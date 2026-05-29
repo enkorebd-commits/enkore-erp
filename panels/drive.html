@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --blue: #29ABE2; --blue-dark: #1a8bbf; }
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: #f4f6f8; height: 100vh;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* TAB BAR */
+    .tab-bar {
+      background: #ffffff; border-bottom: 1px solid #e8e8e8;
+      display: flex; align-items: center; flex-shrink: 0;
+      height: 48px; padding: 0 4px; overflow-x: auto;
+      gap: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .tab-bar::-webkit-scrollbar { display: none; }
+
+    .folder-tab {
+      display: flex; align-items: center; gap: 7px;
+      padding: 0 16px; height: 48px; cursor: pointer;
+      font-size: 13px; font-weight: 500; color: #888;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s; white-space: nowrap;
+      flex-shrink: 0; user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .folder-tab:active { background: #f5f5f5; }
+    .folder-tab.active { color: #111; border-bottom-color: var(--blue); font-weight: 600; }
+    .tab-icon { font-size: 15px; }
+
+    /* DRIVE FRAME */
+    .drive-frame { flex: 1; width: 100%; border: none; display: block; background: #fff; }
+
+    /* NO ACCESS */
+    .no-access {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: #aaa; text-align: center; padding: 40px;
+    }
+    .no-access .na-icon { font-size: 44px; margin-bottom: 14px; }
+    .no-access .na-title { font-size: 15px; font-weight: 600; color: #666; margin-bottom: 6px; }
+    .no-access .na-msg { font-size: 13px; color: #999; line-height: 1.6; }
+
+    /* LOADING BAR */
+    .loading-bar {
+      height: 2px; background: var(--blue);
+      width: 0; transition: width 0.5s ease;
+      position: absolute; top: 44px; left: 0;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<div class="tab-bar" id="tab-bar"></div>
+<div class="loading-bar" id="loading-bar"></div>
+<iframe class="drive-frame" id="drive-frame" src="about:blank" title="Google Drive"></iframe>
+
+<script>
+  // ── REDIRECT if opened directly (no userId param) ──
+  const params  = new URLSearchParams(window.location.search);
+  const userId  = params.get('userId') || '';
+  if (!userId) {
+    window.location.replace('../enkore-erp.html');
+  }
+
+  // ── FOLDER DEFINITIONS ──
+  const FOLDERS = {
+    ops:   { name: 'Operations',            id: '1dfxMLytCzB31VYLuZwdpIa01b-K2Zw0g', icon: '⚙️' },
+    fin:   { name: 'Finance',               id: '1f3ZaTcAoQXYdi3pHOEdHLWJDFZRUFwhx', icon: '💰' },
+    sales: { name: 'Sales',                 id: '1KHl2DJbhNAeqfnnkLeQ2FnkvLBgi5a5j', icon: '📊' },
+    mkt:   { name: 'Marketing',             id: '1iUc2_GvNdIcld5N-efoesuZnEE0KSPka', icon: '📣' },
+    pp:    { name: 'Planning & Production', id: '1b_ZyI0gYSqN9n6369wSzL0039iCtApY4', icon: '🏭' },
+    sc:    { name: 'Supply Chain',          id: '1aYRoKWZ9ZzMVlBZmVk1k82cNBUv18VQo', icon: '🚚' },
+    ir:    { name: 'Investor Relations',    id: '15NpU64cIimEOpWjKQn5PMXqtLdqA_4NN', icon: '💼' },
+  };
+
+  // ── ROLE-BASED ACCESS ──
+  const ROLE_ACCESS = {
+    '1011100001': ['ops','fin','sales','mkt','pp','sc','ir'],
+    '1011100002': ['sc','ops','pp'],
+    '1011100003': ['ops','pp'],
+    '1011100004': ['ops','fin','sales','mkt','pp','sc','ir'],
+    '1012100005': ['pp'],
+    '1011100006': ['mkt','sales'],
+    '1011100007': ['ops','fin','sales','mkt','pp','sc','ir'],
+  };
+
+  const allowed = ROLE_ACCESS[userId] || [];
+
+  function loadFolder(key) {
+    document.querySelectorAll('.folder-tab').forEach(t => t.classList.toggle('active', t.dataset.key === key));
+    const bar = document.getElementById('loading-bar');
+    bar.style.width = '55%';
+    setTimeout(() => { bar.style.width = '100%'; }, 400);
+    setTimeout(() => { bar.style.width = '0'; bar.style.transition = 'none'; setTimeout(() => bar.style.transition = '', 50); }, 900);
+    document.getElementById('drive-frame').src = 'https://drive.google.com/embeddedfolderview?id=' + FOLDERS[key].id + '#list';
+  }
+
+  function buildTabs() {
+    const bar = document.getElementById('tab-bar');
+    if (allowed.length === 0) {
+      bar.remove();
+      document.getElementById('drive-frame').remove();
+      document.getElementById('loading-bar').remove();
+      document.body.insertAdjacentHTML('beforeend', `
+        <div class="no-access">
+          <div class="na-icon">🔒</div>
+          <div class="na-title">Access Restricted</div>
+          <div class="na-msg">You do not have permission to view any Drive folders.<br>Contact your administrator.</div>
+        </div>
+      `);
+      return;
+    }
+    allowed.forEach((key, i) => {
+      const f = FOLDERS[key];
+      if (!f) return;
+      const tab = document.createElement('div');
+      tab.className = 'folder-tab' + (i === 0 ? ' active' : '');
+      tab.dataset.key = key;
+      tab.innerHTML = `<span class="tab-icon">${f.icon}</span>${f.name}`;
+      tab.addEventListener('click', () => loadFolder(key));
+      bar.appendChild(tab);
+    });
+    if (allowed[0]) loadFolder(allowed[0]);
+  }
+
+  buildTabs();
+</script>
+</body>
+</html>

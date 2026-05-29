@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Enkore ERP</title>
+  <meta name="theme-color" content="#0d0d0d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    :root {
+      --blue:      #29ABE2;
+      --blue-d:    #1a8bbf;
+      --black:     #0d0d0d;
+      --dark1:     #161616;
+      --dark2:     #1a1a1a;
+      --dark3:     #222222;
+      --sidebar-w: 220px;
+    }
+    html,body { height:100%; overflow:hidden; font-family:'Inter','Segoe UI',sans-serif; background:#f4f6f8; }
+
+    /* ═══ LOGIN ═══ */
+    #login-screen {
+      position:fixed; inset:0; z-index:1000;
+      background:var(--black);
+      display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+    .login-wrap { width:100%; max-width:380px; }
+    .login-logo-area { text-align:center; margin-bottom:32px; }
+    .login-logo-area img { height:38px; }
+    .login-tagline { font-size:10px; color:#444; margin-top:10px; letter-spacing:1.5px; text-transform:uppercase; }
+    .login-card {
+      background:var(--dark1); border:1px solid var(--dark3);
+      border-radius:16px; padding:28px 24px 24px;
+    }
+    .login-card h2 { font-size:18px; font-weight:600; color:#fff; }
+    .login-sub { font-size:12px; color:#555; margin-top:4px; margin-bottom:24px; }
+    .fg { margin-bottom:14px; }
+    .fg label { display:block; font-size:10px; font-weight:700; color:#555; margin-bottom:7px; text-transform:uppercase; letter-spacing:0.7px; }
+    .fg input {
+      width:100%; padding:14px;
+      background:#1e1e1e; border:1px solid var(--dark3);
+      border-radius:10px; font-size:16px; color:#fff;
+      font-family:inherit; outline:none; -webkit-appearance:none;
+      transition:border-color 0.2s;
+    }
+    .fg input::placeholder { color:#333; }
+    .fg input:focus { border-color:var(--blue); }
+    .btn-login {
+      width:100%; padding:15px;
+      background:var(--blue); border:none; border-radius:10px;
+      font-size:15px; font-weight:600; color:#fff;
+      font-family:inherit; cursor:pointer; margin-top:6px;
+      -webkit-appearance:none; transition:background 0.2s;
+    }
+    .btn-login:active { background:var(--blue-d); }
+    .btn-login:disabled { opacity:0.6; cursor:not-allowed; }
+    .login-err { color:#f87171; font-size:12px; text-align:center; margin-top:12px; min-height:16px; }
+    .login-status { color:#888; font-size:12px; text-align:center; margin-top:12px; min-height:16px; }
+    .remember-row { display:flex; align-items:center; gap:8px; margin-top:4px; margin-bottom:4px; }
+    .remember-row input[type=checkbox] { width:16px; height:16px; accent-color:var(--blue); cursor:pointer; flex-shrink:0; }
+    .remember-row label { font-size:12px; color:#777; cursor:pointer; user-select:none; }
+    .login-footer { text-align:center; margin-top:22px; font-size:10px; color:#2a2a2a; }
+
+    /* ═══ SHELL ═══ */
+    #shell { display:none; height:100%; }
+
+    /* TOP BAR */
+    .topbar {
+      position:fixed; top:0; left:0; right:0; height:52px;
+      background:#fff; border-bottom:1px solid #eee;
+      display:flex; align-items:center; padding:0 14px 0 16px; gap:10px; z-index:100;
+    }
+    .tb-logo img { height:24px; }
+    .tb-spacer { flex:1; }
+    .tb-panel { font-size:13px; color:#999; font-weight:500; display:none; }
+    .tb-uinfo .tbun { font-size:12px; font-weight:600; color:#111; }
+    .tb-uinfo .tbur { font-size:10px; color:#888; }
+    .tb-avatar {
+      width:34px; height:34px; border-radius:50%;
+      background:var(--blue); color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0;
+    }
+    .btn-logout-desk {
+      display:none; padding:7px 14px;
+      background:#f5f5f5; border:1px solid #e8e8e8; border-radius:7px;
+      font-size:12px; color:#555; font-family:inherit;
+      cursor:pointer; font-weight:500; white-space:nowrap;
+    }
+    .btn-logout-desk:hover { background:#fef2f2; border-color:#fca5a5; color:#ef4444; }
+
+    /* USER MENU */
+    .user-menu {
+      position:fixed; top:56px; right:12px;
+      background:#fff; border:1px solid #e8e8e8; border-radius:12px; padding:6px 0;
+      min-width:190px; box-shadow:0 8px 28px rgba(0,0,0,0.12);
+      z-index:300; display:none;
+    }
+    .user-menu.open { display:block; }
+    .um-info { padding:10px 16px; border-bottom:1px solid #f0f0f0; margin-bottom:4px; }
+    .um-info .um-n { font-size:13px; font-weight:600; color:#111; }
+    .um-info .um-r { font-size:11px; color:#888; margin-top:2px; }
+    .um-item { padding:11px 16px; font-size:13px; color:#444; cursor:pointer; display:flex; align-items:center; gap:9px; }
+    .um-item:hover { background:#fafafa; }
+    .um-item.danger { color:#ef4444; }
+
+    /* CONTENT */
+    .content {
+      position:fixed; top:52px; left:0; right:0;
+      bottom:calc(62px + env(safe-area-inset-bottom,0px));
+      background:#f4f6f8;
+    }
+    .content iframe { width:100%; height:100%; border:none; display:block; }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position:fixed; bottom:0; left:0; right:0;
+      height:calc(62px + env(safe-area-inset-bottom,0px));
+      padding-bottom:env(safe-area-inset-bottom,0px);
+      background:var(--black); border-top:1px solid var(--dark2);
+      display:flex; align-items:stretch;
+      overflow-x:auto; -webkit-overflow-scrolling:touch;
+      z-index:100; scrollbar-width:none;
+    }
+    .bottom-nav::-webkit-scrollbar { display:none; }
+    .bnav-item {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      min-width:68px; padding:0 6px; gap:4px;
+      cursor:pointer; flex-shrink:0; user-select:none;
+      border-top:2px solid transparent; transition:border-color 0.15s;
+    }
+    .bnav-item.active { border-top-color:var(--blue); }
+    .bnav-icon { font-size:20px; line-height:1; }
+    .bnav-label { font-size:9px; font-weight:500; color:#3a3a3a; white-space:nowrap; }
+    .bnav-item.active .bnav-label { color:var(--blue); font-weight:600; }
+
+    /* SIDEBAR */
+    .sidebar {
+      display:none; position:fixed; top:0; left:0; bottom:0;
+      width:var(--sidebar-w); background:var(--black);
+      flex-direction:column; overflow-y:auto; border-right:1px solid var(--dark2); z-index:200;
+    }
+    .sidebar::-webkit-scrollbar { width:3px; }
+    .sidebar::-webkit-scrollbar-thumb { background:var(--dark2); }
+    .sb-logo { padding:18px 16px 16px; border-bottom:1px solid var(--dark2); }
+    .sb-logo img { height:28px; }
+    .nav-sect { padding:18px 0 4px; }
+    .nav-lbl { padding:0 16px 8px; font-size:10px; font-weight:700; color:#2a2a2a; text-transform:uppercase; letter-spacing:1.5px; }
+    .nav-item {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 16px; cursor:pointer;
+      color:#4a4a4a; font-size:13px; font-weight:500;
+      border-left:2px solid transparent; transition:all 0.15s; user-select:none;
+    }
+    .nav-item:hover { background:var(--dark2); color:#ccc; }
+    .nav-item.active { background:#1f1f1f; color:#fff; border-left-color:var(--blue); }
+    .nav-icon { font-size:14px; width:18px; text-align:center; flex-shrink:0; }
+    .ro-badge { margin-left:auto; font-size:8px; padding:2px 5px; background:#1a2a35; color:var(--blue); border-radius:4px; font-weight:600; }
+    .sb-footer { margin-top:auto; padding:14px 16px; border-top:1px solid var(--dark2); font-size:10px; color:#282828; }
+
+    /* DESKTOP ≥769px */
+    @media (min-width:769px) {
+      .sidebar    { display:flex; }
+      .bottom-nav { display:none; }
+      .topbar     { left:var(--sidebar-w); height:56px; }
+      .tb-logo    { display:none; }
+      .tb-panel   { display:block; }
+      .btn-logout-desk { display:block; }
+      .content    { top:56px; left:var(--sidebar-w); bottom:0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-logo-area">
+      <img src="assets/logo-white.png" alt="Enkore" />
+      <div class="login-tagline">Enterprise Resource Portal</div>
+    </div>
+    <div class="login-card">
+      <h2>Welcome back</h2>
+      <div class="login-sub">Sign in with your Employee ID</div>
+      <div class="fg">
+        <label>Employee ID</label>
+        <input type="text" id="inp-id" placeholder="e.g. 1011100001" autocomplete="username" inputmode="numeric" />
+      </div>
+      <div class="fg">
+        <label>Password</label>
+        <input type="password" id="inp-pass" placeholder="Enter your password" autocomplete="current-password" />
+      </div>
+      <div class="remember-row">
+        <input type="checkbox" id="chk-remember" />
+        <label for="chk-remember">Remember me on this device</label>
+      </div>
+      <button class="btn-login" id="btn-login" onclick="doLogin()">Sign In</button>
+      <div class="login-status" id="login-status"></div>
+      <div class="login-err" id="login-err"></div>
+    </div>
+    <div class="login-footer">Enkore Automotive Ltd. &mdash; Internal Use Only</div>
+  </div>
+</div>
+
+<!-- SHELL -->
+<div id="shell">
+  <div class="topbar">
+    <div class="tb-logo"><img src="https://enkorebd.com/wp-content/uploads/2026/03/Black.png" alt="Enkore" /></div>
+    <div class="tb-panel" id="tb-panel"></div>
+    <div class="tb-spacer"></div>
+    <div class="tb-uinfo"><div class="tbun" id="tb-name">-</div><div class="tbur" id="tb-role">-</div></div>
+    <div class="tb-avatar" id="tb-avatar" onclick="toggleMenu()">--</div>
+    <button class="btn-logout-desk" onclick="doLogout()">Logout</button>
+  </div>
+
+  <div class="user-menu" id="user-menu">
+    <div class="um-info"><div class="um-n" id="um-n">-</div><div class="um-r" id="um-r">-</div></div>
+    <div class="um-item" onclick="refreshCache()"><span>🔄</span> Refresh Data</div>
+    <div class="um-item danger" onclick="doLogout()"><span>🚪</span> Sign Out</div>
+  </div>
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-logo"><img src="assets/logo-white.png" alt="Enkore" /></div>
+    <div class="nav-sect">
+      <div class="nav-lbl">Panels</div>
+      <div id="sidebar-panels"></div>
+    </div>
+    <div class="sb-footer">Enkore ERP v1.0</div>
+  </nav>
+
+  <div class="content">
+    <iframe id="panel-frame" src="" title="Panel" allowfullscreen></iframe>
+  </div>
+
+  <nav class="bottom-nav" id="bottom-nav"></nav>
+</div>
+
+<script>
+  // ── CONFIG ──
+  const SHEET_ID   = '1mXI0MI9R_5_ImxiTvw8vH0EaQ38M3WlHncjZgmPLTmc';
+  const ACCESS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Access`;
+  const LINK_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Panels`;
+
+  let currentUser = null, menuOpen = false;
+
+  // ── CSV PARSER (handles quoted fields with commas inside) ──
+  function parseCSVLine(line) {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += c; }
+    }
+    cols.push(cur.trim());
+    return cols;
+  }
+
+  function parseCSV(text) {
+    const lines = text.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 2) return [];
+    const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/"/g,''));
+    return lines.slice(1).map(line => {
+      const vals = parseCSVLine(line);
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = (vals[i] || '').replace(/^"|"$/g,''));
+      return obj;
+    });
+  }
+
+  // ── PARSE USER PANELS ──
+  // Returns array of { name, file, icon, readonly }
+  function parsePanels(panelsStr, allPanels) {
+    const str = (panelsStr || '').trim();
+    if (!str) return [];
+
+    if (str.toLowerCase() === 'all') {
+      return allPanels.map(p => ({ ...p, readonly: false }));
+    }
+
+    return str.split(',').map(item => {
+      item = item.trim();
+      const readonly = /\(readonly\)/i.test(item);
+      const name = item.replace(/\s*\(readonly\)/i, '').trim();
+      const panel = allPanels.find(p => p.name.toLowerCase() === name.toLowerCase());
+      if (!panel) return null;
+      return { ...panel, readonly };
+    }).filter(Boolean);
+  }
+
+  // ── SHEET FETCHER (fetch-based, works from HTTPS hosting) ──
+  async function fetchSheetData(sheetId, sheetName) {
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}&t=${Date.now()}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const text = await resp.text();
+    const match = text.match(/setResponse\(([\s\S]*)\)\s*;?\s*$/);
+    if (!match) throw new Error('Parse error');
+    const data = JSON.parse(match[1]);
+    if (!data || !data.table) throw new Error('No table data');
+    const cols = data.table.cols.map(c => (c.label || c.id || '').toLowerCase().trim());
+    return (data.table.rows || []).map(r => {
+      const obj = {};
+      (r.c || []).forEach((cell, i) => {
+        obj[cols[i]] = (cell && cell.v !== null && cell.v !== undefined) ? String(cell.v).trim() : '';
+      });
+      return obj;
+    });
+  }
+
+  // ── 24-HOUR CACHE ──
+  const CACHE_KEY = 'enkore_erp_cache';
+  const CACHE_TTL = 24 * 60 * 60 * 1000;
+
+  async function getSheetData(forceRefresh) {
+    if (!forceRefresh) {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < CACHE_TTL) return data;
+        }
+      } catch(e) {}
+    }
+    const [accessData, linkData] = await Promise.all([
+      fetchSheetData(SHEET_ID, 'Access'),
+      fetchSheetData(SHEET_ID, 'Panels')
+    ]);
+    const data = { accessData, linkData };
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() })); } catch(e) {}
+    return data;
+  }
+
+  function refreshCache() {
+    toggleMenu();
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('shell').style.display = 'none';
+    currentUser = null;
+    sessionStorage.removeItem('erp_user');
+    localStorage.removeItem(CACHE_KEY);
+    document.getElementById('login-status').textContent = 'Data cleared. Please sign in again.';
+  }
+
+  // ── LOGIN ──
+  async function doLogin() {
+    const uid  = document.getElementById('inp-id').value.trim();
+    const pass = document.getElementById('inp-pass').value;
+    const err  = document.getElementById('login-err');
+    const stat = document.getElementById('login-status');
+    const btn  = document.getElementById('btn-login');
+
+    err.textContent  = '';
+    stat.textContent = '';
+
+    if (!uid || !pass) { err.textContent = 'Please fill in both fields.'; return; }
+
+    btn.disabled    = true;
+    btn.textContent = 'Signing in...';
+
+    try {
+      // Check cache first — if hit, login is instant
+      const hasCached = (() => { try { const c = localStorage.getItem(CACHE_KEY); if (!c) return false; const { ts } = JSON.parse(c); return Date.now() - ts < CACHE_TTL; } catch(e) { return false; } })();
+      if (!hasCached) stat.textContent = 'Loading permissions (first time only)...';
+
+      const { accessData, linkData } = await getSheetData();
+
+      // Validate credentials
+      const userRow = accessData.find(u => u.id === uid && u.pass === pass);
+      if (!userRow) {
+        err.textContent = 'Invalid Employee ID or Password.';
+        document.getElementById('inp-pass').value = '';
+        return;
+      }
+
+      // Save / clear remember me
+      if (document.getElementById('chk-remember').checked) {
+        localStorage.setItem('enkore_erp_remember', JSON.stringify({ id: uid, pass }));
+      } else {
+        localStorage.removeItem('enkore_erp_remember');
+      }
+
+      // Build master panel list
+      const allPanels = linkData
+        .map(row => ({ name: row.name, file: row.file, icon: row.icon || '📋' }))
+        .filter(p => p.name && p.file);
+
+      const userPanels = parsePanels(userRow.panels, allPanels);
+      if (userPanels.length === 0) {
+        err.textContent = 'No panels assigned. Contact admin.';
+        return;
+      }
+
+      currentUser = { id: userRow.id, name: userRow.name, role: userRow.role || '', panels: userPanels };
+      sessionStorage.setItem('erp_user', JSON.stringify(currentUser));
+      stat.textContent = '';
+      showShell(currentUser);
+
+    } catch(e) {
+      err.textContent = 'Could not connect. Check your internet connection.';
+      console.error(e);
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = 'Sign In';
+    }
+  }
+
+  // ── REMEMBER ME PRE-FILL ──
+  window.addEventListener('DOMContentLoaded', () => {
+    try {
+      const saved = localStorage.getItem('enkore_erp_remember');
+      if (saved) {
+        const { id, pass } = JSON.parse(saved);
+        document.getElementById('inp-id').value   = id   || '';
+        document.getElementById('inp-pass').value = pass || '';
+        document.getElementById('chk-remember').checked = true;
+      }
+    } catch(e) {}
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+  });
+
+  // ── SHOW SHELL ──
+  function showShell(user) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('shell').style.display = 'block';
+
+    const ini = user.name.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
+    document.getElementById('tb-avatar').textContent = ini;
+    document.getElementById('tb-name').textContent   = user.name;
+    document.getElementById('tb-role').textContent   = user.role;
+    document.getElementById('um-n').textContent      = user.name;
+    document.getElementById('um-r').textContent      = user.role;
+
+    buildNav(user.panels);
+    if (user.panels.length > 0) {
+      const first = user.panels[0];
+      loadPanel(first.file, first.name, first.readonly);
+    }
+  }
+
+  // ── BUILD NAV DYNAMICALLY ──
+  function buildNav(panels) {
+    const sbPanels  = document.getElementById('sidebar-panels');
+    const btmNav    = document.getElementById('bottom-nav');
+    sbPanels.innerHTML = '';
+    btmNav.innerHTML   = '';
+
+    panels.forEach(panel => {
+      // Sidebar item
+      const si = document.createElement('div');
+      si.className = 'nav-item';
+      si.id = 'snav-' + panel.file;
+      si.innerHTML = `<span class="nav-icon">${panel.icon}</span>${panel.name}` +
+        (panel.readonly ? `<span class="ro-badge">View</span>` : '');
+      si.onclick = () => loadPanel(panel.file, panel.name, panel.readonly);
+      sbPanels.appendChild(si);
+
+      // Bottom nav item
+      const bi = document.createElement('div');
+      bi.className = 'bnav-item';
+      bi.id = 'bnav-' + panel.file;
+      bi.innerHTML = `<span class="bnav-icon">${panel.icon}</span><span class="bnav-label">${panel.name}</span>`;
+      bi.onclick = () => loadPanel(panel.file, panel.name, panel.readonly);
+      btmNav.appendChild(bi);
+    });
+  }
+
+  // ── LOAD PANEL ──
+  function loadPanel(file, name, readonly) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.bnav-item').forEach(el => el.classList.remove('active'));
+    const sn = document.getElementById('snav-' + file);
+    if (sn) sn.classList.add('active');
+    const bn = document.getElementById('bnav-' + file);
+    if (bn) bn.classList.add('active');
+
+    document.getElementById('tb-panel').textContent = name;
+
+    const p = new URLSearchParams({
+      userId:   currentUser.id,
+      name:     currentUser.name,
+      role:     currentUser.role,
+      readonly: readonly ? '1' : '0'
+    });
+    document.getElementById('panel-frame').src = 'panels/' + file + '.html?' + p.toString();
+    closeMenu();
+  }
+
+  // ── USER MENU ──
+  function toggleMenu() { menuOpen = !menuOpen; document.getElementById('user-menu').classList.toggle('open', menuOpen); }
+  function closeMenu()  { menuOpen = false; document.getElementById('user-menu').classList.remove('open'); }
+  document.addEventListener('click', e => {
+    if (menuOpen && !document.getElementById('user-menu').contains(e.target) && !document.getElementById('tb-avatar').contains(e.target)) closeMenu();
+  });
+
+  // ── LOGOUT ──
+  function doLogout() {
+    currentUser = null;
+    sessionStorage.removeItem('erp_user');
+    document.getElementById('panel-frame').src = 'about:blank';
+    document.getElementById('shell').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('inp-id').value  = '';
+    document.getElementById('inp-pass').value = '';
+    document.getElementById('login-err').textContent  = '';
+    document.getElementById('login-status').textContent = '';
+    closeMenu();
+  }
+
+  // ── SESSION RESTORE ──
+  window.addEventListener('load', () => {
+    const s = sessionStorage.getItem('erp_user');
+    if (s) {
+      try { currentUser = JSON.parse(s); showShell(currentUser); }
+      catch(e) { sessionStorage.removeItem('erp_user'); }
+    }
+  });
+
+  // ── SERVICE WORKER (PWA) ──
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
