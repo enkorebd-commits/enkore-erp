@@ -1,8 +1,12 @@
-const CACHE_NAME = 'enkore-erp-v1';
+const CACHE_NAME = 'enkore-erp-v3';
 const SHELL_FILES = [
+  '/enkore-erp',
   '/enkore-erp.html',
   '/manifest.json',
-  '/assets/logo-white.png'
+  '/assets/icon-192.png',
+  '/assets/icon-512.png',
+  '/assets/logo-white.png',
+  '/panels/drive.html'
 ];
 
 self.addEventListener('install', e => {
@@ -22,10 +26,16 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Network first for Google Sheets (always fresh), cache first for shell
   const url = e.request.url;
-  if (url.includes('docs.google.com') || url.includes('fonts.googleapis.com')) {
-    return; // let browser handle
+  // Always go network-first for Google services and external APIs
+  if (
+    url.includes('docs.google.com') ||
+    url.includes('script.google.com') ||
+    url.includes('fonts.googleapis.com') ||
+    url.includes('fonts.gstatic.com') ||
+    url.includes('drive-thirdparty.googleusercontent.com')
+  ) {
+    return;
   }
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
