@@ -7,10 +7,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-    :root { --blue:#29ABE2; }
+    :root { --blue:#29ABE2; --bg:#f4f6f8; }
     body {
       font-family:'Inter','Segoe UI',sans-serif;
-      background:#f4f6f8; height:100vh;
+      background:var(--bg); height:100vh;
       display:flex; flex-direction:column; overflow:hidden;
     }
 
@@ -28,7 +28,7 @@
       font-size:13px; font-weight:500; color:#888;
       border-bottom:2px solid transparent;
       transition:all 0.15s; white-space:nowrap; flex-shrink:0;
-      user-select:none; -webkit-tap-highlight-color:transparent;
+      user-select:none;
     }
     .folder-tab:active { background:#f5f5f5; }
     .folder-tab.active { color:#111; border-bottom-color:var(--blue); font-weight:600; }
@@ -36,14 +36,50 @@
     /* LOADING BAR */
     .loading-bar {
       height:2px; background:var(--blue);
-      width:0; transition:width 0.5s ease;
-      flex-shrink:0;
+      width:0; transition:width 0.4s ease; flex-shrink:0;
     }
 
-    /* DRIVE FRAME */
-    .drive-frame { flex:1; width:100%; border:none; display:block; background:#fff; }
+    /* BREADCRUMB */
+    .breadcrumb {
+      background:#fff; border-bottom:1px solid #f0f0f0;
+      padding:0 16px; height:36px;
+      display:flex; align-items:center; gap:4px;
+      overflow-x:auto; flex-shrink:0;
+      -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    }
+    .breadcrumb::-webkit-scrollbar { display:none; }
+    .bc-item {
+      font-size:12px; color:var(--blue); cursor:pointer;
+      white-space:nowrap; font-weight:500;
+    }
+    .bc-item:last-child { color:#555; cursor:default; font-weight:600; }
+    .bc-sep { font-size:12px; color:#ccc; }
 
-    /* NO ACCESS */
+    /* FILE LIST */
+    .file-list {
+      flex:1; overflow-y:auto; padding:8px 0;
+      -webkit-overflow-scrolling:touch;
+    }
+    .file-item {
+      display:flex; align-items:center; gap:12px;
+      padding:10px 16px; cursor:pointer;
+      border-bottom:1px solid #f0f0f0;
+      transition:background 0.1s;
+    }
+    .file-item:active { background:#f0f8fd; }
+    .file-icon { font-size:20px; flex-shrink:0; width:28px; text-align:center; }
+    .file-name { font-size:13px; color:#222; font-weight:500; flex:1; line-height:1.3; }
+    .file-arrow { font-size:12px; color:#ccc; flex-shrink:0; }
+
+    /* STATES */
+    .state-box {
+      flex:1; display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      color:#aaa; text-align:center; padding:40px; gap:10px;
+    }
+    .state-box .icon { font-size:36px; }
+    .state-box .msg { font-size:13px; }
+
     .no-access {
       flex:1; display:flex; flex-direction:column;
       align-items:center; justify-content:center;
@@ -55,9 +91,12 @@
 
 <div class="tab-bar" id="tab-bar"></div>
 <div class="loading-bar" id="loading-bar"></div>
-<iframe class="drive-frame" id="drive-frame" src="about:blank" title="Google Drive"></iframe>
+<div class="breadcrumb" id="breadcrumb"></div>
+<div class="file-list" id="file-list"></div>
 
 <script>
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwluHC74KUGPPaTfavIeHoK_7q95ZzvKqw4Fchn_uXyJB_jccYHPCAvWtv_WFjI1G3O/exec';
+
   const params = new URLSearchParams(window.location.search);
   const userId = params.get('userId') || '';
   if (!userId) window.location.replace('../enkore-erp.html');
@@ -82,48 +121,154 @@
     '1011100007': ['ops','fin','sales','mkt','pp','sc','ir'],
   };
 
-  const allowed = ROLE_ACCESS[userId] || [];
+  const MIME_ICONS = {
+    'application/vnd.google-apps.document': '📝',
+    'application/vnd.google-apps.spreadsheet': '📊',
+    'application/vnd.google-apps.presentation': '📋',
+    'application/vnd.google-apps.form': '📋',
+    'application/pdf': '📄',
+    'image/jpeg': '🖼️',
+    'image/png': '🖼️',
+    'video/mp4': '🎬',
+    'audio/mpeg': '🎵',
+  };
 
-  function loadFolder(key) {
-    document.querySelectorAll('.folder-tab').forEach(t => t.classList.toggle('active', t.dataset.key === key));
+  function getFileIcon(mime) {
+    return MIME_ICONS[mime] || '📄';
+  }
+
+  const allowed = ROLE_ACCESS[userId] || [];
+  let breadcrumbStack = [];
+
+  function showLoading(on) {
     const bar = document.getElementById('loading-bar');
-    bar.style.transition = 'width 0.5s ease';
-    bar.style.width = '60%';
-    setTimeout(() => { bar.style.width = '100%'; }, 400);
-    setTimeout(() => {
-      bar.style.transition = 'none';
-      bar.style.width = '0';
-      setTimeout(() => { bar.style.transition = 'width 0.5s ease'; }, 50);
-    }, 900);
-    document.getElementById('drive-frame').src =
-      'https://drive.google.com/embeddedfolderview?id=' + FOLDERS[key].id + '#list';
+    if (on) {
+      bar.style.transition = 'width 0.4s ease';
+      bar.style.width = '70%';
+    } else {
+      bar.style.width = '100%';
+      setTimeout(() => {
+        bar.style.transition = 'none';
+        bar.style.width = '0';
+      }, 300);
+    }
+  }
+
+  function renderBreadcrumb() {
+    const bc = document.getElementById('breadcrumb');
+    bc.innerHTML = '';
+    breadcrumbStack.forEach((item, i) => {
+      if (i > 0) {
+        const sep = document.createElement('span');
+        sep.className = 'bc-sep';
+        sep.textContent = '›';
+        bc.appendChild(sep);
+      }
+      const el = document.createElement('span');
+      el.className = 'bc-item';
+      el.textContent = item.name;
+      if (i < breadcrumbStack.length - 1) {
+        el.onclick = () => navigateTo(i);
+      }
+      bc.appendChild(el);
+    });
+    bc.scrollLeft = bc.scrollWidth;
+  }
+
+  function navigateTo(stackIndex) {
+    breadcrumbStack = breadcrumbStack.slice(0, stackIndex + 1);
+    renderBreadcrumb();
+    fetchFolder(breadcrumbStack[breadcrumbStack.length - 1].id);
+  }
+
+  function fetchFolder(folderId) {
+    showLoading(true);
+    const fl = document.getElementById('file-list');
+    fl.innerHTML = '<div class="state-box"><span class="icon">⏳</span><span class="msg">Loading...</span></div>';
+
+    const cbName = 'cb_' + Date.now();
+    window[cbName] = function(data) {
+      delete window[cbName];
+      showLoading(false);
+      renderItems(data);
+    };
+    const script = document.createElement('script');
+    script.onerror = function() {
+      showLoading(false);
+      document.getElementById('file-list').innerHTML =
+        '<div class="state-box"><span class="icon">⚠️</span><span class="msg">Failed to load. Check Drive access.</span></div>';
+    };
+    script.src = SCRIPT_URL + '?folderId=' + encodeURIComponent(folderId) + '&callback=' + cbName;
+    document.head.appendChild(script);
+  }
+
+  function renderItems(data) {
+    const fl = document.getElementById('file-list');
+    fl.innerHTML = '';
+    if (!data.ok) {
+      fl.innerHTML = '<div class="state-box"><span class="icon">⚠️</span><span class="msg">' + (data.error || 'Error') + '</span></div>';
+      return;
+    }
+    if (!data.items || data.items.length === 0) {
+      fl.innerHTML = '<div class="state-box"><span class="icon">📭</span><span class="msg">This folder is empty.</span></div>';
+      return;
+    }
+    data.items.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'file-item';
+      if (item.type === 'folder') {
+        div.innerHTML =
+          '<span class="file-icon">📁</span>' +
+          '<span class="file-name">' + item.name + '</span>' +
+          '<span class="file-arrow">›</span>';
+        div.onclick = function() {
+          breadcrumbStack.push({ id: item.id, name: item.name });
+          renderBreadcrumb();
+          fetchFolder(item.id);
+        };
+      } else {
+        div.innerHTML =
+          '<span class="file-icon">' + getFileIcon(item.mime) + '</span>' +
+          '<span class="file-name">' + item.name + '</span>' +
+          '<span class="file-arrow">↗</span>';
+        div.onclick = function() { window.open(item.url, '_blank'); };
+      }
+      fl.appendChild(div);
+    });
+  }
+
+  function loadTab(key) {
+    document.querySelectorAll('.folder-tab').forEach(t => t.classList.toggle('active', t.dataset.key === key));
+    const f = FOLDERS[key];
+    breadcrumbStack = [{ id: f.id, name: f.name }];
+    renderBreadcrumb();
+    fetchFolder(f.id);
   }
 
   function buildTabs() {
     const bar = document.getElementById('tab-bar');
     if (allowed.length === 0) {
       bar.style.display = 'none';
-      document.getElementById('drive-frame').remove();
-      document.getElementById('loading-bar').remove();
-      document.body.insertAdjacentHTML('beforeend', `
-        <div class="no-access">
-          <span style="font-size:36px">🔒</span>
-          <strong style="color:#555">Access Restricted</strong>
-          <span>Contact your administrator.</span>
-        </div>`);
+      document.getElementById('breadcrumb').style.display = 'none';
+      document.getElementById('file-list').innerHTML =
+        '<div class="no-access">' +
+        '<span style="font-size:36px">🔒</span>' +
+        '<strong style="color:#555">Access Restricted</strong>' +
+        '<span>Contact your administrator.</span>' +
+        '</div>';
       return;
     }
-    allowed.forEach((key, i) => {
+    allowed.forEach(function(key, i) {
       const f = FOLDERS[key];
       if (!f) return;
       const tab = document.createElement('div');
       tab.className = 'folder-tab' + (i === 0 ? ' active' : '');
       tab.dataset.key = key;
-      tab.innerHTML = `<span>${f.icon}</span>${f.name}`;
-      tab.onclick = () => loadFolder(key);
+      tab.innerHTML = '<span>' + f.icon + '</span>' + f.name;
+      tab.onclick = function() { loadTab(key); };
       bar.appendChild(tab);
     });
-    loadFolder(allowed[0]);
+    loadTab(allowed[0]);
   }
 
   buildTabs();
