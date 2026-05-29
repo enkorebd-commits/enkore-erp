@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    :root {
+      --blue:   #29ABE2;
+      --green:  #00c07a;
+      --red:    #e8394a;
+      --bg:     #f0f2f5;
+      --card:   #ffffff;
+      --text:   #1c1e21;
+      --sub:    #65676b;
+      --border: #e4e6ea;
+    }
+    body {
+      font-family:'Inter',sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      overflow-y:auto;
+      min-height:100vh;
+      padding-bottom:24px;
+    }
+
+    /* ── GREETING ── */
+    .greeting {
+      background:linear-gradient(135deg,#0d1b2a 0%,#1b3a5c 60%,#29ABE2 100%);
+      padding:20px 20px 28px;
+      color:#fff;
+      position:relative;
+      overflow:hidden;
+    }
+    .greeting::after {
+      content:'';
+      position:absolute; right:-30px; top:-30px;
+      width:160px; height:160px;
+      border-radius:50%;
+      background:rgba(255,255,255,0.05);
+    }
+    .g-date  { font-size:12px; color:rgba(255,255,255,0.55); margin-bottom:6px; font-weight:500; }
+    .g-name  { font-size:24px; font-weight:800; margin-bottom:8px; line-height:1.2; }
+    .g-quote { font-size:12px; color:rgba(255,255,255,0.5); font-style:italic; line-height:1.6; max-width:300px; }
+
+    /* ── SECTION ── */
+    .section { padding:16px 16px 0; }
+    .sec-hdr {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:12px;
+    }
+    .sec-title {
+      font-size:10px; font-weight:700; letter-spacing:1px;
+      color:var(--sub); text-transform:uppercase;
+    }
+
+    /* ── METRIC GRID ── */
+    .metric-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:16px;
+    }
+    @media(min-width:560px){
+      .metric-grid { grid-template-columns:repeat(4,1fr); }
+    }
+
+    .mcard {
+      background:var(--card);
+      border-radius:14px;
+      padding:14px 14px 12px;
+      box-shadow:0 1px 4px rgba(0,0,0,0.07), 0 0 1px rgba(0,0,0,0.04);
+      transition:transform 0.1s;
+    }
+    .mcard:active { transform:scale(0.98); }
+    .mcard-label {
+      font-size:11px; color:var(--sub); font-weight:600;
+      margin-bottom:7px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .mcard-val {
+      font-size:19px; font-weight:800; line-height:1;
+      color:var(--text);
+    }
+    .mcard-val.pos { color:var(--green); }
+    .mcard-val.neg { color:var(--red); }
+    .mcard-val.blu { color:var(--blue); }
+    .mcard-unit { font-size:10px; color:var(--sub); margin-top:4px; font-weight:500; }
+
+    /* ── MONTH SELECTOR ── */
+    .month-sel {
+      appearance:none; -webkit-appearance:none;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:6px 28px 6px 10px;
+      font-size:12px; font-weight:700;
+      color:var(--text);
+      cursor:pointer; outline:none;
+      font-family:'Inter',sans-serif;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2365676b'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;
+      background-position:right 8px center;
+    }
+
+    /* ── DIVIDER ── */
+    .divider { height:1px; background:var(--border); margin:4px 16px 16px; }
+
+    /* ── CASH IN HAND ── */
+    .cash-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .ccard {
+      background:var(--card);
+      border-radius:14px;
+      padding:14px;
+      box-shadow:0 1px 4px rgba(0,0,0,0.07);
+      border-top:3px solid var(--blue);
+    }
+    .ccard-name { font-size:11px; color:var(--sub); font-weight:600; margin-bottom:5px; line-height:1.3; }
+    .ccard-val  { font-size:20px; font-weight:800; color:var(--blue); }
+    .ccard-unit { font-size:10px; color:var(--sub); margin-top:3px; font-weight:500; }
+
+    /* ── STATES ── */
+    .state {
+      text-align:center; padding:40px 20px;
+      color:var(--sub); font-size:13px;
+    }
+    .spin {
+      width:22px; height:22px; border:2px solid var(--border);
+      border-top-color:var(--blue); border-radius:50%;
+      animation:spin 0.8s linear infinite;
+      margin:0 auto 12px;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="greeting">
+  <div class="g-date"  id="g-date"></div>
+  <div class="g-name"  id="g-name">Loading...</div>
+  <div class="g-quote" id="g-quote"></div>
+</div>
+
+<div id="dash-body">
+  <div class="state"><div class="spin"></div>Loading dashboard...</div>
+</div>
+
+<script>
+  const WORKER = 'https://rapid-credit-0593.enkorebd.workers.dev';
+
+  const qp    = new URLSearchParams(window.location.search);
+  const userId = qp.get('userId') || '';
+  const userName = qp.get('name') || 'User';
+  if (!userId) window.location.replace('../enkore-erp.html');
+
+  const QUOTES = [
+    "Revenue is vanity, profit is sanity, cash is reality.",
+    "Small steps forward still move you ahead.",
+    "Build something people love.",
+    "Every great company started where you are now.",
+    "Focus on the process — results will follow.",
+    "Your team is your greatest asset.",
+    "Done is better than perfect."
+  ];
+
+  // ── Greeting ──
+  (function() {
+    const now  = new Date();
+    const h    = now.getHours();
+    const wrd  = h<12?'Good Morning':h<17?'Good Afternoon':h<21?'Good Evening':'Working Late';
+    const dstr = now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    const first = userName.split(' ')[0];
+    document.getElementById('g-date').textContent  = dstr;
+    document.getElementById('g-name').textContent  = wrd + ', ' + first + ' 👋';
+    document.getElementById('g-quote').textContent = '" ' + QUOTES[now.getDay()] + ' "';
+  })();
+
+  // ── Formatters ──
+  function fmt(v) {
+    if (v===''||v===null||v===undefined) return '—';
+    const n = Number(v);
+    if (isNaN(n)) return String(v);
+    return (n<0?'−':'')+Math.abs(Math.round(n)).toLocaleString('en-IN');
+  }
+  function fmtPct(v) {
+    if (v===''||v===null||v===undefined) return '—';
+    const n = Number(v);
+    if (isNaN(n)) return String(v);
+    // stored as decimal (0.68) in Sheets
+    const pct = Math.abs(n) <= 1 ? n*100 : n;
+    return pct.toFixed(0)+'%';
+  }
+  function numClass(v) {
+    const n = Number(v);
+    if (isNaN(n)||n===0) return '';
+    return n>0?'pos':'neg';
+  }
+
+  // Column indices (0-based from col A)
+  const C = { month:0, sales:2, paid:3, clrPct:4, due:5, gp:9, exp:20, np:22 };
+
+  function cards(row) {
+    const metrics = [
+      { lbl:'Sales',          val:fmt(row[C.sales]),   cls:'blu',            unit:'tk' },
+      { lbl:'Paid',           val:fmt(row[C.paid]),    cls:'pos',            unit:'tk' },
+      { lbl:'Clearance %',    val:fmtPct(row[C.clrPct]), cls: Number(row[C.clrPct])>=0.8?'pos':'blu', unit:'collection rate' },
+      { lbl:'Due',            val:fmt(row[C.due]),     cls: Number(row[C.due])>0?'neg':'pos', unit:'tk outstanding' },
+      { lbl:'Gross Profit',   val:fmt(row[C.gp]),      cls:numClass(row[C.gp]),   unit:'tk actual' },
+      { lbl:'Total Expense',  val:fmt(row[C.exp]),     cls:'',               unit:'tk' },
+      { lbl:'Net Profit',     val:fmt(row[C.np]),      cls:numClass(row[C.np]),   unit:'tk actual' },
+    ];
+    return '<div class="metric-grid">'+
+      metrics.map(m=>
+        '<div class="mcard">'+
+        '<div class="mcard-label">'+m.lbl+'</div>'+
+        '<div class="mcard-val '+m.cls+'">'+m.val+'</div>'+
+        '<div class="mcard-unit">'+m.unit+'</div>'+
+        '</div>'
+      ).join('')+
+    '</div>';
+  }
+
+  function buildDash(data) {
+    const monthly = (data.monthly||[]).filter(r=>r[C.month]);
+    window._mdata = monthly;
+
+    const opts = monthly.map((r,i)=>'<option value="'+i+'">'+r[C.month]+'</option>').join('');
+    const lastIdx = monthly.length-1;
+    const lastRow = monthly[lastIdx]||data.ytd;
+
+    let h = '';
+
+    // YTD
+    h += '<div class="section">';
+    h += '<div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div>';
+    h += cards(data.ytd);
+    h += '</div><div class="divider"></div>';
+
+    // Monthly
+    h += '<div class="section">';
+    h += '<div class="sec-hdr"><span class="sec-title">Monthly</span>';
+    h += '<select class="month-sel" id="msel" onchange="switchMonth(this.value)">'+opts+'</select>';
+    h += '</div>';
+    h += '<div id="mcards">'+cards(lastRow)+'</div>';
+    h += '</div><div class="divider"></div>';
+
+    // Cash in Hand
+    h += '<div class="section">';
+    h += '<div class="sec-hdr"><span class="sec-title">Cash in Hand</span></div>';
+    h += '<div class="cash-grid">';
+    h += '<div class="ccard"><div class="ccard-name">Mahedi Islam Chayan</div><div class="ccard-val">'+fmt(data.cash.chayan)+'</div><div class="ccard-unit">tk</div></div>';
+    h += '<div class="ccard"><div class="ccard-name">Anik Rahman</div><div class="ccard-val">'+fmt(data.cash.anik)+'</div><div class="ccard-unit">tk</div></div>';
+    h += '</div>';
+    h += '</div>';
+
+    document.getElementById('dash-body').innerHTML = h;
+    const sel = document.getElementById('msel');
+    if (sel) sel.value = String(lastIdx);
+  }
+
+  window.switchMonth = function(idx) {
+    const row = window._mdata[parseInt(idx)];
+    if (row) document.getElementById('mcards').innerHTML = cards(row);
+  };
+
+  // ── Fetch ──
+  (function() {
+    const cb = 'dcb_'+Date.now();
+    window[cb] = function(data) {
+      delete window[cb];
+      if (!data||!data.ok) {
+        document.getElementById('dash-body').innerHTML =
+          '<div class="state">⚠️ '+(data&&data.error?data.error:'Failed to load data')+'<br><small>Make sure the Apps Script is updated.</small></div>';
+        return;
+      }
+      buildDash(data);
+    };
+    const s = document.createElement('script');
+    s.onerror = function() {
+      document.getElementById('dash-body').innerHTML =
+        '<div class="state">⚠️ Network error. Check your connection.</div>';
+    };
+    s.src = WORKER+'?type=finance&callback='+cb;
+    document.head.appendChild(s);
+  })();
+</script>
+</body>
+</html>
