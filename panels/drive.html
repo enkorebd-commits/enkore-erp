@@ -95,7 +95,7 @@
 
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwluHC74KUGPPaTfavIeHoK_7q95ZzvKqw4Fchn_uXyJB_jccYHPCAvWtv_WFjI1G3O/exec';
-  const ICON_BASE = 'https://drive-thirdparty.googleusercontent.com/20/type/';
+  const ICON_BASE = 'https://drive-thirdparty.googleusercontent.com/16/type/';
 
   const params = new URLSearchParams(window.location.search);
   const userId = params.get('userId') || '';
@@ -222,7 +222,7 @@
       div.className = 'file-item';
       const imgSrc = item.type === 'folder' ? folderIconUrl() : iconUrl(item.mime);
       div.innerHTML =
-        '<img class="file-icon" src="' + imgSrc + '" alt="">' +
+        '<img class="file-icon" src="' + imgSrc + '" alt="" onerror="this.style.display=\'none\'">' +
         '<span class="file-name">' + item.name + '</span>' +
         '<span class="file-arrow">' + (item.type === 'folder' ? '›' : '↗') + '</span>';
       if (item.type === 'folder') {
