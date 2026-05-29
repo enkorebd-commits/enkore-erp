@@ -7,14 +7,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-    :root { --blue:#29ABE2; --bg:#f4f6f8; }
+    :root { --blue:#29ABE2; }
     body {
       font-family:'Inter','Segoe UI',sans-serif;
-      background:var(--bg); height:100vh;
+      background:#f4f6f8; height:100vh;
       display:flex; flex-direction:column; overflow:hidden;
     }
 
-    /* TAB BAR */
     .tab-bar {
       background:#fff; border-bottom:1px solid #e8e8e8;
       display:flex; align-items:center; height:48px; padding:0 4px;
@@ -32,14 +31,17 @@
     }
     .folder-tab:active { background:#f5f5f5; }
     .folder-tab.active { color:#111; border-bottom-color:var(--blue); font-weight:600; }
+    .tab-dot {
+      width:6px; height:6px; border-radius:50%;
+      background:#e0e0e0; flex-shrink:0;
+    }
+    .tab-dot.loaded { background:#34a853; }
 
-    /* LOADING BAR */
     .loading-bar {
       height:2px; background:var(--blue);
       width:0; transition:width 0.4s ease; flex-shrink:0;
     }
 
-    /* BREADCRUMB */
     .breadcrumb {
       background:#fff; border-bottom:1px solid #f0f0f0;
       padding:0 16px; height:36px;
@@ -55,7 +57,6 @@
     .bc-item:last-child { color:#555; cursor:default; font-weight:600; }
     .bc-sep { font-size:12px; color:#ccc; }
 
-    /* FILE LIST */
     .file-list {
       flex:1; overflow-y:auto; padding:8px 0;
       -webkit-overflow-scrolling:touch;
@@ -67,17 +68,15 @@
       transition:background 0.1s;
     }
     .file-item:active { background:#f0f8fd; }
-    .file-icon { font-size:20px; flex-shrink:0; width:28px; text-align:center; }
+    .file-icon { width:20px; height:20px; flex-shrink:0; object-fit:contain; }
     .file-name { font-size:13px; color:#222; font-weight:500; flex:1; line-height:1.3; }
-    .file-arrow { font-size:12px; color:#ccc; flex-shrink:0; }
+    .file-arrow { font-size:13px; color:#ccc; flex-shrink:0; }
 
-    /* STATES */
     .state-box {
-      flex:1; display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
-      color:#aaa; text-align:center; padding:40px; gap:10px;
+      padding:60px 40px; display:flex; flex-direction:column;
+      align-items:center; gap:10px; color:#aaa; text-align:center;
     }
-    .state-box .icon { font-size:36px; }
+    .state-box .icon { font-size:32px; }
     .state-box .msg { font-size:13px; }
 
     .no-access {
@@ -96,19 +95,20 @@
 
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwluHC74KUGPPaTfavIeHoK_7q95ZzvKqw4Fchn_uXyJB_jccYHPCAvWtv_WFjI1G3O/exec';
+  const ICON_BASE = 'https://drive-thirdparty.googleusercontent.com/20/type/';
 
   const params = new URLSearchParams(window.location.search);
   const userId = params.get('userId') || '';
   if (!userId) window.location.replace('../enkore-erp.html');
 
   const FOLDERS = {
-    ops:   { name:'Operations',            id:'1dfxMLytCzB31VYLuZwdpIa01b-K2Zw0g', icon:'⚙️' },
-    fin:   { name:'Finance',               id:'1f3ZaTcAoQXYdi3pHOEdHLWJDFZRUFwhx', icon:'💰' },
-    sales: { name:'Sales',                 id:'1KHl2DJbhNAeqfnnkLeQ2FnkvLBgi5a5j', icon:'📊' },
-    mkt:   { name:'Marketing',             id:'1iUc2_GvNdIcld5N-efoesuZnEE0KSPka', icon:'📣' },
-    pp:    { name:'Planning & Production', id:'1b_ZyI0gYSqN9n6369wSzL0039iCtApY4', icon:'🏭' },
-    sc:    { name:'Supply Chain',          id:'1aYRoKWZ9ZzMVlBZmVk1k82cNBUv18VQo', icon:'🚚' },
-    ir:    { name:'Investor Relations',    id:'15NpU64cIimEOpWjKQn5PMXqtLdqA_4NN', icon:'💼' },
+    ops:   { name:'Operations',            id:'1dfxMLytCzB31VYLuZwdpIa01b-K2Zw0g' },
+    fin:   { name:'Finance',               id:'1f3ZaTcAoQXYdi3pHOEdHLWJDFZRUFwhx' },
+    sales: { name:'Sales',                 id:'1KHl2DJbhNAeqfnnkLeQ2FnkvLBgi5a5j' },
+    mkt:   { name:'Marketing',             id:'1iUc2_GvNdIcld5N-efoesuZnEE0KSPka' },
+    pp:    { name:'Planning & Production', id:'1b_ZyI0gYSqN9n6369wSzL0039iCtApY4' },
+    sc:    { name:'Supply Chain',          id:'1aYRoKWZ9ZzMVlBZmVk1k82cNBUv18VQo' },
+    ir:    { name:'Investor Relations',    id:'15NpU64cIimEOpWjKQn5PMXqtLdqA_4NN' },
   };
 
   const ROLE_ACCESS = {
@@ -121,24 +121,19 @@
     '1011100007': ['ops','fin','sales','mkt','pp','sc','ir'],
   };
 
-  const MIME_ICONS = {
-    'application/vnd.google-apps.document': '📝',
-    'application/vnd.google-apps.spreadsheet': '📊',
-    'application/vnd.google-apps.presentation': '📋',
-    'application/vnd.google-apps.form': '📋',
-    'application/pdf': '📄',
-    'image/jpeg': '🖼️',
-    'image/png': '🖼️',
-    'video/mp4': '🎬',
-    'audio/mpeg': '🎵',
-  };
+  const allowed = ROLE_ACCESS[userId] || [];
+  const cache = {};          // folderId -> data
+  let breadcrumbStack = [];
+  let activeTabKey = null;
 
-  function getFileIcon(mime) {
-    return MIME_ICONS[mime] || '📄';
+  function iconUrl(mime) {
+    if (!mime) mime = 'application/octet-stream';
+    return ICON_BASE + encodeURIComponent(mime);
   }
 
-  const allowed = ROLE_ACCESS[userId] || [];
-  let breadcrumbStack = [];
+  function folderIconUrl() {
+    return ICON_BASE + encodeURIComponent('application/vnd.google-apps.folder');
+  }
 
   function showLoading(on) {
     const bar = document.getElementById('loading-bar');
@@ -147,7 +142,7 @@
       bar.style.width = '70%';
     } else {
       bar.style.width = '100%';
-      setTimeout(() => {
+      setTimeout(function() {
         bar.style.transition = 'none';
         bar.style.width = '0';
       }, 300);
@@ -157,7 +152,7 @@
   function renderBreadcrumb() {
     const bc = document.getElementById('breadcrumb');
     bc.innerHTML = '';
-    breadcrumbStack.forEach((item, i) => {
+    breadcrumbStack.forEach(function(item, i) {
       if (i > 0) {
         const sep = document.createElement('span');
         sep.className = 'bc-sep';
@@ -168,35 +163,44 @@
       el.className = 'bc-item';
       el.textContent = item.name;
       if (i < breadcrumbStack.length - 1) {
-        el.onclick = () => navigateTo(i);
+        (function(idx){ el.onclick = function(){ navigateTo(idx); }; })(i);
       }
       bc.appendChild(el);
     });
     bc.scrollLeft = bc.scrollWidth;
   }
 
-  function navigateTo(stackIndex) {
-    breadcrumbStack = breadcrumbStack.slice(0, stackIndex + 1);
+  function navigateTo(idx) {
+    breadcrumbStack = breadcrumbStack.slice(0, idx + 1);
     renderBreadcrumb();
-    fetchFolder(breadcrumbStack[breadcrumbStack.length - 1].id);
+    showFolder(breadcrumbStack[breadcrumbStack.length - 1].id);
   }
 
-  function fetchFolder(folderId) {
-    showLoading(true);
-    const fl = document.getElementById('file-list');
-    fl.innerHTML = '<div class="state-box"><span class="icon">⏳</span><span class="msg">Loading...</span></div>';
+  // Show from cache immediately, no network call
+  function showFolder(folderId) {
+    const data = cache[folderId];
+    if (data) {
+      renderItems(data);
+    } else {
+      // subfolder not yet cached — fetch it
+      fetchFolder(folderId, function(data) {
+        renderItems(data);
+      });
+    }
+  }
 
-    const cbName = 'cb_' + Date.now();
+  function fetchFolder(folderId, cb) {
+    if (cache[folderId]) { cb(cache[folderId]); return; }
+    const cbName = 'cb_' + folderId.replace(/[^a-z0-9]/gi,'') + '_' + Date.now();
     window[cbName] = function(data) {
       delete window[cbName];
-      showLoading(false);
-      renderItems(data);
+      cache[folderId] = data;
+      cb(data);
     };
     const script = document.createElement('script');
     script.onerror = function() {
-      showLoading(false);
-      document.getElementById('file-list').innerHTML =
-        '<div class="state-box"><span class="icon">⚠️</span><span class="msg">Failed to load. Check Drive access.</span></div>';
+      cache[folderId] = { ok:false, error:'Network error' };
+      cb(cache[folderId]);
     };
     script.src = SCRIPT_URL + '?folderId=' + encodeURIComponent(folderId) + '&callback=' + cbName;
     document.head.appendChild(script);
@@ -205,32 +209,29 @@
   function renderItems(data) {
     const fl = document.getElementById('file-list');
     fl.innerHTML = '';
-    if (!data.ok) {
-      fl.innerHTML = '<div class="state-box"><span class="icon">⚠️</span><span class="msg">' + (data.error || 'Error') + '</span></div>';
+    if (!data || !data.ok) {
+      fl.innerHTML = '<div class="state-box"><span class="icon">⚠️</span><span class="msg">' + (data && data.error ? data.error : 'Error loading folder') + '</span></div>';
       return;
     }
     if (!data.items || data.items.length === 0) {
       fl.innerHTML = '<div class="state-box"><span class="icon">📭</span><span class="msg">This folder is empty.</span></div>';
       return;
     }
-    data.items.forEach(item => {
+    data.items.forEach(function(item) {
       const div = document.createElement('div');
       div.className = 'file-item';
+      const imgSrc = item.type === 'folder' ? folderIconUrl() : iconUrl(item.mime);
+      div.innerHTML =
+        '<img class="file-icon" src="' + imgSrc + '" alt="">' +
+        '<span class="file-name">' + item.name + '</span>' +
+        '<span class="file-arrow">' + (item.type === 'folder' ? '›' : '↗') + '</span>';
       if (item.type === 'folder') {
-        div.innerHTML =
-          '<span class="file-icon">📁</span>' +
-          '<span class="file-name">' + item.name + '</span>' +
-          '<span class="file-arrow">›</span>';
         div.onclick = function() {
           breadcrumbStack.push({ id: item.id, name: item.name });
           renderBreadcrumb();
-          fetchFolder(item.id);
+          showFolder(item.id);
         };
       } else {
-        div.innerHTML =
-          '<span class="file-icon">' + getFileIcon(item.mime) + '</span>' +
-          '<span class="file-name">' + item.name + '</span>' +
-          '<span class="file-arrow">↗</span>';
         div.onclick = function() { window.open(item.url, '_blank'); };
       }
       fl.appendChild(div);
@@ -238,11 +239,37 @@
   }
 
   function loadTab(key) {
-    document.querySelectorAll('.folder-tab').forEach(t => t.classList.toggle('active', t.dataset.key === key));
+    activeTabKey = key;
+    document.querySelectorAll('.folder-tab').forEach(function(t) {
+      t.classList.toggle('active', t.dataset.key === key);
+    });
     const f = FOLDERS[key];
     breadcrumbStack = [{ id: f.id, name: f.name }];
     renderBreadcrumb();
-    fetchFolder(f.id);
+    showFolder(f.id);
+  }
+
+  // Pre-fetch all allowed root folders on startup (once at login)
+  function prefetchAll() {
+    let remaining = allowed.length;
+    allowed.forEach(function(key) {
+      const f = FOLDERS[key];
+      if (!f) { remaining--; return; }
+      fetchFolder(f.id, function() {
+        remaining--;
+        // update dot indicator for this tab
+        const tab = document.querySelector('.folder-tab[data-key="' + key + '"]');
+        if (tab) {
+          const dot = tab.querySelector('.tab-dot');
+          if (dot) dot.classList.add('loaded');
+        }
+        // if active tab just finished loading, render it
+        if (key === activeTabKey) {
+          renderItems(cache[f.id]);
+          showLoading(false);
+        }
+      });
+    });
   }
 
   function buildTabs() {
@@ -251,24 +278,34 @@
       bar.style.display = 'none';
       document.getElementById('breadcrumb').style.display = 'none';
       document.getElementById('file-list').innerHTML =
-        '<div class="no-access">' +
-        '<span style="font-size:36px">🔒</span>' +
+        '<div class="no-access"><span style="font-size:36px">🔒</span>' +
         '<strong style="color:#555">Access Restricted</strong>' +
-        '<span>Contact your administrator.</span>' +
-        '</div>';
+        '<span>Contact your administrator.</span></div>';
       return;
     }
+
     allowed.forEach(function(key, i) {
       const f = FOLDERS[key];
       if (!f) return;
       const tab = document.createElement('div');
       tab.className = 'folder-tab' + (i === 0 ? ' active' : '');
       tab.dataset.key = key;
-      tab.innerHTML = '<span>' + f.icon + '</span>' + f.name;
+      tab.innerHTML = f.name + '<span class="tab-dot"></span>';
       tab.onclick = function() { loadTab(key); };
       bar.appendChild(tab);
     });
-    loadTab(allowed[0]);
+
+    // Set first tab active and show loading state
+    activeTabKey = allowed[0];
+    const firstF = FOLDERS[allowed[0]];
+    breadcrumbStack = [{ id: firstF.id, name: firstF.name }];
+    renderBreadcrumb();
+    document.getElementById('file-list').innerHTML =
+      '<div class="state-box"><span class="icon">⏳</span><span class="msg">Loading Drive...</span></div>';
+    showLoading(true);
+
+    // Fetch everything in background
+    prefetchAll();
   }
 
   buildTabs();
