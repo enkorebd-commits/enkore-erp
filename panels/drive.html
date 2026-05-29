@@ -28,97 +28,20 @@
       font-size:13px; font-weight:500; color:#888;
       border-bottom:2px solid transparent;
       transition:all 0.15s; white-space:nowrap; flex-shrink:0;
-      user-select:none;
+      user-select:none; -webkit-tap-highlight-color:transparent;
     }
-    .folder-tab:active { background:#f9f9f9; }
+    .folder-tab:active { background:#f5f5f5; }
     .folder-tab.active { color:#111; border-bottom-color:var(--blue); font-weight:600; }
 
-    /* TREE VIEW */
-    #tree-view {
-      flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    /* LOADING BAR */
+    .loading-bar {
+      height:2px; background:var(--blue);
+      width:0; transition:width 0.5s ease;
+      flex-shrink:0;
     }
 
-    .tree-loading, .tree-state {
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      height:200px; color:#aaa; gap:10px; font-size:13px; text-align:center; padding:24px;
-    }
-    .state-icon { font-size:32px; }
-
-    /* FOLDER ROW */
-    .tree-folder {
-      display:flex; align-items:center; gap:10px;
-      padding:13px 16px; cursor:pointer;
-      border-bottom:1px solid #efefef;
-      background:#fff; user-select:none;
-      transition:background 0.1s;
-    }
-    .tree-folder:active { background:#f5f5f5; }
-    .tf-icon { font-size:16px; flex-shrink:0; width:22px; text-align:center; }
-    .tf-name { flex:1; font-size:13px; color:#111; font-weight:500; }
-    .tf-arrow {
-      font-size:18px; color:#ccc; transition:transform 0.2s;
-      line-height:1; flex-shrink:0;
-    }
-    .tree-folder.open .tf-arrow { transform:rotate(90deg); color:#888; }
-
-    /* SUBFOLDER FILES */
-    .subfolder-files { display:none; }
-    .subfolder-files.open { display:block; }
-
-    /* FILE ROW */
-    .tree-file {
-      display:flex; align-items:center; gap:10px;
-      padding:12px 16px; cursor:pointer;
-      border-bottom:1px solid #f5f5f5;
-      user-select:none; transition:background 0.1s;
-    }
-    .tree-file:active { background:#e8f5fb; }
-    .tree-file.indented { padding-left:48px; background:#fafafa; }
-    .tree-file .tf-name { color:#333; font-size:13px; font-weight:400; }
-    .tree-file .tf-meta { font-size:11px; color:#bbb; margin-left:auto; flex-shrink:0; }
-
-    /* FILE VIEWER */
-    #file-viewer {
-      display:none; flex-direction:column; flex:1;
-    }
-    .viewer-bar {
-      display:flex; align-items:center; gap:10px;
-      padding:0 12px; height:46px; background:#fff;
-      border-bottom:1px solid #e8e8e8; flex-shrink:0;
-    }
-    .btn-back {
-      display:flex; align-items:center; gap:4px;
-      padding:7px 12px; background:#f2f2f2; border:none;
-      border-radius:8px; font-size:12px; font-weight:600;
-      color:#444; cursor:pointer; font-family:inherit;
-      flex-shrink:0; white-space:nowrap;
-    }
-    .btn-back:active { background:#e8e8e8; }
-    .viewer-filename {
-      flex:1; font-size:13px; font-weight:500; color:#111;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    #viewer-frame { flex:1; width:100%; border:none; background:#fff; display:block; }
-
-    /* SETUP CARD */
-    .setup-card {
-      margin:16px; padding:18px; background:#fff;
-      border:1px solid #e8e8e8; border-radius:12px;
-      font-size:13px; color:#555; line-height:1.7;
-    }
-    .setup-card strong { color:#111; display:block; margin-bottom:6px; }
-    .setup-card code {
-      background:#f4f6f8; padding:2px 7px;
-      border-radius:5px; font-size:12px; color:#333;
-    }
-    .setup-cols {
-      display:grid; grid-template-columns:repeat(5,1fr);
-      gap:4px; margin-top:10px;
-    }
-    .setup-col {
-      background:#f4f6f8; padding:6px 8px; border-radius:6px;
-      text-align:center; font-size:11px; font-weight:600; color:#555;
-    }
+    /* DRIVE FRAME */
+    .drive-frame { flex:1; width:100%; border:none; display:block; background:#fff; }
 
     /* NO ACCESS */
     .no-access {
@@ -131,29 +54,22 @@
 <body>
 
 <div class="tab-bar" id="tab-bar"></div>
-<div id="tree-view"></div>
-<div id="file-viewer">
-  <div class="viewer-bar">
-    <button class="btn-back" onclick="closeViewer()">‹ Back</button>
-    <span class="viewer-filename" id="viewer-filename"></span>
-  </div>
-  <iframe id="viewer-frame" src="about:blank" allowfullscreen></iframe>
-</div>
+<div class="loading-bar" id="loading-bar"></div>
+<iframe class="drive-frame" id="drive-frame" src="about:blank" title="Google Drive"></iframe>
 
 <script>
-  const SHEET_ID = '1mXI0MI9R_5_ImxiTvw8vH0EaQ38M3WlHncjZgmPLTmc';
-  const params   = new URLSearchParams(window.location.search);
-  const userId   = params.get('userId') || '';
+  const params = new URLSearchParams(window.location.search);
+  const userId = params.get('userId') || '';
   if (!userId) window.location.replace('../enkore-erp.html');
 
   const FOLDERS = {
-    ops:   { name:'Operations',            icon:'⚙️' },
-    fin:   { name:'Finance',               icon:'💰' },
-    sales: { name:'Sales',                 icon:'📊' },
-    mkt:   { name:'Marketing',             icon:'📣' },
-    pp:    { name:'Planning & Production', icon:'🏭' },
-    sc:    { name:'Supply Chain',          icon:'🚚' },
-    ir:    { name:'Investor Relations',    icon:'💼' },
+    ops:   { name:'Operations',            id:'1dfxMLytCzB31VYLuZwdpIa01b-K2Zw0g', icon:'⚙️' },
+    fin:   { name:'Finance',               id:'1f3ZaTcAoQXYdi3pHOEdHLWJDFZRUFwhx', icon:'💰' },
+    sales: { name:'Sales',                 id:'1KHl2DJbhNAeqfnnkLeQ2FnkvLBgi5a5j', icon:'📊' },
+    mkt:   { name:'Marketing',             id:'1iUc2_GvNdIcld5N-efoesuZnEE0KSPka', icon:'📣' },
+    pp:    { name:'Planning & Production', id:'1b_ZyI0gYSqN9n6369wSzL0039iCtApY4', icon:'🏭' },
+    sc:    { name:'Supply Chain',          id:'1aYRoKWZ9ZzMVlBZmVk1k82cNBUv18VQo', icon:'🚚' },
+    ir:    { name:'Investor Relations',    id:'15NpU64cIimEOpWjKQn5PMXqtLdqA_4NN', icon:'💼' },
   };
 
   const ROLE_ACCESS = {
@@ -167,151 +83,36 @@
   };
 
   const allowed = ROLE_ACCESS[userId] || [];
-  let allFiles  = [];
 
-  // ── FETCH DriveFiles SHEET ──
-  async function fetchDriveFiles() {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=DriveFiles&t=${Date.now()}`;
-    try {
-      const resp = await fetch(url);
-      if (!resp.ok) return [];
-      const text = await resp.text();
-      const match = text.match(/setResponse\(([\s\S]*)\)\s*;?\s*$/);
-      if (!match) return [];
-      const data = JSON.parse(match[1]);
-      if (!data.table || !data.table.rows) return [];
-      const cols = data.table.cols.map(c => (c.label||c.id||'').toLowerCase().trim());
-      return data.table.rows.map(r => {
-        const obj = {};
-        (r.c||[]).forEach((cell, i) => {
-          obj[cols[i]] = (cell && cell.v != null) ? String(cell.v).trim() : '';
-        });
-        return obj;
-      }).filter(r => r.folder && r.name && r.id);
-    } catch(e) { return []; }
+  function loadFolder(key) {
+    document.querySelectorAll('.folder-tab').forEach(t => t.classList.toggle('active', t.dataset.key === key));
+    const bar = document.getElementById('loading-bar');
+    bar.style.transition = 'width 0.5s ease';
+    bar.style.width = '60%';
+    setTimeout(() => { bar.style.width = '100%'; }, 400);
+    setTimeout(() => {
+      bar.style.transition = 'none';
+      bar.style.width = '0';
+      setTimeout(() => { bar.style.transition = 'width 0.5s ease'; }, 50);
+    }, 900);
+    document.getElementById('drive-frame').src =
+      'https://drive.google.com/embeddedfolderview?id=' + FOLDERS[key].id + '#list';
   }
 
-  // ── ICONS & PREVIEW URLs ──
-  function getIcon(type) {
-    const map = { doc:'📝', sheet:'📊', slide:'📈', form:'📋', pdf:'📕', image:'🖼️', video:'🎬', folder:'📁' };
-    return map[(type||'').toLowerCase()] || '📄';
-  }
-
-  function getPreviewUrl(id, type) {
-    const t = (type||'').toLowerCase();
-    if (t === 'doc')   return `https://docs.google.com/document/d/${id}/preview`;
-    if (t === 'sheet') return `https://docs.google.com/spreadsheets/d/${id}/preview`;
-    if (t === 'slide') return `https://docs.google.com/presentation/d/${id}/preview`;
-    if (t === 'form')  return `https://docs.google.com/forms/d/${id}/viewform?embedded=true`;
-    return `https://drive.google.com/file/d/${id}/preview`;
-  }
-
-  // ── SHOW TREE FOR A FOLDER KEY ──
-  function showTree(folderKey) {
-    const tv = document.getElementById('tree-view');
-    document.getElementById('file-viewer').style.display = 'none';
-    document.getElementById('viewer-frame').src = 'about:blank';
-    tv.style.display = '';
-
-    const folderFiles = allFiles.filter(f => f.folder === folderKey);
-
-    if (folderFiles.length === 0) {
-      tv.innerHTML = `
-        <div class="setup-card">
-          <strong>No files configured for this section yet.</strong>
-          To add files here, create a sheet tab called <code>DriveFiles</code>
-          in your ERP Google Sheet with these columns:<br>
-          <div class="setup-cols">
-            <div class="setup-col">folder</div>
-            <div class="setup-col">subfolder</div>
-            <div class="setup-col">name</div>
-            <div class="setup-col">id</div>
-            <div class="setup-col">type</div>
-          </div><br>
-          Set <code>folder</code> to <code>${folderKey}</code> for this section.
-          The <code>id</code> is the file's Google Drive ID from its URL.
-          Types: <code>doc</code> · <code>sheet</code> · <code>slide</code> · <code>pdf</code> · <code>image</code>
-        </div>`;
-      return;
-    }
-
-    // Group files by subfolder
-    const subfolders = {};
-    const rootFiles  = [];
-    folderFiles.forEach(f => {
-      if (f.subfolder) {
-        (subfolders[f.subfolder] = subfolders[f.subfolder] || []).push(f);
-      } else {
-        rootFiles.push(f);
-      }
-    });
-
-    let html = '';
-
-    // Subfolders (accordion)
-    Object.entries(subfolders).forEach(([sf, files]) => {
-      html += `
-        <div class="tree-folder" onclick="toggleFolder(this)">
-          <span class="tf-icon">📁</span>
-          <span class="tf-name">${sf}</span>
-          <span class="tf-arrow">›</span>
-        </div>
-        <div class="subfolder-files">
-          ${files.map(f => fileRow(f, true)).join('')}
-        </div>`;
-    });
-
-    // Root-level files
-    html += rootFiles.map(f => fileRow(f, false)).join('');
-
-    tv.innerHTML = html;
-  }
-
-  function fileRow(f, indented) {
-    const icon    = getIcon(f.type);
-    const safeName = f.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<div class="tree-file${indented ? ' indented' : ''}" onclick="openFile('${f.id}','${safeName}','${f.type}')">
-      <span class="tf-icon">${icon}</span>
-      <span class="tf-name">${f.name}</span>
-    </div>`;
-  }
-
-  function toggleFolder(el) {
-    const sub    = el.nextElementSibling;
-    const isOpen = sub.classList.toggle('open');
-    el.classList.toggle('open', isOpen);
-  }
-
-  // ── FILE VIEWER ──
-  function openFile(id, name, type) {
-    document.getElementById('viewer-filename').textContent = name;
-    document.getElementById('viewer-frame').src = getPreviewUrl(id, type);
-    document.getElementById('tree-view').style.display = 'none';
-    document.getElementById('file-viewer').style.display = 'flex';
-  }
-
-  function closeViewer() {
-    document.getElementById('viewer-frame').src = 'about:blank';
-    document.getElementById('file-viewer').style.display = 'none';
-    document.getElementById('tree-view').style.display = '';
-  }
-
-  // ── BUILD TABS ──
   function buildTabs() {
     const bar = document.getElementById('tab-bar');
-    bar.innerHTML = '';
-
     if (allowed.length === 0) {
       bar.style.display = 'none';
-      document.getElementById('tree-view').innerHTML = `
+      document.getElementById('drive-frame').remove();
+      document.getElementById('loading-bar').remove();
+      document.body.insertAdjacentHTML('beforeend', `
         <div class="no-access">
           <span style="font-size:36px">🔒</span>
           <strong style="color:#555">Access Restricted</strong>
           <span>Contact your administrator.</span>
-        </div>`;
+        </div>`);
       return;
     }
-
     allowed.forEach((key, i) => {
       const f = FOLDERS[key];
       if (!f) return;
@@ -319,24 +120,13 @@
       tab.className = 'folder-tab' + (i === 0 ? ' active' : '');
       tab.dataset.key = key;
       tab.innerHTML = `<span>${f.icon}</span>${f.name}`;
-      tab.onclick = () => {
-        document.querySelectorAll('.folder-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        showTree(key);
-      };
+      tab.onclick = () => loadFolder(key);
       bar.appendChild(tab);
     });
+    loadFolder(allowed[0]);
   }
 
-  // ── INIT ──
-  async function init() {
-    document.getElementById('tree-view').innerHTML = '<div class="tree-loading"><span class="state-icon">⏳</span>Loading files...</div>';
-    buildTabs();
-    allFiles = await fetchDriveFiles();
-    if (allowed.length > 0) showTree(allowed[0]);
-  }
-
-  init();
+  buildTabs();
 </script>
 </body>
 </html>
