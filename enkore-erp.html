@@ -302,7 +302,7 @@
     const resp = await fetch(url);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const text = await resp.text();
-    const match = text.match(/setResponse\(([\s\S]*)\)\s*;?\s*$/);
+    const match = text.match(/setResponse\([\s\S]*\)\s*;?\s*$/);
     if (!match) throw new Error('Parse error');
     const data = JSON.parse(match[1]);
     if (!data || !data.table) throw new Error('No table data');
@@ -447,7 +447,7 @@
   }
 
   // ── ACTIVE PANELS (add more here when each panel is ready) ──
-  const ACTIVE_PANELS = ['drive'];
+  const ACTIVE_PANELS = ['admin-dashboard', 'drive'];
 
   // ── BUILD NAV DYNAMICALLY ──
   function buildNav(panels) {
