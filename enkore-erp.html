@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Enkore ERP</title>
   <meta name="theme-color" content="#0d0d0d">
-        <link rel="icon" type="image/png" href="https://enkorebd.com/wp-content/uploads/2026/03/cropped-WhatsApp_Image_2026-01-24_at_1.50.39_PM__1_-removebg-preview-270x270.png">
+  <link rel="icon" type="image/png" href="https://enkorebd.com/wp-content/uploads/2026/03/cropped-WhatsApp_Image_2026-01-24_at_1.50.39_PM__1_-removebg-preview-270x270.png">
+  <link rel="shortcut icon" href="https://enkorebd.com/wp-content/uploads/2026/03/cropped-WhatsApp_Image_2026-01-24_at_1.50.39_PM__1_-removebg-preview-270x270.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.json">h
+  <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -441,20 +442,22 @@
     document.getElementById('um-r').textContent      = user.role;
 
     buildNav(user.panels);
-    if (user.panels.length > 0) {
-      const first = user.panels[0];
-      loadPanel(first.file, first.name, first.readonly);
-    }
+    const first = user.panels.find(p => ACTIVE_PANELS.includes(p.file));
+    if (first) loadPanel(first.file, first.name, first.readonly);
   }
+
+  // ── ACTIVE PANELS (add more here when each panel is ready) ──
+  const ACTIVE_PANELS = ['drive'];
 
   // ── BUILD NAV DYNAMICALLY ──
   function buildNav(panels) {
+    const visible    = panels.filter(p => ACTIVE_PANELS.includes(p.file));
     const sbPanels  = document.getElementById('sidebar-panels');
     const btmNav    = document.getElementById('bottom-nav');
     sbPanels.innerHTML = '';
     btmNav.innerHTML   = '';
 
-    panels.forEach(panel => {
+    visible.forEach(panel => {
       // Sidebar item
       const si = document.createElement('div');
       si.className = 'nav-item';
@@ -534,4 +537,3 @@
 </script>
 </body>
 </html>
-
