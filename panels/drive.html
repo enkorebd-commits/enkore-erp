@@ -79,11 +79,6 @@
     .state-box .icon { font-size:32px; }
     .state-box .msg { font-size:13px; }
 
-    .no-access {
-      flex:1; display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
-      color:#aaa; text-align:center; padding:40px; gap:10px;
-    }
   </style>
 </head>
 <body>
@@ -111,17 +106,8 @@
     ir:    { name:'Investor Relations',    id:'15NpU64cIimEOpWjKQn5PMXqtLdqA_4NN' },
   };
 
-  const ROLE_ACCESS = {
-    '1011100001': ['ops','fin','sales','mkt','pp','sc','ir'],
-    '1011100002': ['sc','ops','pp'],
-    '1011100003': ['ops','pp'],
-    '1011100004': ['ops','fin','sales','mkt','pp','sc','ir'],
-    '1012100005': ['pp'],
-    '1011100006': ['mkt','sales'],
-    '1011100007': ['ops','fin','sales','mkt','pp','sc','ir'],
-  };
-
-  const allowed = ROLE_ACCESS[userId] || [];
+  // All users with Drive panel access see all folders
+  const allowed = Object.keys(FOLDERS);
   const cache = {};          // folderId -> data
   let breadcrumbStack = [];
   let activeTabKey = null;
