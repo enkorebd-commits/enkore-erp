@@ -2,9 +2,10 @@
   "name": "Enkore ERP",
   "short_name": "Enkore ERP",
   "description": "Enkore Automotive Ltd. Enterprise Resource Portal",
-  "start_url": "/enkore-erp/enkore-erp.html",
+  "start_url": "/enkore-erp",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0d0d0d",
+  "background_color": "#ffffff",
   "theme_color": "#0d0d0d",
   "orientation": "any",
   "icons": [
