@@ -152,7 +152,6 @@
 </div>
 
 <script>
-  const WORKER = 'https://rapid-credit-0593.enkorebd.workers.dev';
   const SCRIPT = 'https://script.google.com/macros/s/AKfycbxf8dBwUiFB6VcD16ryR7e8Df15d9QRdkRh_W9YS0zpFMUPgvdSt0Dd3XUccEDHN_jG5Q/exec';
 
   const qp    = new URLSearchParams(window.location.search);
@@ -237,30 +236,25 @@
     if (row) document.getElementById('mcards').innerHTML = cards(row);
   };
 
-  // ── Fetch (tries Worker first, falls back to Apps Script directly) ──
+  // ── Fetch ──
   (function() {
     const cb = 'dcb_'+Date.now();
-    let done = false;
     window[cb] = function(data) {
-      if (done) return;
-      done = true;
       delete window[cb];
       if (!data||!data.ok) {
-        document.getElementById('dash-body').innerHTML='<div class="state">⚠️ '+(data&&data.error?data.error:'Failed to load data')+'<br><small>Make sure the Apps Script is updated.</small></div>';
+        document.getElementById('dash-body').innerHTML =
+          '<div class="state">⚠️ '+(data&&data.error?data.error:'Failed to load data')+'<br><small>Make sure the Apps Script is deployed.</small></div>';
         return;
       }
       buildDash(data);
     };
-    function tryLoad(src) {
-      const s = document.createElement('script');
-      s.onerror = function() {
-        if (!done && src.includes(WORKER)) { tryLoad(SCRIPT+'?type=finance&callback='+cb); }
-        else if (!done) { done=true; document.getElementById('dash-body').innerHTML='<div class="state">⚠️ Network error. Check your connection.</div>'; }
-      };
-      s.src = src;
-      document.head.appendChild(s);
-    }
-    tryLoad(WORKER+'?type=finance&callback='+cb);
+    const s = document.createElement('script');
+    s.onerror = function() {
+      document.getElementById('dash-body').innerHTML =
+        '<div class="state">⚠️ Network error. Check your connection.</div>';
+    };
+    s.src = SCRIPT+'?type=finance&callback='+cb;
+    document.head.appendChild(s);
   })();
 </script>
 </body>
