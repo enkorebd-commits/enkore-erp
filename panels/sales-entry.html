@@ -316,36 +316,15 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 const SHEET_ID = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
 const AS_URL   = 'https://script.google.com/macros/s/AKfycbwb4jNnTisA38xQ9TFD8NK6fqjFWvWuFF0_KHrbg2liEhUpyqbRDjsRXyHo7LiczxpF_w/exec';
 
-const PRODUCTS = [
-  'ENKORE Octane Booster (30ml)','ENKORE Octane Booster (100ml)',
-  'ENKORE Necessary Combo Pack for Bike',
-  'ENKORE Instant Glossy Polish – Compact (200ml)',
-  'ENKORE Instant Glossy Polish – Spray (300ml)',
-  'ENKORE Tire Sealant – Your Tire Guard (Green Formula)',
-  'ENKORE Tire Sealant – Premium Tire Guard (Blue Formula)',
-  'ENKORE Tire Sealant – 1 Liter Professional Pack',
-  'ENKORE Tire Sealant – High Quality Tire Guard (500ml)',
-  'ENKORE Car & Bike Washing Gel – 500mL (Blue Formula)',
-  'ENKORE Car & Bike Washing Gel – 10L (Blue Formula)',
-  'ENKORE Car & Bike Washing Gel – 10L (Green Formula)',
-  'ENKORE Car & Bike Washing Gel – 30L Professional Bulk Pack',
-  'ENKORE Chain Lube – Friction Control (200ml)',
-  'Enkore Towel','Enkore Soft Towel','Enkore Chain Cleaner Brush',
-];
-
-const STAFF = [
-  'Mahedi Islam Chayan','Anik Rahman','Yaman Islam Siam',
-  'Lipi Akter','Omar Faruk','Mizanur Rahman Ronju','Rakibul Islam Nayan',
-];
+// Products and staff loaded dynamically from Control tab
 
 let clients = [], mode = 'sale', selClient = null, giftOn = false;
 
 // ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   setHeaderDate();
-  populateSelects();
+  loadDropdowns(); // fetches products + staff from Control tab
   loadClients();
-  autoFillSeller();
   document.addEventListener('click', e => { if (!e.target.closest('.cs-wrap')) closeDd(); });
 
   // Fix mobile history drawer scroll
@@ -404,17 +383,66 @@ function tk(n) {
   return '৳ ' + Number(n).toLocaleString('en-IN');
 }
 
-// ── SELECTS ──────────────────────────────────────────────────
-function populateSelects() {
-  const pSel = document.getElementById('product');
-  PRODUCTS.forEach(p => pSel.add(new Option(p, p)));
+// ── DROPDOWNS FROM SHEET ─────────────────────────────────────
+async function loadDropdowns() {
+  try {
+    const url  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Control&t=${Date.now()}`;
+    const data = parseGviz(await fetch(url).then(r => r.text()));
+    if (!data) throw new Error('parse fail');
 
+    const products = [], staff = [];
+
+    data.table.rows.forEach(r => {
+      const a = String(r.c?.[0]?.v || '').trim();
+      const b = String(r.c?.[1]?.v || '').trim();
+      // Products: column B starts with ENKORE or Enkore
+      if (b && (b.startsWith('ENKORE') || b.startsWith('Enkore'))) products.push(b);
+      // Staff: column A is a 10-digit employee ID
+      if (/^\d{10}$/.test(a) && b) staff.push(b);
+    });
+
+    fillProductSelect(products);
+    fillStaffSelects(staff);
+  } catch(e) {
+    console.error('dropdowns load failed, using fallback:', e);
+    // Fallback hardcoded values if sheet unreachable
+    fillProductSelect([
+      'ENKORE Octane Booster (30ml)','ENKORE Octane Booster (100ml)',
+      'ENKORE Necessary Combo Pack for Bike',
+      'ENKORE Instant Glossy Polish – Compact (200ml)',
+      'ENKORE Instant Glossy Polish – Spray (300ml)',
+      'ENKORE Tire Sealant – Your Tire Guard (Green Formula)',
+      'ENKORE Tire Sealant – Premium Tire Guard (Blue Formula)',
+      'ENKORE Tire Sealant – 1 Liter Professional Pack',
+      'ENKORE Tire Sealant – High Quality Tire Guard (500ml)',
+      'ENKORE Car & Bike Washing Gel – 500mL (Blue Formula)',
+      'ENKORE Car & Bike Washing Gel – 10L (Blue Formula)',
+      'ENKORE Car & Bike Washing Gel – 10L (Green Formula)',
+      'ENKORE Car & Bike Washing Gel – 30L Professional Bulk Pack',
+      'ENKORE Chain Lube – Friction Control (200ml)',
+      'Enkore Towel','Enkore Soft Towel','Enkore Chain Cleaner Brush',
+    ]);
+    fillStaffSelects([
+      'Mahedi Islam Chayan','Anik Rahman','Yaman Islam Siam',
+      'Lipi Akter','Omar Faruk','Mizanur Rahman Ronju','Rakibul Islam Nayan',
+    ]);
+  }
+}
+
+function fillProductSelect(products) {
+  const sel = document.getElementById('product');
+  sel.innerHTML = '<option value="">— Select Product —</option>';
+  products.forEach(p => sel.add(new Option(p, p)));
+}
+
+function fillStaffSelects(staff) {
   [['seller','cashBy'],['pSeller','pCashBy']].forEach(([s, c]) => {
     const ss = document.getElementById(s), cs = document.getElementById(c);
-    ss.add(new Option('— Select —', ''));
-    cs.add(new Option('— Select —', ''));
-    STAFF.forEach(e => { ss.add(new Option(e, e)); cs.add(new Option(e, e)); });
+    ss.innerHTML = '<option value="">— Select —</option>';
+    cs.innerHTML = '<option value="">— Select —</option>';
+    staff.forEach(e => { ss.add(new Option(e, e)); cs.add(new Option(e, e)); });
   });
+  autoFillSeller(); // auto-select logged-in user after staff is loaded
 }
 
 function autoFillSeller() {
