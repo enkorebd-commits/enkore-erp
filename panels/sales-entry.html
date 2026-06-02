@@ -656,7 +656,7 @@ async function submitEntry() {
         action: 'addSaleEntry',
         date: dateStr, clientInfo: selClient.det,
         hl: 'FALSE', product, gift: String(giftOn),
-        rate, qty, discount: disc, prevDue, paid,
+        rate, qty, discount: disc, paid,
         comment, seller, cashReceivedBy: cashBy,
       };
 
@@ -677,7 +677,7 @@ async function submitEntry() {
         action: 'addSaleEntry',
         date: dateStr, clientInfo: selClient.det,
         hl: 'FALSE', product: '', gift: 'FALSE',
-        rate: '', qty: '', discount: '', prevDue, paid,
+        rate: '', qty: '', discount: '', paid,
         comment, seller, cashReceivedBy: cashBy,
       };
     }
