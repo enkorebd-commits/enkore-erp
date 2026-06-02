@@ -222,7 +222,6 @@
 
   <div class="user-menu" id="user-menu">
     <div class="um-info"><div class="um-n" id="um-n">-</div><div class="um-r" id="um-r">-</div></div>
-    <div class="um-item" onclick="refreshCache()"><span>🔄</span> Refresh Data</div>
     <div class="um-item danger" onclick="doLogout()"><span>🚪</span> Sign Out</div>
   </div>
 
@@ -504,6 +503,7 @@
   function doLogout() {
     currentUser = null;
     sessionStorage.removeItem('erp_user');
+    localStorage.removeItem(CACHE_KEY);
     document.getElementById('panel-frame').src = 'about:blank';
     document.getElementById('shell').style.display = 'none';
     document.getElementById('login-screen').style.display = 'flex';
