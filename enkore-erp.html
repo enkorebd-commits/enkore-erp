@@ -503,6 +503,7 @@
   function doLogout() {
     currentUser = null;
     sessionStorage.removeItem('erp_user');
+    sessionStorage.removeItem('enkore_sales_data');
     localStorage.removeItem(CACHE_KEY);
     document.getElementById('panel-frame').src = 'about:blank';
     document.getElementById('shell').style.display = 'none';
