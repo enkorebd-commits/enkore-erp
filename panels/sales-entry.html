@@ -469,7 +469,8 @@ function autoFillSeller() {
     const u = JSON.parse(window.parent?.sessionStorage?.getItem('erp_user') || 'null');
     const n = u?.name;
     if (!n) return;
-    ['seller','pSeller'].forEach(id => {
+    // Pre-select logged-in user in Seller AND Cash Received by — all four dropdowns
+    ['seller', 'pSeller', 'cashBy', 'pCashBy'].forEach(id => {
       const s = document.getElementById(id);
       for (let i = 0; i < s.options.length; i++) {
         if (s.options[i].value === n) { s.selectedIndex = i; break; }
@@ -740,6 +741,7 @@ function resetForm() {
   document.getElementById('cashByGroup').className = 'fg hidden';
   setGift(false);
   calc();
+  autoFillSeller(); // restore logged-in user selection after reset
 }
 
 // ── TOAST ────────────────────────────────────────────────────
