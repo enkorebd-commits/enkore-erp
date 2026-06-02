@@ -534,9 +534,6 @@
       navigator.serviceWorker.register('sw.js').catch(() => {});
     });
   }
-</script>
-</body>
-</html>
 tus').textContent = '';
     closeMenu();
   }
@@ -551,11 +548,36 @@ tus').textContent = '';
   });
 
   // ── SERVICE WORKER (PWA) ──
+  // ── SERVICE WORKER (PWA) ──
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      navigator.serviceWorker.register('sw.js').then(reg => {
+        reg.addEventListener('updatefound', () => {
+          const newSW = reg.installing;
+          newSW.addEventListener('statechange', () => {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              showUpdateBanner();
+            }
+          });
+        });
+      }).catch(() => {});
     });
   }
+
+  function showUpdateBanner() {
+    document.getElementById('update-banner').style.display = 'flex';
+  }
+
+  function applyUpdate() {
+    window.location.reload();
+  }
 </script>
+
+<!-- UPDATE BANNER -->
+<div id="update-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1971c2;color:#fff;padding:12px 16px;align-items:center;justify-content:space-between;gap:12px;font-family:inherit;box-shadow:0 -2px 12px rgba(0,0,0,.2);">
+  <span style="font-size:13px;font-weight:600;">🔄 New update available</span>
+  <button onclick="applyUpdate()" style="background:#fff;color:#1971c2;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Tap to Update</button>
+</div>
+
 </body>
 </html>
