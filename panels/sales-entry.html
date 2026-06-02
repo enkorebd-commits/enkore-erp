@@ -323,8 +323,7 @@ let clients = [], mode = 'sale', selClient = null, giftOn = false;
 // ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   setHeaderDate();
-  loadDropdowns(); // fetches products + staff from Control tab
-  loadClients();
+  loadAllData(); // fetches everything once, caches in sessionStorage
   document.addEventListener('click', e => { if (!e.target.closest('.cs-wrap')) closeDd(); });
 
   // Fix mobile history drawer scroll
@@ -383,49 +382,69 @@ function tk(n) {
   return '৳ ' + Number(n).toLocaleString('en-IN');
 }
 
-// ── DROPDOWNS FROM SHEET ─────────────────────────────────────
-async function loadDropdowns() {
+// ── ALL DATA: fetch once, cache in sessionStorage ─────────────
+const CACHE_KEY = 'enkore_sales_data';
+
+async function loadAllData() {
+  // Read from cache first — instant, no fetch
   try {
-    const url  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Control&t=${Date.now()}`;
-    const data = parseGviz(await fetch(url).then(r => r.text()));
-    if (!data) throw new Error('parse fail');
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const { products, staff, clientList } = JSON.parse(cached);
+      fillProductSelect(products);
+      fillStaffSelects(staff);
+      clients = clientList;
+      return;
+    }
+  } catch(_) {}
 
-    const products = [], staff = [];
+  // Not cached — fetch all three sources in parallel
+  try {
+    const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+    const [prodTxt, staffTxt, clientTxt] = await Promise.all([
+      fetch(`${base}&sheet=Control&range=F3:F`).then(r => r.text()),
+      fetch(`${base}&sheet=Control&range=K3:K`).then(r => r.text()),
+      fetch(`${base}&sheet=Clients%20Info`).then(r => r.text()),
+    ]);
 
-    data.table.rows.forEach(r => {
-      const a = String(r.c?.[0]?.v || '').trim();
-      const b = String(r.c?.[1]?.v || '').trim();
-      // Products: column B starts with ENKORE or Enkore
-      if (b && (b.startsWith('ENKORE') || b.startsWith('Enkore'))) products.push(b);
-      // Staff: column A is a 10-digit employee ID
-      if (/^\d{10}$/.test(a) && b) staff.push(b);
-    });
+    // Parse products (F3:F — single column, index 0)
+    const prodData = parseGviz(prodTxt);
+    const products = (prodData?.table.rows || [])
+      .map(r => String(r.c?.[0]?.v || '').trim())
+      .filter(v => v);
+
+    // Parse staff (K3:K — single column, index 0)
+    const staffData = parseGviz(staffTxt);
+    const staff = (staffData?.table.rows || [])
+      .map(r => String(r.c?.[0]?.v || '').trim())
+      .filter(v => v);
+
+    // Parse clients (Clients Info tab)
+    const clientData = parseGviz(clientTxt);
+    const clientList = (clientData?.table.rows || [])
+      .filter(r => r.c?.[7]?.v)
+      .map(r => ({
+        name:  r.c[2]?.v || '',
+        shop:  r.c[3]?.v || '',
+        loc:   r.c[4]?.v || '',
+        zone:  r.c[5]?.v || '',
+        phone: r.c[6]?.v || '',
+        det:   r.c[7]?.v || '',
+        type:  r.c[1]?.v || '',
+        sales: r.c[8]?.v || 0,
+        paid:  r.c[9]?.v || 0,
+        due:   r.c[10]?.v || 0,
+      }));
+
+    // Cache for this session
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ products, staff, clientList }));
 
     fillProductSelect(products);
     fillStaffSelects(staff);
+    clients = clientList;
+
   } catch(e) {
-    console.error('dropdowns load failed, using fallback:', e);
-    // Fallback hardcoded values if sheet unreachable
-    fillProductSelect([
-      'ENKORE Octane Booster (30ml)','ENKORE Octane Booster (100ml)',
-      'ENKORE Necessary Combo Pack for Bike',
-      'ENKORE Instant Glossy Polish – Compact (200ml)',
-      'ENKORE Instant Glossy Polish – Spray (300ml)',
-      'ENKORE Tire Sealant – Your Tire Guard (Green Formula)',
-      'ENKORE Tire Sealant – Premium Tire Guard (Blue Formula)',
-      'ENKORE Tire Sealant – 1 Liter Professional Pack',
-      'ENKORE Tire Sealant – High Quality Tire Guard (500ml)',
-      'ENKORE Car & Bike Washing Gel – 500mL (Blue Formula)',
-      'ENKORE Car & Bike Washing Gel – 10L (Blue Formula)',
-      'ENKORE Car & Bike Washing Gel – 10L (Green Formula)',
-      'ENKORE Car & Bike Washing Gel – 30L Professional Bulk Pack',
-      'ENKORE Chain Lube – Friction Control (200ml)',
-      'Enkore Towel','Enkore Soft Towel','Enkore Chain Cleaner Brush',
-    ]);
-    fillStaffSelects([
-      'Mahedi Islam Chayan','Anik Rahman','Yaman Islam Siam',
-      'Lipi Akter','Omar Faruk','Mizanur Rahman Ronju','Rakibul Islam Nayan',
-    ]);
+    console.error('data load failed:', e);
   }
 }
 
@@ -442,7 +461,7 @@ function fillStaffSelects(staff) {
     cs.innerHTML = '<option value="">— Select —</option>';
     staff.forEach(e => { ss.add(new Option(e, e)); cs.add(new Option(e, e)); });
   });
-  autoFillSeller(); // auto-select logged-in user after staff is loaded
+  autoFillSeller();
 }
 
 function autoFillSeller() {
@@ -457,30 +476,6 @@ function autoFillSeller() {
       }
     });
   } catch(_) {}
-}
-
-// ── CLIENTS ──────────────────────────────────────────────────
-async function loadClients() {
-  try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Clients%20Info&t=${Date.now()}`;
-    const txt = await fetch(url).then(r => r.text());
-    const d   = parseGviz(txt);
-    if (!d) return;
-    clients = d.table.rows
-      .filter(r => r.c?.[7]?.v)
-      .map(r => ({
-        name:  r.c[2]?.v || '',
-        shop:  r.c[3]?.v || '',
-        loc:   r.c[4]?.v || '',
-        zone:  r.c[5]?.v || '',
-        phone: r.c[6]?.v || '',
-        det:   r.c[7]?.v || '',
-        type:  r.c[1]?.v || '',
-        sales: r.c[8]?.v || 0,
-        paid:  r.c[9]?.v || 0,
-        due:   r.c[10]?.v || 0,
-      }));
-  } catch(e) { console.error('clients load:', e); }
 }
 
 function openDd() { renderOpts(clients); document.getElementById('csDd').classList.add('open'); }
