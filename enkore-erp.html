@@ -442,16 +442,13 @@
     document.getElementById('um-r').textContent      = user.role;
 
     buildNav(user.panels);
-    const first = user.panels.find(p => ACTIVE_PANELS.includes(p.file));
+    const first = user.panels[0];
     if (first) loadPanel(first.file, first.name, first.readonly);
   }
 
-  // ── ACTIVE PANELS (add more here when each panel is ready) ──
-  const ACTIVE_PANELS = ['admin-dashboard', 'drive', 'sales-entry'];
-
   // ── BUILD NAV DYNAMICALLY ──
   function buildNav(panels) {
-    const visible    = panels.filter(p => ACTIVE_PANELS.includes(p.file));
+    const visible    = panels;
     const sbPanels  = document.getElementById('sidebar-panels');
     const btmNav    = document.getElementById('bottom-nav');
     sbPanels.innerHTML = '';
