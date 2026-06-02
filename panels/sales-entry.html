@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sales Entry — Enkore</title>
+<style>
+:root {
+  --g: #1b6b3a;
+  --g2: #2d8a52;
+  --gbg: #edf7f1;
+  --red: #e03131;
+  --orange: #f76707;
+  --blue: #1971c2;
+  --text: #1a1a2e;
+  --muted: #868e96;
+  --border: #dee2e6;
+  --bg: #f3f4f6;
+  --card: #fff;
+  --r: 12px;
+  --sh: 0 2px 8px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior:none}
+
+/* HEADER */
+.hdr{background:var(--g);color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.hdr-title{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.hdr-date{font-size:11px;opacity:.75;font-weight:600}
+.tabs{display:flex;gap:2px}
+.tab{flex:1;padding:9px 8px;text-align:center;font-size:13px;font-weight:700;color:rgba(255,255,255,.55);border-bottom:3px solid transparent;cursor:pointer;transition:.2s;user-select:none;letter-spacing:.2px}
+.tab.on{color:#fff;border-bottom-color:#69db7c}
+
+/* CONTENT */
+.body{padding:14px;max-width:560px;margin:0 auto}
+
+/* CARD */
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.card-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px}
+
+/* CLIENT SEARCH */
+.cs-wrap{position:relative}
+.cs-input{width:100%;padding:13px 15px;font-size:15px;border:2px solid var(--border);border-radius:10px;outline:none;transition:border .2s;background:#fff;color:var(--text);font-weight:500}
+.cs-input:focus{border-color:var(--g)}
+.cs-dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:260px;overflow-y:auto;z-index:300;display:none}
+.cs-dd.open{display:block}
+.cs-opt{padding:11px 14px;cursor:pointer;border-bottom:1px solid #f1f3f5;transition:background .15s}
+.cs-opt:last-child{border-bottom:none}
+.cs-opt:hover,.cs-opt:active{background:var(--gbg)}
+.cs-opt-name{font-weight:700;font-size:14px}
+.cs-opt-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.cs-empty{padding:16px;text-align:center;color:var(--muted);font-size:13px}
+
+/* CLIENT STATUS */
+.cs-status{display:none;background:linear-gradient(135deg,#1b6b3a,#2d8a52);color:#fff;border-radius:var(--r);padding:14px;margin-bottom:10px}
+.cs-status.show{display:block}
+.cs-status-name{font-size:15px;font-weight:800;margin-bottom:2px}
+.cs-status-sub{font-size:12px;opacity:.8;margin-bottom:12px}
+.stats{display:flex;gap:8px}
+.stat{flex:1;background:rgba(255,255,255,.15);border-radius:8px;padding:9px 6px;text-align:center}
+.stat-v{font-size:16px;font-weight:900;line-height:1}
+.stat-v.red{color:#ff8787}
+.stat-v.grn{color:#b2f2bb}
+.stat-l{font-size:9px;opacity:.75;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.hist-btn{width:100%;margin-top:10px;padding:9px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:.2s;letter-spacing:.2px}
+.hist-btn:hover{background:rgba(255,255,255,.28)}
+.hist-btn:active{transform:scale(.98)}
+
+/* FIELD */
+.fg{margin-bottom:10px}
+.fg:last-child{margin-bottom:0}
+.fl{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;display:flex;align-items:center;gap:3px;text-transform:uppercase;letter-spacing:.5px}
+.fl .req{color:var(--red)}
+.fi{width:100%;padding:12px 13px;font-size:15px;border:1.5px solid var(--border);border-radius:8px;outline:none;transition:border .2s;background:#fff;color:var(--text);font-weight:500}
+.fi:focus{border-color:var(--g)}
+.fi[readonly]{background:#f8f9fa;color:var(--muted);cursor:default}
+.fi.calc{background:var(--gbg);color:var(--g);font-weight:800;border-color:var(--g)}
+.fi.big-calc{background:#1a1a2e;color:#69db7c;font-weight:900;font-size:18px;border-color:#1a1a2e;text-align:center}
+
+select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer}
+
+/* ROW 2 */
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* QTY */
+.qty-row{display:flex;align-items:center;gap:6px}
+.qty-btn{width:44px;height:44px;border:1.5px solid var(--border);background:#fff;border-radius:8px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;color:var(--g);transition:.15s;line-height:1}
+.qty-btn:hover{background:var(--gbg);border-color:var(--g)}
+.qty-btn:active{transform:scale(.9)}
+.qty-inp{flex:1;text-align:center}
+
+/* TOGGLE BTNS */
+.tog{display:flex;gap:6px}
+.tog-btn{flex:1;padding:10px 6px;border:1.5px solid var(--border);background:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;color:var(--muted);transition:.2s;user-select:none}
+.tog-btn.on{background:var(--g);border-color:var(--g);color:#fff}
+.tog-btn:active{transform:scale(.97)}
+
+/* CALC SUMMARY */
+.calc-box{background:#1a1a2e;color:#fff;border-radius:var(--r);padding:14px;margin-bottom:10px}
+.cr{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:14px}
+.cr.div{border-top:1px solid rgba(255,255,255,.12);margin-top:5px;padding-top:10px}
+.cr.tot{font-size:17px;font-weight:900}
+.cl{opacity:.65;font-size:13px}
+.cv{font-weight:700}
+.cv.warn{color:#ffd43b}
+.cv.red{color:#ff8787}
+.cv.grn{color:#b2f2bb}
+.cv.big{font-size:17px}
+
+/* DUE DISPLAY (payment mode) */
+.due-display{text-align:center;padding:22px 16px;background:linear-gradient(135deg,#fff5f5,#ffe3e3);border-radius:var(--r);margin-bottom:10px;border:1.5px solid #ffc9c9}
+.due-display-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--red);font-weight:800;margin-bottom:6px}
+.due-display-amt{font-size:38px;font-weight:900;color:var(--red);letter-spacing:-1px;line-height:1}
+.due-display-sub{font-size:12px;color:var(--muted);margin-top:6px}
+
+/* SUBMIT */
+.sub-btn{width:100%;padding:15px;background:var(--g);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;transition:.2s;letter-spacing:.3px;margin-bottom:20px;box-shadow:0 4px 16px rgba(27,107,58,.3)}
+.sub-btn:hover{background:var(--g2);transform:translateY(-1px);box-shadow:0 6px 20px rgba(27,107,58,.35)}
+.sub-btn:active{transform:translateY(0)}
+.sub-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* HISTORY DRAWER */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;backdrop-filter:blur(3px)}
+.overlay.open{display:block}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;max-height:82vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.4,0,.2,1)}
+.overlay.open .drawer{transform:translateY(0)}
+.handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0}
+.d-hdr{padding:10px 18px 14px;border-bottom:1px solid var(--border)}
+.d-title{font-size:15px;font-weight:800}
+.d-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.d-body{overflow-y:auto;flex:1;padding:10px 14px 20px}
+.h-item{background:#f8f9fa;border-radius:10px;padding:11px;margin-bottom:8px;border-left:3px solid var(--g)}
+.h-item.pay{border-left-color:var(--blue)}
+.h-top{display:flex;justify-content:space-between;margin-bottom:5px}
+.h-date{font-size:11px;color:var(--muted);font-weight:700}
+.h-seller{font-size:10px;color:var(--muted)}
+.h-prod{font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px}
+.h-amts{display:flex;gap:6px}
+.chip{flex:1;text-align:center;padding:5px 3px;border-radius:6px}
+.chip-lbl{font-size:9px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px}
+.chip-val{font-weight:800;font-size:12px}
+.chip-b{background:#e7f5ff;color:var(--blue)}
+.chip-p{background:#ebfbee;color:var(--g)}
+.chip-d{background:#fff5f5;color:var(--red)}
+.h-note{font-size:11px;color:var(--muted);margin-top:7px;padding-top:6px;border-top:1px solid #eee}
+.d-empty{text-align:center;padding:30px;color:var(--muted);font-size:13px}
+.d-loading{text-align:center;padding:30px;color:var(--muted);font-size:13px}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:11px 22px;border-radius:100px;font-size:14px;font-weight:700;z-index:1000;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--g)}
+.toast.err{background:var(--red)}
+
+/* SPINNER */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.hidden{display:none!important}
+.section{display:block}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="hdr-title">⚡ Sales Entry</div>
+    <div class="hdr-date" id="hdrDate"></div>
+  </div>
+  <div class="tabs">
+    <div class="tab on" id="tabSale" onclick="setMode('sale')">🛒 Sale Entry</div>
+    <div class="tab" id="tabPay" onclick="setMode('payment')">💳 Collect Payment</div>
+  </div>
+</div>
+
+<div class="body">
+
+  <!-- Client Selector -->
+  <div class="card">
+    <div class="card-lbl">Client</div>
+    <div class="cs-wrap">
+      <input type="text" class="cs-input" id="csInput" placeholder="Search name or shop…" autocomplete="off"
+        oninput="filterClients(this.value)" onfocus="openDd()">
+      <div class="cs-dd" id="csDd"></div>
+    </div>
+  </div>
+
+  <!-- Client Status -->
+  <div class="cs-status" id="csStatus">
+    <div class="cs-status-name" id="sName"></div>
+    <div class="cs-status-sub" id="sSub"></div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-v" id="sDue">৳0</div>
+        <div class="stat-l">Running Due</div>
+      </div>
+      <div class="stat">
+        <div class="stat-v" id="sSales">৳0</div>
+        <div class="stat-l">Total Sales</div>
+      </div>
+      <div class="stat">
+        <div class="stat-v" id="sType" style="font-size:20px">—</div>
+        <div class="stat-l">Type</div>
+      </div>
+    </div>
+    <button class="hist-btn" onclick="openHistory()">📋 Full Transaction History</button>
+  </div>
+
+  <!-- ===== SALE ENTRY FORM ===== -->
+  <div id="saleSection" class="section">
+
+    <div class="card">
+      <div class="card-lbl">Product</div>
+      <div class="fg">
+        <select class="fi" id="product" onchange="onProdChange()">
+          <option value="">— Select Product —</option>
+        </select>
+      </div>
+      <div class="r2">
+        <div class="fg">
+          <div class="fl">Rate (tk) <span class="req">*</span></div>
+          <input type="number" class="fi" id="rate" placeholder="0" min="0" oninput="calc()">
+        </div>
+        <div class="fg">
+          <div class="fl">Qty <span class="req">*</span></div>
+          <div class="qty-row">
+            <button class="qty-btn" onclick="dQty(-1)">−</button>
+            <input type="number" class="fi qty-inp" id="qty" value="1" min="1" oninput="calc()">
+            <button class="qty-btn" onclick="dQty(1)">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="r2">
+        <div class="fg">
+          <div class="fl">Discount (tk)</div>
+          <input type="number" class="fi" id="disc" placeholder="0" min="0" oninput="calc()">
+        </div>
+        <div class="fg">
+          <div class="fl">Gift?</div>
+          <div class="tog">
+            <div class="tog-btn on" id="gNo" onclick="setGift(false)">No</div>
+            <div class="tog-btn" id="gYes" onclick="setGift(true)">🎁 Yes</div>
+          </div>
+        </div>
+      </div>
+      <div class="fg" style="margin-top:4px">
+        <div class="fl">Order Type</div>
+        <div class="tog">
+          <div class="tog-btn on" id="oNew" onclick="setOrder('New')">🆕 New</div>
+          <div class="tog-btn" id="oRet" onclick="setOrder('Return')">🔄 Return</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Calculation Box -->
+    <div class="calc-box">
+      <div class="cr"><span class="cl">Bill (Rate × Qty)</span><span class="cv" id="cBill">৳ 0</span></div>
+      <div class="cr"><span class="cl">Discount</span><span class="cv">− <span id="cDisc">৳ 0</span></span></div>
+      <div class="cr div"><span class="cl">Final Bill</span><span class="cv warn" id="cFinal">৳ 0</span></div>
+      <div class="cr"><span class="cl">Prev. Due (client)</span><span class="cv red" id="cPrev">৳ 0</span></div>
+      <div class="cr div tot"><span class="cl">Total Payable</span><span class="cv big" id="cTotal">৳ 0</span></div>
+    </div>
+
+    <!-- Payment -->
+    <div class="card">
+      <div class="card-lbl">Payment</div>
+      <div class="fg">
+        <div class="fl">Amount Paid (tk)</div>
+        <input type="number" class="fi" id="paid" placeholder="0" min="0" oninput="calc()">
+      </div>
+      <div class="fg">
+        <div class="fl">New Due After This Entry</div>
+        <input type="text" class="fi big-calc" id="newDue" readonly value="৳ 0">
+      </div>
+      <div class="r2">
+        <div class="fg">
+          <div class="fl">Seller <span class="req">*</span></div>
+          <select class="fi" id="seller"></select>
+        </div>
+        <div class="fg">
+          <div class="fl">Cash Received by</div>
+          <select class="fi" id="cashBy"></select>
+        </div>
+      </div>
+      <div class="fg">
+        <div class="fl">Comment</div>
+        <input type="text" class="fi" id="comment" placeholder="Optional note…">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== COLLECT PAYMENT FORM ===== -->
+  <div id="paySection" class="hidden">
+
+    <div class="due-display">
+      <div class="due-display-lbl">Outstanding Due</div>
+      <div class="due-display-amt" id="pdAmt">৳ 0</div>
+      <div class="due-display-sub" id="pdSub">Select a client above</div>
+    </div>
+
+    <div class="card">
+      <div class="card-lbl">Collection</div>
+      <div class="fg">
+        <div class="fl">Amount Collected (tk) <span class="req">*</span></div>
+        <input type="number" class="fi" id="pPaid" placeholder="0" min="0" oninput="calcPay()">
+      </div>
+      <div class="fg">
+        <div class="fl">Remaining Due</div>
+        <input type="text" class="fi big-calc" id="pRemain" readonly value="৳ 0">
+      </div>
+      <div class="r2">
+        <div class="fg">
+          <div class="fl">Seller <span class="req">*</span></div>
+          <select class="fi" id="pSeller"></select>
+        </div>
+        <div class="fg">
+          <div class="fl">Cash Received by</div>
+          <select class="fi" id="pCashBy"></select>
+        </div>
+      </div>
+      <div class="fg">
+        <div class="fl">Comment</div>
+        <input type="text" class="fi" id="pComment" placeholder="Optional note…">
+      </div>
+    </div>
+
+  </div>
+
+  <button class="sub-btn" id="subBtn" onclick="submitEntry()">Submit Entry</button>
+
+</div>
+
+<!-- History Drawer -->
+<div class="overlay" id="histOverlay" onclick="overlayClick(event)">
+  <div class="drawer">
+    <div class="handle"></div>
+    <div class="d-hdr">
+      <div class="d-title" id="dTitle">Transaction History</div>
+      <div class="d-sub" id="dSub"></div>
+    </div>
+    <div class="d-body" id="dBody"><div class="d-loading">⏳ Loading…</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────
+const SHEET_ID   = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
+const AS_URL     = 'https://script.google.com/macros/s/AKfycbysMUuZnQNErmRxj85q_F0gBLDpYAGKcyMlHOZ17u2Jsh4NrQemmoYkQo4dzPBb1CFDCA/exec';
+
+const PRODUCTS = [
+  'ENKORE Octane Booster (30ml)',
+  'ENKORE Octane Booster (100ml)',
+  'ENKORE Necessary Combo Pack for Bike',
+  'ENKORE Instant Glossy Polish – Compact (200ml)',
+  'ENKORE Instant Glossy Polish – Spray (300ml)',
+  'ENKORE Tire Sealant – Your Tire Guard (Green Formula)',
+  'ENKORE Tire Sealant – Premium Tire Guard (Blue Formula)',
+  'ENKORE Tire Sealant – 1 Liter Professional Pack',
+  'ENKORE Tire Sealant – High Quality Tire Guard (500ml)',
+  'ENKORE Car & Bike Washing Gel – 500mL (Blue Formula)',
+  'ENKORE Car & Bike Washing Gel – 10L (Blue Formula)',
+  'ENKORE Car & Bike Washing Gel – 10L (Green Formula)',
+  'ENKORE Car & Bike Washing Gel – 30L Professional Bulk Pack',
+  'ENKORE Chain Lube – Friction Control (200ml)',
+  'Enkore Towel','Enkore Soft Towel','Enkore Chain Cleaner Brush',
+];
+
+const STAFF = [
+  'Mahedi Islam Chayan','Anik Rahman','Yaman Islam Siam',
+  'Lipi Akter','Omar Faruk','Mizanur Rahman Ronju','Rakibul Islam Nayan',
+];
+
+// ── STATE ────────────────────────────────────────────────────
+let clients = [], mode = 'sale', selClient = null, giftOn = false, orderT = 'New';
+
+// ── INIT ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  setHeaderDate();
+  populateSelects();
+  loadClients();
+  autoFillSeller();
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.cs-wrap')) closeDd();
+  });
+});
+
+function setHeaderDate() {
+  const d = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const mos  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('hdrDate').textContent =
+    `${days[d.getDay()]}, ${d.getDate()} ${mos[d.getMonth()]} '${String(d.getFullYear()).slice(-2)}`;
+}
+
+function fmtDate(d) {
+  const mos = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getDate()} ${mos[d.getMonth()]}, ${String(d.getFullYear()).slice(-2)}`;
+}
+
+function tk(n) {
+  if (n === '' || n === null || n === undefined) return '৳ 0';
+  const num = Number(n);
+  return '৳ ' + num.toLocaleString('en-IN');
+}
+
+function populateSelects() {
+  const pSel = document.getElementById('product');
+  PRODUCTS.forEach(p => pSel.add(new Option(p, p)));
+
+  [['seller','cashBy'],['pSeller','pCashBy']].forEach(([s, c]) => {
+    const ss = document.getElementById(s), cs = document.getElementById(c);
+    ss.add(new Option('— Select —', ''));
+    cs.add(new Option('— Select —', ''));
+    STAFF.forEach(e => { ss.add(new Option(e, e)); cs.add(new Option(e, e)); });
+  });
+}
+
+function autoFillSeller() {
+  try {
+    const n = window.parent?.sessionStorage?.getItem('userName')
+           || window.parent?.sessionStorage?.getItem('enkore_user')
+           || window.parent?.localStorage?.getItem('enkore_user');
+    if (!n) return;
+    ['seller','pSeller'].forEach(id => {
+      const s = document.getElementById(id);
+      for (let i = 0; i < s.options.length; i++) {
+        if (s.options[i].value === n) { s.selectedIndex = i; break; }
+      }
+    });
+  } catch(_) {}
+}
+
+// ── CLIENTS ──────────────────────────────────────────────────
+async function loadClients() {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Clients%20Info`;
+    const r   = await fetch(url);
+    const txt = await r.text();
+    const d   = parseGviz(txt);
+    if (!d) return;
+    clients = d.table.rows
+      .filter(r => r.c?.[7]?.v)
+      .map(r => ({
+        name:      r.c[2]?.v || '',
+        shop:      r.c[3]?.v || '',
+        loc:       r.c[4]?.v || '',
+        zone:      r.c[5]?.v || '',
+        phone:     r.c[6]?.v || '',
+        det:       r.c[7]?.v || '',
+        type:      r.c[1]?.v || '',
+        sales:     r.c[8]?.v || 0,
+        paid:      r.c[9]?.v || 0,
+        due:       r.c[10]?.v || 0,
+        lastDays:  r.c[11]?.v,
+      }));
+  } catch(e) { console.error('clients load:', e); }
+}
+
+function openDd() {
+  renderOpts(clients);
+  document.getElementById('csDd').classList.add('open');
+}
+
+function closeDd() {
+  document.getElementById('csDd').classList.remove('open');
+}
+
+function filterClients(q) {
+  const lq = q.toLowerCase().trim();
+  const list = lq ? clients.filter(c =>
+    c.name.toLowerCase().includes(lq) ||
+    c.shop.toLowerCase().includes(lq) ||
+    c.loc.toLowerCase().includes(lq)
+  ) : clients;
+  renderOpts(list);
+  document.getElementById('csDd').classList.add('open');
+}
+
+function renderOpts(list) {
+  const dd = document.getElementById('csDd');
+  if (!list.length) {
+    dd.innerHTML = '<div class="cs-empty">No clients found</div>';
+    return;
+  }
+  const typeIcon = t => t === 'Retail Shop' ? '🏪' : t === 'Dealer' ? '🏢' : t === 'Brand' ? '🏷️' : '👤';
+  dd.innerHTML = list.slice(0, 60).map(c => `
+    <div class="cs-opt" onclick="pickClient(${JSON.stringify(c.det).replace(/"/g,'&quot;')})">
+      <div class="cs-opt-name">${typeIcon(c.type)} ${c.name || c.shop}</div>
+      <div class="cs-opt-sub">${[c.shop, c.loc, c.zone].filter(Boolean).join(' · ')}</div>
+    </div>
+  `).join('');
+}
+
+function pickClient(det) {
+  const c = clients.find(x => x.det === det);
+  if (!c) return;
+  selClient = c;
+  document.getElementById('csInput').value = c.name || c.shop;
+  closeDd();
+  showStatus(c);
+  calc();
+  if (mode === 'payment') updatePayDue(c);
+}
+
+function showStatus(c) {
+  const due = c.due || 0;
+  document.getElementById('sName').textContent = c.name || c.shop;
+  document.getElementById('sSub').textContent = [c.shop, c.loc, c.zone, c.phone].filter(Boolean).join(' · ');
+
+  const dEl = document.getElementById('sDue');
+  dEl.textContent = tk(due);
+  dEl.className = 'stat-v ' + (due > 0 ? 'red' : 'grn');
+
+  document.getElementById('sSales').textContent = tk(c.sales);
+  const typeIcon = t => t === 'Retail Shop' ? '🏪' : t === 'Dealer' ? '🏢' : t === 'Brand' ? '🏷️' : '👤';
+  document.getElementById('sType').textContent = typeIcon(c.type);
+
+  document.getElementById('csStatus').classList.add('show');
+  document.getElementById('cPrev').textContent = tk(due);
+}
+
+// ── MODE ─────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('tabSale').className = 'tab' + (m === 'sale' ? ' on' : '');
+  document.getElementById('tabPay').className  = 'tab' + (m === 'payment' ? ' on' : '');
+  document.getElementById('saleSection').className = m === 'sale' ? 'section' : 'hidden';
+  document.getElementById('paySection').className  = m === 'payment' ? 'section' : 'hidden';
+  if (m === 'payment' && selClient) updatePayDue(selClient);
+}
+
+function updatePayDue(c) {
+  document.getElementById('pdAmt').textContent = tk(c.due || 0);
+  document.getElementById('pdSub').textContent = `${c.name || ''} · ${c.shop || ''}`;
+  calcPay();
+}
+
+// ── CALCULATIONS ─────────────────────────────────────────────
+function calc() {
+  const rate   = +document.getElementById('rate').value || 0;
+  const qty    = +document.getElementById('qty').value  || 0;
+  const disc   = +document.getElementById('disc').value || 0;
+  const paid   = +document.getElementById('paid').value || 0;
+  const prev   = selClient?.due || 0;
+
+  const bill   = rate * qty;
+  const final_ = Math.max(0, bill - disc);
+  const total  = final_ + prev;
+  const newDue = total - paid;
+
+  document.getElementById('cBill').textContent  = tk(bill);
+  document.getElementById('cDisc').textContent  = tk(disc);
+  document.getElementById('cFinal').textContent = tk(final_);
+  document.getElementById('cPrev').textContent  = tk(prev);
+  document.getElementById('cTotal').textContent = tk(total);
+  document.getElementById('newDue').value       = tk(newDue);
+}
+
+function calcPay() {
+  const due    = selClient?.due || 0;
+  const paid   = +document.getElementById('pPaid').value || 0;
+  document.getElementById('pRemain').value = tk(due - paid);
+}
+
+function dQty(d) {
+  const el = document.getElementById('qty');
+  el.value = Math.max(1, (parseInt(el.value) || 0) + d);
+  calc();
+}
+
+function setGift(v) {
+  giftOn = v;
+  document.getElementById('gNo').className  = 'tog-btn' + (!v ? ' on' : '');
+  document.getElementById('gYes').className = 'tog-btn' + (v  ? ' on' : '');
+}
+
+function setOrder(t) {
+  orderT = t;
+  document.getElementById('oNew').className = 'tog-btn' + (t === 'New'    ? ' on' : '');
+  document.getElementById('oRet').className = 'tog-btn' + (t === 'Return' ? ' on' : '');
+}
+
+function onProdChange() { /* future: suggest last rate */ }
+
+// ── HISTORY ──────────────────────────────────────────────────
+async function openHistory() {
+  if (!selClient) { toast('Select a client first', 'err'); return; }
+  document.getElementById('dTitle').textContent = selClient.name || selClient.shop;
+  document.getElementById('dSub').textContent   = [selClient.shop, selClient.zone].filter(Boolean).join(' · ');
+  document.getElementById('dBody').innerHTML    = '<div class="d-loading">⏳ Loading history…</div>';
+  document.getElementById('histOverlay').classList.add('open');
+
+  try {
+    const url  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sale%20Entry`;
+    const r    = await fetch(url);
+    const txt  = await r.text();
+    const data = parseGviz(txt);
+    if (!data) throw new Error('parse fail');
+
+    const rows = data.table.rows
+      .filter(r => r.c?.[1]?.v === selClient.det)
+      .map(r => ({
+        date:    r.c[0]?.v  || '',
+        prod:    r.c[3]?.v  || '',
+        rate:    r.c[5]?.v  || 0,
+        qty:     r.c[6]?.v  || 0,
+        bill:    r.c[9]?.v  || r.c[7]?.v || 0,
+        paid:    r.c[12]?.v || 0,
+        due:     r.c[13]?.v || 0,
+        comment: r.c[14]?.v || '',
+        seller:  r.c[15]?.v || '',
+      }))
+      .reverse();
+
+    if (!rows.length) {
+      document.getElementById('dBody').innerHTML = '<div class="d-empty">No transactions found for this client.</div>';
+      return;
+    }
+
+    document.getElementById('dBody').innerHTML = rows.map(h => `
+      <div class="h-item ${!h.prod ? 'pay' : ''}">
+        <div class="h-top">
+          <span class="h-date">${h.date}</span>
+          <span class="h-seller">${h.seller}</span>
+        </div>
+        <div class="h-prod">${h.prod || '💳 Payment Collection'}</div>
+        <div class="h-amts">
+          <div class="chip chip-b"><div class="chip-lbl">Bill</div><div class="chip-val">${tk(h.bill)}</div></div>
+          <div class="chip chip-p"><div class="chip-lbl">Paid</div><div class="chip-val">${tk(h.paid)}</div></div>
+          <div class="chip chip-d"><div class="chip-lbl">Due</div><div class="chip-val">${tk(h.due)}</div></div>
+        </div>
+        ${h.comment ? `<div class="h-note">💬 ${h.comment}</div>` : ''}
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('dBody').innerHTML = '<div class="d-empty">Failed to load history. Check internet.</div>';
+  }
+}
+
+function overlayClick(e) {
+  if (e.target === document.getElementById('histOverlay'))
+    document.getElementById('histOverlay').classList.remove('open');
+}
+
+// ── SUBMIT ───────────────────────────────────────────────────
+async function submitEntry() {
+  if (!selClient) { toast('Select a client first', 'err'); return; }
+
+  const btn = document.getElementById('subBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Submitting…';
+
+  try {
+    const dateStr = fmtDate(new Date());
+    let params;
+
+    if (mode === 'sale') {
+      const product  = document.getElementById('product').value;
+      const rate     = +document.getElementById('rate').value  || 0;
+      const qty      = +document.getElementById('qty').value   || 0;
+      const disc     = +document.getElementById('disc').value  || 0;
+      const paid     = +document.getElementById('paid').value  || 0;
+      const seller   = document.getElementById('seller').value;
+      const cashBy   = document.getElementById('cashBy').value;
+      const comment  = document.getElementById('comment').value;
+      const prevDue  = selClient.due || 0;
+      const bill     = rate * qty;
+      const finalB   = Math.max(0, bill - disc);
+      const totalP   = finalB + prevDue;
+      const newDue   = totalP - paid;
+
+      if (!product) { toast('Select a product', 'err'); resetBtn(); return; }
+      if (!rate || !qty) { toast('Enter Rate and Qty', 'err'); resetBtn(); return; }
+      if (!seller) { toast('Select a seller', 'err'); resetBtn(); return; }
+
+      params = { action:'addSaleEntry', date:dateStr, clientInfo:selClient.det,
+        hl:'FALSE', product, gift:String(giftOn), rate, qty,
+        bill, discount:disc, finalBill:finalB, prevDue,
+        totalPayable:totalP, paid, due:newDue,
+        comment, seller, cashReceivedBy:cashBy, repeatOrder:orderT };
+
+    } else {
+      const paid    = +document.getElementById('pPaid').value  || 0;
+      const seller  = document.getElementById('pSeller').value;
+      const cashBy  = document.getElementById('pCashBy').value;
+      const comment = document.getElementById('pComment').value;
+      const prevDue = selClient.due || 0;
+      const newDue  = prevDue - paid;
+
+      if (!paid) { toast('Enter amount collected', 'err'); resetBtn(); return; }
+      if (!seller) { toast('Select a seller', 'err'); resetBtn(); return; }
+
+      params = { action:'addSaleEntry', date:dateStr, clientInfo:selClient.det,
+        hl:'FALSE', product:'', gift:'FALSE', rate:'', qty:'', bill:'', discount:'',
+        finalBill:'', prevDue, totalPayable:prevDue, paid, due:newDue,
+        comment, seller, cashReceivedBy:cashBy, repeatOrder:'New' };
+    }
+
+    const qs  = Object.entries(params).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+    const res = await fetch(`${AS_URL}?${qs}`);
+    const js  = await res.json();
+
+    if (js.success) {
+      toast('✅ Entry saved!', 'ok');
+      resetForm();
+    } else {
+      throw new Error(js.error || 'Failed');
+    }
+  } catch(e) {
+    console.error(e);
+    toast('❌ Save failed — check connection', 'err');
+  }
+  resetBtn();
+}
+
+function resetBtn() {
+  const b = document.getElementById('subBtn');
+  b.disabled = false;
+  b.innerHTML = 'Submit Entry';
+}
+
+function resetForm() {
+  document.getElementById('product').selectedIndex = 0;
+  ['rate','disc','paid','comment','pPaid','pComment'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('qty').value = 1;
+  setGift(false); setOrder('New'); calc();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = 'toast', 3200);
+}
+
+// ── GVIZ PARSER ───────────────────────────────────────────────
+function parseGviz(txt) {
+  try {
+    const m = txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+    return m ? JSON.parse(m[1]) : null;
+  } catch(_) { return null; }
+}
+</script>
+</body>
+</html>
