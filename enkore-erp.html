@@ -242,6 +242,12 @@
   <nav class="bottom-nav" id="bottom-nav"></nav>
 </div>
 
+<!-- UPDATE BANNER -->
+<div id="update-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1971c2;color:#fff;padding:12px 16px;align-items:center;justify-content:space-between;gap:12px;font-family:inherit;box-shadow:0 -2px 12px rgba(0,0,0,.2);">
+  <span style="font-size:13px;font-weight:600;">🔄 New update available</span>
+  <button onclick="applyUpdate()" style="background:#fff;color:#1971c2;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Tap to Update</button>
+</div>
+
 <script>
   // ── CONFIG ──
   const SHEET_ID   = '1mXI0MI9R_5_ImxiTvw8vH0EaQ38M3WlHncjZgmPLTmc';
@@ -277,7 +283,6 @@
   }
 
   // ── PARSE USER PANELS ──
-  // Returns array of { name, file, icon, readonly }
   function parsePanels(panelsStr, allPanels) {
     const str = (panelsStr || '').trim();
     if (!str) return [];
@@ -296,7 +301,7 @@
     }).filter(Boolean);
   }
 
-  // ── SHEET FETCHER (fetch-based, works from HTTPS hosting) ──
+  // ── SHEET FETCHER ──
   async function fetchSheetData(sheetId, sheetName) {
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(sheetName)}&t=${Date.now()}`;
     const resp = await fetch(url);
@@ -366,13 +371,11 @@
     btn.textContent = 'Signing in...';
 
     try {
-      // Check cache first — if hit, login is instant
       const hasCached = (() => { try { const c = localStorage.getItem(CACHE_KEY); if (!c) return false; const { ts } = JSON.parse(c); return Date.now() - ts < CACHE_TTL; } catch(e) { return false; } })();
       if (!hasCached) stat.textContent = 'Loading permissions (first time only)...';
 
       const { accessData, linkData } = await getSheetData();
 
-      // Validate credentials
       const userRow = accessData.find(u => u.id === uid && u.pass === pass);
       if (!userRow) {
         err.textContent = 'Invalid Employee ID or Password.';
@@ -380,14 +383,12 @@
         return;
       }
 
-      // Save / clear remember me
       if (document.getElementById('chk-remember').checked) {
         localStorage.setItem('enkore_erp_remember', JSON.stringify({ id: uid, pass }));
       } else {
         localStorage.removeItem('enkore_erp_remember');
       }
 
-      // Build master panel list
       const allPanels = linkData
         .map(row => ({ name: row.name, file: row.file, icon: row.icon || '📋' }))
         .filter(p => p.name && p.file);
@@ -446,16 +447,14 @@
     if (first) loadPanel(first.file, first.name, first.readonly);
   }
 
-  // ── BUILD NAV DYNAMICALLY ──
+  // ── BUILD NAV — all panels from sheet, no whitelist ──
   function buildNav(panels) {
-    const visible    = panels;
-    const sbPanels  = document.getElementById('sidebar-panels');
-    const btmNav    = document.getElementById('bottom-nav');
+    const sbPanels = document.getElementById('sidebar-panels');
+    const btmNav   = document.getElementById('bottom-nav');
     sbPanels.innerHTML = '';
     btmNav.innerHTML   = '';
 
-    visible.forEach(panel => {
-      // Sidebar item
+    panels.forEach(panel => {
       const si = document.createElement('div');
       si.className = 'nav-item';
       si.id = 'snav-' + panel.file;
@@ -464,7 +463,6 @@
       si.onclick = () => loadPanel(panel.file, panel.name, panel.readonly);
       sbPanels.appendChild(si);
 
-      // Bottom nav item
       const bi = document.createElement('div');
       bi.className = 'bnav-item';
       bi.id = 'bnav-' + panel.file;
@@ -525,27 +523,7 @@
     }
   });
 
-  // ── SERVICE WORKER (PWA) ──
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
-    });
-  }
-tus').textContent = '';
-    closeMenu();
-  }
-
-  // ── SESSION RESTORE ──
-  window.addEventListener('load', () => {
-    const s = sessionStorage.getItem('erp_user');
-    if (s) {
-      try { currentUser = JSON.parse(s); showShell(currentUser); }
-      catch(e) { sessionStorage.removeItem('erp_user'); }
-    }
-  });
-
-  // ── SERVICE WORKER (PWA) ──
-  // ── SERVICE WORKER (PWA) ──
+  // ── SERVICE WORKER + AUTO UPDATE ──
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').then(reg => {
@@ -553,7 +531,7 @@ tus').textContent = '';
           const newSW = reg.installing;
           newSW.addEventListener('statechange', () => {
             if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-              showUpdateBanner();
+              document.getElementById('update-banner').style.display = 'flex';
             }
           });
         });
@@ -561,20 +539,9 @@ tus').textContent = '';
     });
   }
 
-  function showUpdateBanner() {
-    document.getElementById('update-banner').style.display = 'flex';
-  }
-
   function applyUpdate() {
     window.location.reload();
   }
 </script>
-
-<!-- UPDATE BANNER -->
-<div id="update-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1971c2;color:#fff;padding:12px 16px;align-items:center;justify-content:space-between;gap:12px;font-family:inherit;box-shadow:0 -2px 12px rgba(0,0,0,.2);">
-  <span style="font-size:13px;font-weight:600;">🔄 New update available</span>
-  <button onclick="applyUpdate()" style="background:#fff;color:#1971c2;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Tap to Update</button>
-</div>
-
 </body>
 </html>
