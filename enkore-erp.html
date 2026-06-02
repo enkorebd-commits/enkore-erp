@@ -447,7 +447,7 @@
   }
 
   // ── ACTIVE PANELS (add more here when each panel is ready) ──
-  const ACTIVE_PANELS = ['admin-dashboard', 'drive'];
+  const ACTIVE_PANELS = ['admin-dashboard', 'drive', 'sales-entry'];
 
   // ── BUILD NAV DYNAMICALLY ──
   function buildNav(panels) {
@@ -516,6 +516,28 @@
     document.getElementById('inp-pass').value = '';
     document.getElementById('login-err').textContent  = '';
     document.getElementById('login-status').textContent = '';
+    closeMenu();
+  }
+
+  // ── SESSION RESTORE ──
+  window.addEventListener('load', () => {
+    const s = sessionStorage.getItem('erp_user');
+    if (s) {
+      try { currentUser = JSON.parse(s); showShell(currentUser); }
+      catch(e) { sessionStorage.removeItem('erp_user'); }
+    }
+  });
+
+  // ── SERVICE WORKER (PWA) ──
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
+tus').textContent = '';
     closeMenu();
   }
 
