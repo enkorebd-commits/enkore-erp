@@ -909,17 +909,28 @@ async function submitNewClient() {
       pickClient(js.det);
       toast('✅ New client saved!', 'ok');
 
-      // Phase 2 — upload photo silently in background (user already back on main form)
+      // Phase 2 — upload photo in background (text/plain JSON avoids redirect issue with Apps Script)
       if (photoData) {
+        toast('📷 Uploading photo…', '');
         (async () => {
           try {
-            const body = new URLSearchParams();
-            body.append('action', 'uploadClientPhoto');
-            body.append('det', js.det);
-            body.append('photoData', photoData);
-            body.append('clientName', name || shop);
-            await fetch(AS_URL, { method: 'POST', body });
-          } catch(_) {} // silent — never blocks the user
+            const res = await fetch(AS_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({
+                action: 'uploadClientPhoto',
+                det: js.det,
+                photoData: photoData,
+                clientName: name || shop
+              })
+            });
+            const result = await res.json();
+            if (result.success) toast('📷 Photo saved to Drive', 'ok');
+            else toast('📷 Photo upload failed: ' + (result.error || ''), 'err');
+          } catch(e) {
+            toast('📷 Photo upload error', 'err');
+            console.error('Photo upload:', e);
+          }
         })();
       }
     } else {
