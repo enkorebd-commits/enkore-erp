@@ -810,17 +810,17 @@ function handlePhotoSelect(input) {
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      // Good quality — chunked upload handles the size, no need to over-compress
+      // 900px / 80% quality — readable text, chunks stay within URL limits
       const canvas = document.createElement('canvas');
       let w = img.width, h = img.height;
-      const max = 1200;
+      const max = 900;
       if (w > max || h > max) {
         if (w > h) { h = Math.round(h * max / w); w = max; }
         else       { w = Math.round(w * max / h); h = max; }
       }
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const compressed = canvas.toDataURL('image/jpeg', 0.82);
+      const compressed = canvas.toDataURL('image/jpeg', 0.80);
       window._ncPhotoData = compressed;
       // Show preview using original (better quality for display)
       document.getElementById('ncPhotoImg').src = e.target.result;
@@ -916,7 +916,7 @@ async function submitNewClient() {
         (async () => {
           try {
             const uploadId = 'u' + Date.now();
-            const CHUNK    = 8000;
+            const CHUNK    = 3000;
             const chunks   = [];
             for (let i = 0; i < photoData.length; i += CHUNK)
               chunks.push(photoData.substring(i, i + CHUNK));
