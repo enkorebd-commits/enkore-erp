@@ -483,6 +483,7 @@ function togGift(idx) {
   row.dataset.gift = String(!isGift);
   btn.textContent = !isGift ? '✅ Gift' : '🎁 Gift';
   btn.className = 'gift-btn' + (!isGift ? ' on' : '');
+  calcAll();
 }
 
 // ── CALCULATIONS ─────────────────────────────────────────────
