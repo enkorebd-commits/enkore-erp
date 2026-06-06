@@ -92,6 +92,8 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .prod-row-head{display:flex;gap:8px;align-items:center;margin-bottom:8px}
 .prod-sel{flex:1;min-width:0;padding:9px 26px 9px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:7px;outline:none;background:#fff;color:var(--text);font-weight:500;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer;overflow:hidden;text-overflow:ellipsis}
 .prod-sel:focus{border-color:var(--g)}
+.prod-sel-name{display:none;font-size:11px;color:var(--g);font-weight:700;margin-top:4px;line-height:1.4;padding:0 2px}
+.prod-sel-name.show{display:block}
 .prod-del{width:32px;height:32px;border:1.5px solid #ffc9c9;background:#fff5f5;border-radius:7px;color:var(--red);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;transition:.15s}
 .prod-del:active{transform:scale(.9)}
 .prod-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -543,10 +545,13 @@ function addProdRow() {
   div.dataset.gift = 'false';
   div.innerHTML = `
     <div class="prod-row-head">
-      <select class="prod-sel" onchange="calcAll()">
-        <option value="">— Select Product —</option>
-        ${CURRENT_PRODUCTS.map(p=>`<option value="${p}">${p}</option>`).join('')}
-      </select>
+      <div style="flex:1;min-width:0">
+        <select class="prod-sel" style="width:100%" onchange="calcAll(); showProdName(this)">
+          <option value="">— Select Product —</option>
+          ${CURRENT_PRODUCTS.map(p=>`<option value="${p}">${p}</option>`).join('')}
+        </select>
+        <div class="prod-sel-name"></div>
+      </div>
       <button class="prod-del" onclick="removeProdRow(${idx})" title="Remove">×</button>
     </div>
     <div class="prod-fields">
@@ -595,6 +600,13 @@ function dQtyR(idx, delta) {
   const inp = row.querySelector('.prod-qty');
   inp.value = Math.max(1, (parseInt(inp.value)||0) + delta);
   calcAll();
+}
+
+function showProdName(sel) {
+  const nameEl = sel.parentElement.querySelector('.prod-sel-name');
+  if (!nameEl) return;
+  nameEl.textContent = sel.value;
+  nameEl.classList.toggle('show', !!sel.value);
 }
 
 function togGift(idx) {
