@@ -391,6 +391,24 @@ window.addEventListener('DOMContentLoaded', () => {
   ncOverlay.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
   ncDBody.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
   ncOverlay.addEventListener('click', e => { if (e.target === ncOverlay) closeNewClient(); });
+
+  // ── KEYBOARD: resize open overlays so drawer stays above keyboard ──
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      const vv = window.visualViewport;
+      document.querySelectorAll('.overlay.open').forEach(ov => {
+        ov.style.height = vv.height + 'px';
+        ov.style.top    = vv.offsetTop + 'px';
+      });
+    });
+  }
+
+  // ── KEYBOARD: scroll focused input into view on main panel ──
+  document.addEventListener('focusin', e => {
+    if (!e.target.matches('input, select')) return;
+    if (e.target.closest('.overlay')) return; // drawer scrolls itself
+    setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350);
+  });
 });
 
 // ── DATE ─────────────────────────────────────────────────────
@@ -701,7 +719,11 @@ function handleZoneSelect() {
   }
 }
 
-function closeNewClient() { document.getElementById('ncOverlay').classList.remove('open'); }
+function closeNewClient() {
+  const ov = document.getElementById('ncOverlay');
+  ov.classList.remove('open');
+  ov.style.height = ''; ov.style.top = '';
+}
 
 async function submitNewClient() {
   const type  = document.getElementById('ncType').value;
@@ -860,7 +882,11 @@ function renderHistory(showAll) {
   document.getElementById('dBody').innerHTML = emptyMsg + itemsHtml + loadMoreBtn;
 }
 
-function closeHistory() { document.getElementById('histOverlay').classList.remove('open'); }
+function closeHistory() {
+  const ov = document.getElementById('histOverlay');
+  ov.classList.remove('open');
+  ov.style.height = ''; ov.style.top = '';
+}
 
 // ── SUBMIT ───────────────────────────────────────────────────
 async function submitEntry() {
