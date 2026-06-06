@@ -419,6 +419,7 @@ window.addEventListener('DOMContentLoaded', () => {
   setHeaderDate();
   loadAllData();
   addProdRow();
+  checkPendingPhotoUpload();
   document.addEventListener('click', e => { if (!e.target.closest('.cs-wrap')) closeDd(); });
 
   const histOverlay = document.getElementById('histOverlay');
@@ -831,6 +832,52 @@ function handlePhotoSelect(input) {
   reader.readAsDataURL(file);
 }
 
+// ── PHOTO UPLOAD (resumable) ──────────────────────────────────
+async function runPhotoUpload(det, clientName, photoData, silent) {
+  if (!silent) toast('📷 Uploading photo…', '');
+  try {
+    const uploadId = 'u' + Date.now();
+    const CHUNK    = 3000;
+    const chunks   = [];
+    for (let i = 0; i < photoData.length; i += CHUNK)
+      chunks.push(photoData.substring(i, i + CHUNK));
+
+    for (let i = 0; i < chunks.length; i++) {
+      const qs = `action=uploadPhotoChunk&id=${encodeURIComponent(uploadId)}&idx=${i}&total=${chunks.length}&data=${encodeURIComponent(chunks[i])}`;
+      const r  = await fetch(`${AS_URL}?${qs}`).then(res => res.json());
+      if (!r.success) throw new Error('Chunk ' + i + ' failed: ' + (r.error || ''));
+    }
+
+    const qs = `action=assembleClientPhoto&id=${encodeURIComponent(uploadId)}&total=${chunks.length}&det=${encodeURIComponent(det)}&clientName=${encodeURIComponent(clientName)}`;
+    const final = await fetch(`${AS_URL}?${qs}`).then(res => res.json());
+
+    if (final.success) {
+      localStorage.removeItem('enkore_pending_photo');
+      toast('📷 Photo saved to Drive', 'ok');
+    } else {
+      throw new Error(final.error || 'Assembly failed');
+    }
+  } catch(e) {
+    toast('📷 Upload failed — will retry next time', 'err');
+    console.error('Photo upload:', e);
+    // Keep localStorage entry so it retries on next open
+  }
+}
+
+// On page load: check if there's a pending photo upload from a previous session
+function checkPendingPhotoUpload() {
+  try {
+    const raw = localStorage.getItem('enkore_pending_photo');
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (!p || !p.photoData || !p.det) { localStorage.removeItem('enkore_pending_photo'); return; }
+    // Resume silently in background
+    setTimeout(() => runPhotoUpload(p.det, p.clientName || '', p.photoData, true), 3000);
+  } catch(_) {
+    localStorage.removeItem('enkore_pending_photo');
+  }
+}
+
 function clearPhoto() {
   const input = document.getElementById('ncPhotoInput');
   if (input) input.value = '';
@@ -910,34 +957,15 @@ async function submitNewClient() {
       pickClient(js.det);
       toast('✅ New client saved!', 'ok');
 
-      // Phase 2 — sequential chunked upload (parallel caused connection failures)
+      // Phase 2 — save photo to localStorage first, then upload
+      // If user closes app mid-upload, it resumes automatically on next open
       if (photoData) {
-        toast('📷 Uploading photo…', '');
-        (async () => {
-          try {
-            const uploadId = 'u' + Date.now();
-            const CHUNK    = 3000;
-            const chunks   = [];
-            for (let i = 0; i < photoData.length; i += CHUNK)
-              chunks.push(photoData.substring(i, i + CHUNK));
-
-            // Upload chunks one by one
-            for (let i = 0; i < chunks.length; i++) {
-              const qs = `action=uploadPhotoChunk&id=${encodeURIComponent(uploadId)}&idx=${i}&total=${chunks.length}&data=${encodeURIComponent(chunks[i])}`;
-              const r  = await fetch(`${AS_URL}?${qs}`).then(res => res.json());
-              if (!r.success) throw new Error('Chunk ' + i + ' failed: ' + (r.error || ''));
-            }
-
-            // Assemble on server and save to Drive
-            const qs = `action=assembleClientPhoto&id=${encodeURIComponent(uploadId)}&total=${chunks.length}&det=${encodeURIComponent(js.det)}&clientName=${encodeURIComponent(name || shop)}`;
-            const final = await fetch(`${AS_URL}?${qs}`).then(res => res.json());
-            if (final.success) toast('📷 Photo saved to Drive', 'ok');
-            else toast('📷 Upload failed: ' + (final.error || ''), 'err');
-          } catch(e) {
-            toast('📷 Upload error: ' + e.message, 'err');
-            console.error('Photo upload:', e);
-          }
-        })();
+        try {
+          localStorage.setItem('enkore_pending_photo', JSON.stringify({
+            det: js.det, clientName: name || shop, photoData
+          }));
+        } catch(_) {}
+        runPhotoUpload(js.det, name || shop, photoData);
       }
     } else {
       throw new Error(js.error || 'Failed');
