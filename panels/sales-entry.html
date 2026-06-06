@@ -34,14 +34,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .cs-wrap{position:relative}
 .cs-input{width:100%;padding:13px 15px;font-size:15px;border:2px solid var(--border);border-radius:10px;outline:none;transition:border .2s;background:#fff;color:var(--text);font-weight:500}
 .cs-input:focus{border-color:var(--g)}
-.cs-dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:260px;overflow-y:auto;z-index:300;display:none}
+.cs-dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:280px;overflow-y:auto;z-index:300;display:none}
 .cs-dd.open{display:block}
 .cs-opt{padding:11px 14px;cursor:pointer;border-bottom:1px solid #f1f3f5;transition:background .15s}
 .cs-opt:last-child{border-bottom:none}
 .cs-opt:hover,.cs-opt:active{background:var(--gbg)}
 .cs-opt-name{font-weight:700;font-size:14px}
 .cs-opt-sub{font-size:11px;color:var(--muted);margin-top:2px}
-.cs-empty{padding:16px;text-align:center;color:var(--muted);font-size:13px}
+.cs-empty{padding:12px 14px;color:var(--muted);font-size:13px}
+.cs-add-new{background:var(--gbg);border-top:2px dashed var(--g) !important;position:sticky;bottom:0}
+.cs-add-new .cs-opt-name{color:var(--g)}
 
 /* CLIENT STATUS */
 .cs-status{display:none;background:linear-gradient(135deg,#1b6b3a,#2d8a52);color:#fff;border-radius:var(--r);padding:14px;margin-bottom:10px}
@@ -81,7 +83,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .tog-btn.on{background:var(--g);border-color:var(--g);color:#fff}
 .tog-btn:active{transform:scale(.97)}
 
-/* ── PRODUCT ROWS ── */
+/* PRODUCT ROWS */
 .prod-row{background:#f8f9fa;border:1.5px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;position:relative}
 .prod-row-head{display:flex;gap:8px;align-items:center;margin-bottom:8px}
 .prod-sel{flex:1;padding:9px 30px 9px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:7px;outline:none;background:#fff;color:var(--text);font-weight:500;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;cursor:pointer}
@@ -136,7 +138,9 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .drawer{width:100%;background:#fff;border-radius:20px 20px 0 0;max-height:82vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.4,0,.2,1)}
 .overlay.open .drawer{transform:translateY(0)}
 .handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0;flex-shrink:0}
-.d-hdr{padding:10px 18px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.d-hdr{padding:10px 18px 14px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;justify-content:space-between;align-items:flex-start}
+.d-hdr-left{flex:1}
+.d-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:0 0 0 10px;line-height:1}
 .d-title{font-size:15px;font-weight:800}
 .d-sub{font-size:12px;color:var(--muted);margin-top:2px}
 .d-body{overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;flex:1;padding:10px 14px 20px;min-height:0}
@@ -155,6 +159,20 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .chip-d{background:#fff5f5;color:var(--red)}
 .h-note{font-size:11px;color:var(--muted);margin-top:7px;padding-top:6px;border-top:1px solid #eee}
 .d-empty,.d-loading{text-align:center;padding:30px;color:var(--muted);font-size:13px}
+.load-more-btn{width:100%;padding:12px;background:var(--gbg);border:1.5px solid var(--g);border-radius:10px;color:var(--g);font-size:13px;font-weight:800;cursor:pointer;margin-top:4px;text-align:center}
+.load-more-btn:active{background:#d3f5e3}
+
+/* NEW CLIENT DRAWER */
+.nc-drawer{max-height:90vh}
+.nc-d-body{overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;flex:1;padding:14px 14px 24px;min-height:0}
+.nc-fi{width:100%;padding:12px 13px;font-size:15px;border:1.5px solid var(--border);border-radius:8px;outline:none;transition:border .2s;background:#fff;color:var(--text);font-weight:500;margin-top:5px}
+.nc-fi:focus{border-color:var(--g)}
+select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer}
+.nc-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:3px}
+.nc-fg{margin-bottom:12px}
+.nc-save-btn{width:100%;padding:15px;background:var(--g);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;margin-top:6px;box-shadow:0 4px 16px rgba(27,107,58,.3)}
+.nc-save-btn:disabled{opacity:.5;cursor:not-allowed}
+.nc-save-btn:active{transform:scale(.98)}
 
 /* TOAST */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:11px 22px;border-radius:100px;font-size:14px;font-weight:700;z-index:1000;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none}
@@ -186,7 +204,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div class="card">
     <div class="card-lbl">Client</div>
     <div class="cs-wrap">
-      <input type="text" class="cs-input" id="csInput" placeholder="Search name or shop…" autocomplete="off"
+      <input type="text" class="cs-input" id="csInput" placeholder="Search name, shop, zone or number…" autocomplete="off"
         oninput="filterClients(this.value)" onfocus="openDd()">
       <div class="cs-dd" id="csDd"></div>
     </div>
@@ -200,7 +218,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <div class="stat"><div class="stat-v" id="sDue">৳0</div><div class="stat-l">Running Due</div></div>
       <div class="stat"><div class="stat-v" id="sSales">৳0</div><div class="stat-l">Total Sales</div></div>
     </div>
-    <button class="hist-btn" onclick="openHistory()">📋 Full Transaction History</button>
+    <button class="hist-btn" onclick="openHistory()">📋 Previous Transactions</button>
   </div>
 
   <!-- ===== SALE ENTRY ===== -->
@@ -284,34 +302,95 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div class="drawer">
     <div class="handle"></div>
     <div class="d-hdr">
-      <div class="d-title" id="dTitle">Transaction History</div>
-      <div class="d-sub" id="dSub"></div>
+      <div class="d-hdr-left">
+        <div class="d-title" id="dTitle">Transaction History</div>
+        <div class="d-sub" id="dSub"></div>
+      </div>
+      <button class="d-close" onclick="closeHistory()">×</button>
     </div>
     <div class="d-body" id="dBody"><div class="d-loading">⏳ Loading…</div></div>
+  </div>
+</div>
+
+<!-- New Client Drawer -->
+<div class="overlay" id="ncOverlay">
+  <div class="drawer nc-drawer">
+    <div class="handle"></div>
+    <div class="d-hdr">
+      <div class="d-hdr-left">
+        <div class="d-title">➕ Add New Client</div>
+        <div class="d-sub">Saved directly to Clients Info sheet</div>
+      </div>
+      <button class="d-close" onclick="closeNewClient()">×</button>
+    </div>
+    <div class="nc-d-body">
+      <div class="nc-fg">
+        <div class="nc-lbl">Client Type <span class="req">*</span></div>
+        <select class="nc-fi" id="ncType">
+          <option value="">— Select Type —</option>
+          <option value="Retail Shop">🏪 Retail Shop</option>
+          <option value="Dealer">🏢 Dealer</option>
+          <option value="Brand">🏷️ Brand</option>
+          <option value="End Customer">👤 End Customer</option>
+        </select>
+      </div>
+      <div class="nc-fg">
+        <div class="nc-lbl">Name <span class="req">*</span></div>
+        <input type="text" class="nc-fi" id="ncName" placeholder="Client person name">
+      </div>
+      <div class="nc-fg">
+        <div class="nc-lbl">Shop / Business Name</div>
+        <input type="text" class="nc-fi" id="ncShop" placeholder="Shop or business name">
+      </div>
+      <div class="nc-fg">
+        <div class="nc-lbl">Location <span class="req">*</span></div>
+        <input type="text" class="nc-fi" id="ncLoc" placeholder="Area or address">
+      </div>
+      <div class="nc-fg">
+        <div class="nc-lbl">Zone</div>
+        <select class="nc-fi" id="ncZoneSelect" onchange="handleZoneSelect()">
+          <option value="">— Select Zone —</option>
+        </select>
+        <input type="text" class="nc-fi hidden" id="ncZoneNew" placeholder="Type new zone name…" style="margin-top:6px">
+      </div>
+      <div class="nc-fg">
+        <div class="nc-lbl">Mobile Number</div>
+        <input type="tel" class="nc-fi" id="ncPhone" placeholder="01XXXXXXXXX">
+      </div>
+      <button class="nc-save-btn" id="ncSaveBtn" onclick="submitNewClient()">💾 Save New Client</button>
+    </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const SHEET_ID = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
-const AS_URL   = 'https://script.google.com/macros/s/AKfycbzNbCaVCEC0X1NewgiyqYnkaTD-BYl5_SaejXj5bBDo6UvtJKq7AC_zF3aMMv067E16ZQ/exec';
+const SHEET_ID  = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
+const AS_URL    = 'https://script.google.com/macros/s/AKfycbzNbCaVCEC0X1NewgiyqYnkaTD-BYl5_SaejXj5bBDo6UvtJKq7AC_zF3aMMv067E16ZQ/exec';
 const CACHE_KEY = 'enkore_sales_data';
 
 let clients = [], mode = 'sale', selClient = null;
 let CURRENT_PRODUCTS = [], prodRowCount = 0;
+let histAllRows = [], histShowingAll = false;
 
 // ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   setHeaderDate();
   loadAllData();
-  addProdRow(); // start with one product row
+  addProdRow();
   document.addEventListener('click', e => { if (!e.target.closest('.cs-wrap')) closeDd(); });
-  const overlay = document.getElementById('histOverlay');
-  const dBody   = document.getElementById('dBody');
-  overlay.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+  const histOverlay = document.getElementById('histOverlay');
+  const dBody       = document.getElementById('dBody');
+  histOverlay.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
   dBody.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
-  overlay.addEventListener('click', e => { if (e.target === overlay) closeHistory(); });
+  histOverlay.addEventListener('click', e => { if (e.target === histOverlay) closeHistory(); });
+
+  const ncOverlay = document.getElementById('ncOverlay');
+  const ncDBody   = ncOverlay.querySelector('.nc-d-body');
+  ncOverlay.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+  ncDBody.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
+  ncOverlay.addEventListener('click', e => { if (e.target === ncOverlay) closeNewClient(); });
 });
 
 // ── DATE ─────────────────────────────────────────────────────
@@ -351,25 +430,37 @@ async function loadAllData() {
   try {
     const cached = sessionStorage.getItem(CACHE_KEY);
     if (cached) {
-      const { products, staff, clientList } = JSON.parse(cached);
-      fillProductSelects(products); fillStaffSelects(staff); clients = clientList; return;
+      const { products, staff, clientList, zoneList } = JSON.parse(cached);
+      fillProductSelects(products); fillStaffSelects(staff); clients = clientList;
+      if (zoneList) window._zones = zoneList;
+      return;
     }
   } catch(_) {}
   try {
     const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-    const [prodTxt, staffTxt, clientTxt] = await Promise.all([
+    const [prodTxt, staffTxt, clientTxt, zoneTxt] = await Promise.all([
       fetch(`${base}&sheet=Control&range=F3:F`).then(r=>r.text()),
       fetch(`${base}&sheet=Control&range=K3:K`).then(r=>r.text()),
       fetch(`${base}&sheet=Clients%20Info`).then(r=>r.text()),
+      fetch(`${base}&sheet=Zone%2FArea&range=A2:A`).then(r=>r.text()),
     ]);
-    const products  = (parseGviz(prodTxt)?.table.rows||[]).map(r=>String(r.c?.[0]?.v||'').trim()).filter(v=>v);
-    const staff     = (parseGviz(staffTxt)?.table.rows||[]).map(r=>String(r.c?.[0]?.v||'').trim()).filter(v=>v);
-    const clientList= (parseGviz(clientTxt)?.table.rows||[]).filter(r=>r.c?.[7]?.v).map(r=>({
-      name:r.c[2]?.v||'', shop:r.c[3]?.v||'', loc:r.c[4]?.v||'', zone:r.c[5]?.v||'',
-      phone:r.c[6]?.v||'', det:r.c[7]?.v||'', type:r.c[1]?.v||'',
-      sales:r.c[8]?.v||0, paid:r.c[9]?.v||0, due:r.c[10]?.v||0,
+    const products   = (parseGviz(prodTxt)?.table.rows||[]).map(r=>String(r.c?.[0]?.v||'').trim()).filter(v=>v);
+    const staff      = (parseGviz(staffTxt)?.table.rows||[]).map(r=>String(r.c?.[0]?.v||'').trim()).filter(v=>v);
+    const clientList = (parseGviz(clientTxt)?.table.rows||[]).filter(r=>r.c?.[7]?.v).map(r=>({
+      name:  r.c[2]?.v||'',
+      shop:  r.c[3]?.v||'',
+      loc:   r.c[4]?.v||'',
+      zone:  r.c[5]?.v||'',
+      phone: String(r.c[6]?.v||''),
+      det:   r.c[7]?.v||'',
+      type:  r.c[1]?.v||'',
+      sales: r.c[8]?.v||0,
+      paid:  r.c[9]?.v||0,
+      due:   r.c[10]?.v||0,
     }));
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ products, staff, clientList }));
+    const zoneList   = (parseGviz(zoneTxt)?.table.rows||[]).map(r=>String(r.c?.[0]?.v||'').trim()).filter(v=>v);
+    window._zones    = zoneList;
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ products, staff, clientList, zoneList }));
     fillProductSelects(products); fillStaffSelects(staff); clients = clientList;
   } catch(e) { console.error('data load:', e); }
 }
@@ -454,8 +545,7 @@ function removeProdRow(idx) {
   const rows = document.querySelectorAll('.prod-row');
   if (rows.length <= 1) return;
   document.getElementById(`pr-${idx}`).remove();
-  updateDelBtns();
-  calcAll();
+  updateDelBtns(); calcAll();
 }
 
 function updateDelBtns() {
@@ -488,11 +578,9 @@ function calcAll() {
     const rate   = +row.querySelector('.prod-rate').value||0;
     const qty    = +row.querySelector('.prod-qty').value ||0;
     const disc   = +row.querySelector('.prod-disc').value||0;
-    const bill   = isGift ? 0 : rate * qty;      // gift = no bill
+    const bill   = isGift ? 0 : rate * qty;
     const final_ = isGift ? 0 : Math.max(0, bill - disc);
-    totalBill  += bill;
-    totalDisc  += isGift ? 0 : disc;
-    totalFinal += final_;
+    totalBill  += bill; totalDisc += isGift ? 0 : disc; totalFinal += final_;
     const ltEl = row.querySelector('.prod-line-total');
     if (ltEl) ltEl.textContent = isGift ? '🎁 Gift — ৳ 0' : `→ ${tk(final_)}`;
   });
@@ -511,7 +599,8 @@ function calcAll() {
 function calcPay() {
   const due  = selClient?.due||0;
   const paid = +document.getElementById('pPaid').value||0;
-  document.getElementById('pRemain').value = tk(due-paid);
+  const el   = document.getElementById('pRemain');
+  if (el) el.value = tk(due-paid);
 }
 
 function checkCashBy() {
@@ -519,194 +608,353 @@ function checkCashBy() {
   document.getElementById('cashByGroup').className = 'fg'+(paid>0?'':' hidden');
 }
 
-// ── CLIENT ───────────────────────────────────────────────────
+// ── CLIENT SEARCH ────────────────────────────────────────────
 function openDd() { renderOpts(clients); document.getElementById('csDd').classList.add('open'); }
 function closeDd() { document.getElementById('csDd').classList.remove('open'); }
 
 function filterClients(q) {
-  const lq=q.toLowerCase().trim();
-  renderOpts(lq?clients.filter(c=>c.name.toLowerCase().includes(lq)||c.shop.toLowerCase().includes(lq)||c.loc.toLowerCase().includes(lq)):clients);
+  const lq = q.toLowerCase().trim();
+  const filtered = lq ? clients.filter(c =>
+    c.name.toLowerCase().includes(lq)  ||
+    c.shop.toLowerCase().includes(lq)  ||
+    c.loc.toLowerCase().includes(lq)   ||
+    c.zone.toLowerCase().includes(lq)  ||
+    c.phone.includes(lq)
+  ) : clients;
+  renderOpts(filtered);
   document.getElementById('csDd').classList.add('open');
 }
 
 function renderOpts(list) {
-  const dd=document.getElementById('csDd');
-  if (!list.length) { dd.innerHTML='<div class="cs-empty">No clients found</div>'; return; }
-  const icon=t=>t==='Retail Shop'?'🏪':t==='Dealer'?'🏢':t==='Brand'?'🏷️':'👤';
-  dd.innerHTML=list.slice(0,60).map(c=>`
+  const dd   = document.getElementById('csDd');
+  const icon = t => t==='Retail Shop'?'🏪':t==='Dealer'?'🏢':t==='Brand'?'🏷️':t==='End Customer'?'👤':'👤';
+
+  const addNewHtml = `
+    <div class="cs-opt cs-add-new" onclick="openNewClient()">
+      <div class="cs-opt-name">➕ Add New Client</div>
+      <div class="cs-opt-sub">Save a new client to the sheet</div>
+    </div>`;
+
+  if (!list.length) {
+    dd.innerHTML = `<div class="cs-empty">No clients found</div>${addNewHtml}`;
+    return;
+  }
+  dd.innerHTML = list.slice(0, 80).map(c => `
     <div class="cs-opt" onclick="pickClient(${JSON.stringify(c.det).replace(/"/g,'&quot;')})">
       <div class="cs-opt-name">${icon(c.type)} ${c.name||c.shop}</div>
-      <div class="cs-opt-sub">${[c.shop,c.loc,c.zone].filter(Boolean).join(' · ')}</div>
-    </div>`).join('');
+      <div class="cs-opt-sub">${[c.shop, c.loc, c.zone, c.phone].filter(Boolean).join(' · ')}</div>
+    </div>`).join('') + addNewHtml;
 }
 
 function pickClient(det) {
-  const c=clients.find(x=>x.det===det);
+  const c = clients.find(x => x.det === det);
   if (!c) return;
-  selClient=c;
-  document.getElementById('csInput').value=c.name||c.shop;
+  selClient = c;
+  document.getElementById('csInput').value = c.name || c.shop;
   closeDd(); showStatus(c); calcAll();
-  if (mode==='payment') updatePayDue(c);
+  if (mode === 'payment') updatePayDue(c);
 }
 
 function showStatus(c) {
-  const due=c.due||0;
-  document.getElementById('sName').textContent=c.name||c.shop;
-  document.getElementById('sSub').textContent=[c.shop,c.loc,c.zone,c.phone].filter(Boolean).join(' · ');
-  const dEl=document.getElementById('sDue');
-  dEl.textContent=tk(due); dEl.className='stat-v '+(due>0?'red':'grn');
-  document.getElementById('sSales').textContent=tk(c.sales);
+  const due = c.due || 0;
+  document.getElementById('sName').textContent = c.name || c.shop;
+  document.getElementById('sSub').textContent  = [c.shop, c.loc, c.zone, c.phone].filter(Boolean).join(' · ');
+  const dEl = document.getElementById('sDue');
+  dEl.textContent = tk(due); dEl.className = 'stat-v ' + (due > 0 ? 'red' : 'grn');
+  document.getElementById('sSales').textContent = tk(c.sales);
   document.getElementById('csStatus').classList.add('show');
-  document.getElementById('cPrev').textContent=tk(due);
+  document.getElementById('cPrev').textContent  = tk(due);
+}
+
+// ── NEW CLIENT ───────────────────────────────────────────────
+function openNewClient() {
+  // Populate zone select from Zone/Area sheet (loaded at startup)
+  const zones = window._zones && window._zones.length
+    ? window._zones
+    : [...new Set(clients.map(c => c.zone).filter(Boolean))].sort();
+
+  const sel = document.getElementById('ncZoneSelect');
+  sel.innerHTML = '<option value="">— Select Zone —</option>';
+  zones.forEach(z => sel.add(new Option(z, z)));
+  sel.add(new Option('➕ Add new zone…', '__new__'));
+
+  // Reset all fields
+  ['ncName','ncShop','ncLoc','ncPhone'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ncType').selectedIndex = 0;
+  document.getElementById('ncZoneSelect').selectedIndex = 0;
+  document.getElementById('ncZoneNew').value = '';
+  document.getElementById('ncZoneNew').classList.add('hidden');
+
+  closeDd();
+  document.getElementById('ncOverlay').classList.add('open');
+}
+
+function handleZoneSelect() {
+  const val    = document.getElementById('ncZoneSelect').value;
+  const newInp = document.getElementById('ncZoneNew');
+  if (val === '__new__') {
+    newInp.classList.remove('hidden');
+    newInp.focus();
+  } else {
+    newInp.classList.add('hidden');
+    newInp.value = '';
+  }
+}
+
+function closeNewClient() { document.getElementById('ncOverlay').classList.remove('open'); }
+
+async function submitNewClient() {
+  const type  = document.getElementById('ncType').value;
+  const name  = document.getElementById('ncName').value.trim();
+  const shop  = document.getElementById('ncShop').value.trim();
+  const loc   = document.getElementById('ncLoc').value.trim();
+  const phone = document.getElementById('ncPhone').value.trim();
+
+  const zoneSelectVal = document.getElementById('ncZoneSelect').value;
+  const zone = zoneSelectVal === '__new__'
+    ? document.getElementById('ncZoneNew').value.trim()
+    : zoneSelectVal;
+
+  if (!type) { toast('Select a client type', 'err'); return; }
+  if (!name) { toast('Enter client name', 'err'); return; }
+  if (!loc)  { toast('Enter location', 'err'); return; }
+  if (zoneSelectVal === '__new__' && !zone) { toast('Type the new zone name', 'err'); return; }
+
+  const btn = document.getElementById('ncSaveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Saving…';
+
+  try {
+    const params = { action: 'addNewClient', type, name, shop, loc, zone, phone };
+    const qs = Object.entries(params).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+    const js = await fetch(`${AS_URL}?${qs}`).then(r => r.json());
+
+    if (js.success) {
+      // Add to local clients list using the det returned from the sheet (column H formula result)
+      const newClient = { type, name, shop, loc, zone, phone, det: js.det, sales: 0, paid: 0, due: 0 };
+      clients.push(newClient);
+      try {
+        const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}');
+        cached.clientList = clients;
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+      } catch(_) {}
+      closeNewClient();
+      pickClient(js.det);
+      toast('✅ New client saved!', 'ok');
+    } else {
+      throw new Error(js.error || 'Failed');
+    }
+  } catch(e) {
+    console.error(e);
+    toast('❌ Save failed — check connection', 'err');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '💾 Save New Client';
 }
 
 // ── MODE ─────────────────────────────────────────────────────
 function setMode(m) {
-  mode=m;
-  const isSale=m==='sale';
-  document.getElementById('tabSale').className='tab sale-tab'+(isSale?' on':'');
-  document.getElementById('tabPay').className='tab pay-tab'+(!isSale?' on':'');
-  document.getElementById('saleSection').className=isSale?'':'hidden';
-  document.getElementById('paySection').className=!isSale?'':'hidden';
-  document.getElementById('mainHdr').className='hdr '+(isSale?'sale':'pay');
-  document.getElementById('hdrTitle').textContent=isSale?'🛒 Sale Entry':'💳 Collect Payment';
-  if (!isSale&&selClient) updatePayDue(selClient);
+  mode = m;
+  const isSale = m === 'sale';
+  document.getElementById('tabSale').className  = 'tab sale-tab' + (isSale ? ' on' : '');
+  document.getElementById('tabPay').className   = 'tab pay-tab'  + (!isSale ? ' on' : '');
+  document.getElementById('saleSection').className = isSale ? '' : 'hidden';
+  document.getElementById('paySection').className  = !isSale ? '' : 'hidden';
+  document.getElementById('mainHdr').className  = 'hdr ' + (isSale ? 'sale' : 'pay');
+  document.getElementById('hdrTitle').textContent = isSale ? '🛒 Sale Entry' : '💳 Collect Payment';
+  if (!isSale && selClient) updatePayDue(selClient);
 }
 
 function updatePayDue(c) {
-  document.getElementById('pdAmt').textContent=tk(c.due||0);
-  document.getElementById('pdSub').textContent=`${c.name||''} · ${c.shop||''}`;
+  const pdAmt = document.getElementById('pdAmt');
+  const pdSub = document.getElementById('pdSub');
+  if (pdAmt) pdAmt.textContent = tk(c.due || 0);
+  if (pdSub) pdSub.textContent = `${c.name||''} · ${c.shop||''}`;
   calcPay();
 }
 
 // ── HISTORY ──────────────────────────────────────────────────
 async function openHistory() {
-  if (!selClient) { toast('Select a client first','err'); return; }
-  document.getElementById('dTitle').textContent=selClient.name||selClient.shop;
-  document.getElementById('dSub').textContent=[selClient.shop,selClient.zone].filter(Boolean).join(' · ');
-  document.getElementById('dBody').innerHTML='<div class="d-loading">⏳ Loading history…</div>';
+  if (!selClient) { toast('Select a client first', 'err'); return; }
+  histAllRows = []; histShowingAll = false;
+
+  const mos = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now  = new Date();
+  document.getElementById('dTitle').textContent = selClient.name || selClient.shop;
+  document.getElementById('dSub').textContent   = `${mos[now.getMonth()]} ${now.getFullYear()} · loading…`;
+  document.getElementById('dBody').innerHTML    = '<div class="d-loading">⏳ Loading…</div>';
   document.getElementById('histOverlay').classList.add('open');
+
   try {
-    const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sale%20Entry&t=${Date.now()}`;
-    const data=parseGviz(await fetch(url).then(r=>r.text()));
+    const url  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sale%20Entry&t=${Date.now()}`;
+    const data = parseGviz(await fetch(url).then(r => r.text()));
     if (!data) throw new Error('parse fail');
-    const rows=data.table.rows.filter(r=>r.c?.[1]?.v===selClient.det).map(r=>{
-      const di=fmtGvizDate(r.c[0]);
-      return { dateDisplay:di.display, dateTs:di.ts, prod:r.c[3]?.v||'',
-        bill:r.c[9]?.v||r.c[7]?.v||0, paid:r.c[12]?.v||0, due:r.c[13]?.v||0,
-        comment:r.c[14]?.v||'', seller:r.c[15]?.v||'' };
-    }).sort((a,b)=>b.dateTs-a.dateTs);
-    if (!rows.length) { document.getElementById('dBody').innerHTML='<div class="d-empty">No transactions found.</div>'; return; }
-    document.getElementById('dBody').innerHTML=rows.map(h=>`
-      <div class="h-item ${!h.prod?'pay':''}">
-        <div class="h-top"><span class="h-date">${h.dateDisplay}</span><span class="h-seller">${h.seller}</span></div>
-        <div class="h-prod">${h.prod||'💳 Payment Collection'}</div>
-        <div class="h-amts">
-          <div class="chip chip-b"><div class="chip-lbl">Bill</div><div class="chip-val">${tk(h.bill)}</div></div>
-          <div class="chip chip-p"><div class="chip-lbl">Paid</div><div class="chip-val">${tk(h.paid)}</div></div>
-          <div class="chip chip-d"><div class="chip-lbl">Due</div><div class="chip-val">${tk(h.due)}</div></div>
-        </div>
-        ${h.comment?`<div class="h-note">💬 ${h.comment}</div>`:''}
-      </div>`).join('');
-  } catch(e) { document.getElementById('dBody').innerHTML='<div class="d-empty">Failed to load. Check internet.</div>'; }
+
+    histAllRows = data.table.rows
+      .filter(r => r.c?.[1]?.v === selClient.det)
+      .map(r => {
+        const di = fmtGvizDate(r.c[0]);
+        return {
+          dateDisplay: di.display, dateTs: di.ts,
+          prod:    r.c[3]?.v  || '',
+          bill:    r.c[9]?.v  || r.c[7]?.v || 0,
+          paid:    r.c[12]?.v || 0,
+          due:     r.c[13]?.v || 0,
+          comment: r.c[14]?.v || '',
+          seller:  r.c[15]?.v || ''
+        };
+      })
+      .sort((a, b) => b.dateTs - a.dateTs);
+
+    renderHistory(false);
+  } catch(e) {
+    document.getElementById('dBody').innerHTML = '<div class="d-empty">Failed to load. Check internet.</div>';
+  }
 }
+
+function renderHistory(showAll) {
+  histShowingAll = showAll;
+  if (!histAllRows.length) {
+    document.getElementById('dBody').innerHTML = '<div class="d-empty">No transactions found.</div>';
+    return;
+  }
+
+  const now  = new Date();
+  const cy   = now.getFullYear(), cm = now.getMonth();
+  const mos  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  let rows;
+  if (showAll) {
+    rows = histAllRows;
+    document.getElementById('dSub').textContent = `All ${histAllRows.length} transactions`;
+  } else {
+    rows = histAllRows.filter(r => {
+      if (!r.dateTs) return false;
+      const d = new Date(r.dateTs);
+      return d.getFullYear() === cy && d.getMonth() === cm;
+    });
+    document.getElementById('dSub').textContent = `${mos[cm]} ${cy} · ${rows.length} transaction${rows.length !== 1 ? 's' : ''}`;
+  }
+
+  const hasMore      = !showAll && histAllRows.length > rows.length;
+  const remainCount  = histAllRows.length - rows.length;
+
+  const itemsHtml = rows.map(h => `
+    <div class="h-item ${!h.prod ? 'pay' : ''}">
+      <div class="h-top"><span class="h-date">${h.dateDisplay}</span><span class="h-seller">${h.seller}</span></div>
+      <div class="h-prod">${h.prod || '💳 Payment Collection'}</div>
+      <div class="h-amts">
+        <div class="chip chip-b"><div class="chip-lbl">Bill</div><div class="chip-val">${tk(h.bill)}</div></div>
+        <div class="chip chip-p"><div class="chip-lbl">Paid</div><div class="chip-val">${tk(h.paid)}</div></div>
+        <div class="chip chip-d"><div class="chip-lbl">Due</div><div class="chip-val">${tk(h.due)}</div></div>
+      </div>
+      ${h.comment ? `<div class="h-note">💬 ${h.comment}</div>` : ''}
+    </div>`).join('');
+
+  const emptyMsg    = !rows.length ? `<div class="d-empty">No transactions this month.</div>` : '';
+  const loadMoreBtn = hasMore
+    ? `<button class="load-more-btn" onclick="renderHistory(true)">📂 Load All — ${remainCount} older transaction${remainCount !== 1 ? 's' : ''}</button>`
+    : '';
+
+  document.getElementById('dBody').innerHTML = emptyMsg + itemsHtml + loadMoreBtn;
+}
+
 function closeHistory() { document.getElementById('histOverlay').classList.remove('open'); }
 
 // ── SUBMIT ───────────────────────────────────────────────────
 async function submitEntry() {
-  if (!selClient) { toast('Select a client first','err'); return; }
-  const btn = document.getElementById(mode==='sale'?'subBtn':'payBtn');
-  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Submitting…';
+  if (!selClient) { toast('Select a client first', 'err'); return; }
+  const btn = document.getElementById(mode === 'sale' ? 'subBtn' : 'payBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Submitting…';
   try {
-    const dateStr=fmtDate(new Date());
+    const dateStr = fmtDate(new Date());
     let params, newDueVal;
 
-    if (mode==='sale') {
+    if (mode === 'sale') {
       const rows  = document.querySelectorAll('.prod-row');
       const prods = [];
-      let valid = true;
+      let valid   = true;
       rows.forEach(row => {
         const product = row.querySelector('.prod-sel').value;
-        const rate    = +row.querySelector('.prod-rate').value||0;
-        const qty     = +row.querySelector('.prod-qty').value ||0;
-        const disc    = +row.querySelector('.prod-disc').value||0;
-        const gift    = row.dataset.gift==='true';
-        if (!product||!rate||!qty) valid=false;
-        prods.push({ product, rate, qty, discount:disc, gift });
+        const rate    = +row.querySelector('.prod-rate').value || 0;
+        const qty     = +row.querySelector('.prod-qty').value  || 0;
+        const disc    = +row.querySelector('.prod-disc').value || 0;
+        const gift    = row.dataset.gift === 'true';
+        if (!product || !rate || !qty) valid = false;
+        prods.push({ product, rate, qty, discount: disc, gift });
       });
-      const paid   = +document.getElementById('paid').value||0;
-      const seller = document.getElementById('seller').value;
-      const cashBy = paid>0 ? document.getElementById('cashBy').value : '';
-      const comment= document.getElementById('comment').value;
-      const prev   = selClient.due||0;
-      const totalFinal = prods.reduce((s,p)=>s+Math.max(0,p.rate*p.qty-p.discount),0);
-      newDueVal = totalFinal+prev-paid;
+      const paid    = +document.getElementById('paid').value || 0;
+      const seller  = document.getElementById('seller').value;
+      const cashBy  = paid > 0 ? document.getElementById('cashBy').value : '';
+      const comment = document.getElementById('comment').value;
+      const prev    = selClient.due || 0;
+      const totalFinal = prods.reduce((s,p) => s + Math.max(0, p.rate * p.qty - p.discount), 0);
+      newDueVal = totalFinal + prev - paid;
 
-      if (!valid)  { toast('Fill all product details','err'); resetBtn(btn,'Submit Sale Entry'); return; }
-      if (!seller) { toast('Select a seller','err'); resetBtn(btn,'Submit Sale Entry'); return; }
-      if (paid>0&&!cashBy) { toast('Select who received cash','err'); resetBtn(btn,'Submit Sale Entry'); return; }
+      if (!valid)  { toast('Fill all product details', 'err'); resetBtn(btn, 'Submit Sale Entry'); return; }
+      if (!seller) { toast('Select a seller', 'err'); resetBtn(btn, 'Submit Sale Entry'); return; }
+      if (paid > 0 && !cashBy) { toast('Select who received cash', 'err'); resetBtn(btn, 'Submit Sale Entry'); return; }
 
       params = {
-        action:'addSaleEntry', date:dateStr, clientInfo:selClient.det,
-        products:JSON.stringify(prods), paid, seller, cashReceivedBy:cashBy, comment
+        action: 'addSaleEntry', date: dateStr, clientInfo: selClient.det,
+        products: JSON.stringify(prods), paid, seller, cashReceivedBy: cashBy, comment
       };
     } else {
-      const paid   = +document.getElementById('pPaid').value||0;
-      const seller = document.getElementById('pSeller').value;
-      const cashBy = document.getElementById('pCashBy').value;
-      const comment= document.getElementById('pComment').value;
-      const prev   = selClient.due||0;
-      newDueVal    = prev-paid;
+      const paid    = +document.getElementById('pPaid').value || 0;
+      const seller  = document.getElementById('pSeller').value;
+      const cashBy  = document.getElementById('pCashBy').value;
+      const comment = document.getElementById('pComment').value;
+      const prev    = selClient.due || 0;
+      newDueVal     = prev - paid;
 
-      if (!paid)   { toast('Enter amount collected','err'); resetBtn(btn,'Submit Payment'); return; }
-      if (!seller) { toast('Select a seller','err'); resetBtn(btn,'Submit Payment'); return; }
-      if (!cashBy) { toast('Select who received cash','err'); resetBtn(btn,'Submit Payment'); return; }
+      if (!paid)   { toast('Enter amount collected', 'err'); resetBtn(btn, 'Submit Payment'); return; }
+      if (!seller) { toast('Select a seller', 'err'); resetBtn(btn, 'Submit Payment'); return; }
+      if (!cashBy) { toast('Select who received cash', 'err'); resetBtn(btn, 'Submit Payment'); return; }
 
       params = {
-        action:'addSaleEntry', date:dateStr, clientInfo:selClient.det,
-        products:JSON.stringify([]), paid, seller, cashReceivedBy:cashBy, comment
+        action: 'addSaleEntry', date: dateStr, clientInfo: selClient.det,
+        products: JSON.stringify([]), paid, seller, cashReceivedBy: cashBy, comment
       };
     }
 
-    const qs  = Object.entries(params).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
-    const js  = await fetch(`${AS_URL}?${qs}`).then(r=>r.json());
+    const qs = Object.entries(params).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+    const js = await fetch(`${AS_URL}?${qs}`).then(r => r.json());
 
     if (js.success) {
-      toast('✅ Entry saved!','ok');
-      selClient.due=newDueVal;
-      const ci=clients.findIndex(x=>x.det===selClient.det);
-      if (ci>=0) clients[ci].due=newDueVal;
+      toast('✅ Entry saved!', 'ok');
+      selClient.due = newDueVal;
+      const ci = clients.findIndex(x => x.det === selClient.det);
+      if (ci >= 0) clients[ci].due = newDueVal;
       showStatus(selClient);
-      if (mode==='payment') updatePayDue(selClient);
+      if (mode === 'payment') updatePayDue(selClient);
       resetForm();
-    } else throw new Error(js.error||'Failed');
-  } catch(e) { console.error(e); toast('❌ Save failed — check connection','err'); }
-  resetBtn(btn, mode==='sale'?'Submit Sale Entry':'Submit Payment');
+    } else throw new Error(js.error || 'Failed');
+  } catch(e) { console.error(e); toast('❌ Save failed — check connection', 'err'); }
+  resetBtn(btn, mode === 'sale' ? 'Submit Sale Entry' : 'Submit Payment');
 }
 
-function resetBtn(btn, label) { btn.disabled=false; btn.innerHTML=label; }
+function resetBtn(btn, label) { btn.disabled = false; btn.innerHTML = label; }
 
 function resetForm() {
-  document.getElementById('prodRows').innerHTML='';
-  prodRowCount=0;
-  addProdRow();
-  ['paid','comment','pPaid','pComment'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('cashByGroup').className='fg hidden';
-  calcAll(); calcPay();
-  autoFillSeller();
+  document.getElementById('prodRows').innerHTML = '';
+  prodRowCount = 0; addProdRow();
+  ['paid','comment','pPaid','pComment'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('cashByGroup').className = 'fg hidden';
+  calcAll(); calcPay(); autoFillSeller();
 }
 
 // ── TOAST ─────────────────────────────────────────────────────
 let toastTimer;
-function toast(msg,type='') {
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.className=`toast ${type} show`;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `toast ${type} show`;
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>el.className='toast',3200);
+  toastTimer = setTimeout(() => el.className = 'toast', 3200);
 }
 
 function parseGviz(txt) {
-  try { const m=txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/); return m?JSON.parse(m[1]):null; }
+  try { const m = txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/); return m ? JSON.parse(m[1]) : null; }
   catch(_) { return null; }
 }
 </script>
