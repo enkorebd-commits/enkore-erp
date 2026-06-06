@@ -7,22 +7,26 @@
 <style>
 :root {
   --g:#1b6b3a;--g2:#2d8a52;--gbg:#edf7f1;--red:#e03131;
-  --blue:#1971c2;--text:#1a1a2e;--muted:#868e96;--border:#dee2e6;
-  --bg:#f3f4f6;--card:#fff;--r:12px;--sh:0 2px 8px rgba(0,0,0,.08);
+  --orange:#e67e22;--blue:#1971c2;--text:#1a1a2e;--muted:#868e96;
+  --border:#dee2e6;--bg:#f3f4f6;--card:#fff;--r:12px;--sh:0 2px 8px rgba(0,0,0,.08);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior:none}
 
-.hdr{background:var(--g);color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+/* HEADER */
+.hdr{color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2);transition:background .3s}
+.hdr.sale{background:var(--g)}
+.hdr.pay{background:#c0392b}
 .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .hdr-title{font-size:17px;font-weight:800;letter-spacing:-.3px}
 .hdr-date{font-size:11px;opacity:.75;font-weight:600}
 .tabs{display:flex;gap:2px}
 .tab{flex:1;padding:9px 8px;text-align:center;font-size:13px;font-weight:700;color:rgba(255,255,255,.55);border-bottom:3px solid transparent;cursor:pointer;transition:.2s;user-select:none}
-.tab.on{color:#fff;border-bottom-color:#69db7c}
+.tab.on.sale-tab{color:#fff;border-bottom-color:#69db7c}
+.tab.on.pay-tab{color:#fff;border-bottom-color:#fab005}
 
+/* BODY */
 .body{padding:14px;max-width:560px;margin:0 auto}
-
 .card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
 .card-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px}
 
@@ -61,13 +65,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .fi{width:100%;padding:12px 13px;font-size:15px;border:1.5px solid var(--border);border-radius:8px;outline:none;transition:border .2s;background:#fff;color:var(--text);font-weight:500}
 .fi:focus{border-color:var(--g)}
 .fi[readonly]{background:#f8f9fa;color:var(--muted);cursor:default}
-.fi.calc{background:var(--gbg);color:var(--g);font-weight:800;border-color:var(--g)}
 .fi.big-calc{background:#1a1a2e;color:#69db7c;font-weight:900;font-size:18px;border-color:#1a1a2e;text-align:center}
 select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer}
-
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-/* QTY */
+/* QTY (main) */
 .qty-row{display:flex;align-items:center;gap:6px}
 .qty-btn{width:44px;height:44px;border:1.5px solid var(--border);background:#fff;border-radius:8px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;color:var(--g);transition:.15s;line-height:1}
 .qty-btn:active{transform:scale(.9)}
@@ -78,6 +80,29 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .tog-btn{flex:1;padding:10px 6px;border:1.5px solid var(--border);background:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;color:var(--muted);transition:.2s;user-select:none}
 .tog-btn.on{background:var(--g);border-color:var(--g);color:#fff}
 .tog-btn:active{transform:scale(.97)}
+
+/* ── PRODUCT ROWS ── */
+.prod-row{background:#f8f9fa;border:1.5px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;position:relative}
+.prod-row-head{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.prod-sel{flex:1;padding:9px 30px 9px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:7px;outline:none;background:#fff;color:var(--text);font-weight:500;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;cursor:pointer}
+.prod-sel:focus{border-color:var(--g)}
+.prod-del{width:32px;height:32px;border:1.5px solid #ffc9c9;background:#fff5f5;border-radius:7px;color:var(--red);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;transition:.15s}
+.prod-del:active{transform:scale(.9)}
+.prod-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prod-fl{font-size:10px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.prod-fi{width:100%;padding:9px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:7px;outline:none;background:#fff;color:var(--text);font-weight:500}
+.prod-fi:focus{border-color:var(--g)}
+.qty-row-sm{display:flex;align-items:center;gap:4px}
+.qty-btn-sm{width:34px;height:34px;border:1.5px solid var(--border);background:#fff;border-radius:7px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;color:var(--g);line-height:1}
+.qty-btn-sm:active{transform:scale(.9)}
+.qty-inp-sm{flex:1;text-align:center;padding:9px 4px;font-size:13px}
+.gift-btn{width:100%;padding:9px 4px;border:1.5px solid var(--border);background:#fff;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;color:var(--muted);transition:.2s;user-select:none}
+.gift-btn.on{background:var(--g);border-color:var(--g);color:#fff}
+.gift-btn:active{transform:scale(.97)}
+.prod-line-total{text-align:right;font-size:13px;font-weight:800;color:var(--g);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+
+.add-prod-btn{width:100%;padding:11px;background:var(--gbg);border:1.5px dashed var(--g);border-radius:10px;color:var(--g);font-size:13px;font-weight:800;cursor:pointer;text-align:center;margin-top:4px;transition:.2s}
+.add-prod-btn:active{background:#d3f5e3}
 
 /* CALC BOX */
 .calc-box{background:#1a1a2e;color:#fff;border-radius:var(--r);padding:14px;margin-bottom:10px}
@@ -97,8 +122,11 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .due-display-sub{font-size:12px;color:var(--muted);margin-top:6px}
 
 /* SUBMIT */
-.sub-btn{width:100%;padding:15px;background:var(--g);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;transition:.2s;letter-spacing:.3px;margin-bottom:20px;box-shadow:0 4px 16px rgba(27,107,58,.3)}
-.sub-btn:hover{background:var(--g2);transform:translateY(-1px)}
+.sub-btn{width:100%;padding:15px;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;transition:.2s;letter-spacing:.3px;margin-bottom:20px}
+.sub-btn.sale-btn{background:var(--g);box-shadow:0 4px 16px rgba(27,107,58,.3)}
+.sub-btn.sale-btn:hover{background:var(--g2);transform:translateY(-1px)}
+.sub-btn.pay-btn{background:#c0392b;box-shadow:0 4px 16px rgba(192,57,43,.3)}
+.sub-btn.pay-btn:hover{background:#a93226;transform:translateY(-1px)}
 .sub-btn:active{transform:translateY(0)}
 .sub-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
 
@@ -126,8 +154,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .chip-p{background:#ebfbee;color:var(--g)}
 .chip-d{background:#fff5f5;color:var(--red)}
 .h-note{font-size:11px;color:var(--muted);margin-top:7px;padding-top:6px;border-top:1px solid #eee}
-.d-empty{text-align:center;padding:30px;color:var(--muted);font-size:13px}
-.d-loading{text-align:center;padding:30px;color:var(--muted);font-size:13px}
+.d-empty,.d-loading{text-align:center;padding:30px;color:var(--muted);font-size:13px}
 
 /* TOAST */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:11px 22px;border-radius:100px;font-size:14px;font-weight:700;z-index:1000;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none}
@@ -142,20 +169,20 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 </head>
 <body>
 
-<div class="hdr">
+<div class="hdr sale" id="mainHdr">
   <div class="hdr-top">
-    <div class="hdr-title">⚡ Sales Entry</div>
+    <div class="hdr-title" id="hdrTitle">🛒 Sale Entry</div>
     <div class="hdr-date" id="hdrDate"></div>
   </div>
   <div class="tabs">
-    <div class="tab on" id="tabSale" onclick="setMode('sale')">🛒 Sale Entry</div>
-    <div class="tab" id="tabPay" onclick="setMode('payment')">💳 Collect Payment</div>
+    <div class="tab on sale-tab" id="tabSale" onclick="setMode('sale')">🛒 Sale Entry</div>
+    <div class="tab pay-tab" id="tabPay" onclick="setMode('payment')">💳 Collect Payment</div>
   </div>
 </div>
 
 <div class="body">
 
-  <!-- Client Selector -->
+  <!-- Client -->
   <div class="card">
     <div class="card-lbl">Client</div>
     <div class="cs-wrap">
@@ -165,68 +192,32 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     </div>
   </div>
 
-  <!-- Client Status — no Type stat -->
+  <!-- Client Status -->
   <div class="cs-status" id="csStatus">
     <div class="cs-status-name" id="sName"></div>
     <div class="cs-status-sub" id="sSub"></div>
     <div class="stats">
-      <div class="stat">
-        <div class="stat-v" id="sDue">৳0</div>
-        <div class="stat-l">Running Due</div>
-      </div>
-      <div class="stat">
-        <div class="stat-v" id="sSales">৳0</div>
-        <div class="stat-l">Total Sales</div>
-      </div>
+      <div class="stat"><div class="stat-v" id="sDue">৳0</div><div class="stat-l">Running Due</div></div>
+      <div class="stat"><div class="stat-v" id="sSales">৳0</div><div class="stat-l">Total Sales</div></div>
     </div>
     <button class="hist-btn" onclick="openHistory()">📋 Full Transaction History</button>
   </div>
 
-  <!-- SALE ENTRY FORM -->
+  <!-- ===== SALE ENTRY ===== -->
   <div id="saleSection">
 
     <div class="card">
-      <div class="card-lbl">Product</div>
-      <div class="fg">
-        <select class="fi" id="product">
-          <option value="">— Select Product —</option>
-        </select>
-      </div>
-      <div class="r2">
-        <div class="fg">
-          <div class="fl">Rate (tk) <span class="req">*</span></div>
-          <input type="number" class="fi" id="rate" placeholder="0" min="0" oninput="calc()">
-        </div>
-        <div class="fg">
-          <div class="fl">Qty <span class="req">*</span></div>
-          <div class="qty-row">
-            <button class="qty-btn" onclick="dQty(-1)">−</button>
-            <input type="number" class="fi qty-inp" id="qty" value="1" min="1" oninput="calc()">
-            <button class="qty-btn" onclick="dQty(1)">+</button>
-          </div>
-        </div>
-      </div>
-      <div class="r2">
-        <div class="fg">
-          <div class="fl">Discount (tk)</div>
-          <input type="number" class="fi" id="disc" placeholder="0" min="0" oninput="calc()">
-        </div>
-        <div class="fg">
-          <div class="fl">Gift?</div>
-          <div class="tog">
-            <div class="tog-btn on" id="gNo" onclick="setGift(false)">No</div>
-            <div class="tog-btn" id="gYes" onclick="setGift(true)">🎁 Yes</div>
-          </div>
-        </div>
-      </div>
+      <div class="card-lbl">Products</div>
+      <div id="prodRows"></div>
+      <button class="add-prod-btn" onclick="addProdRow()">＋ Add Another Product</button>
     </div>
 
-    <!-- Live Calc -->
+    <!-- Calc -->
     <div class="calc-box">
-      <div class="cr"><span class="cl">Bill (Rate × Qty)</span><span class="cv" id="cBill">৳ 0</span></div>
-      <div class="cr"><span class="cl">Discount</span><span class="cv">− <span id="cDisc">৳ 0</span></span></div>
+      <div class="cr"><span class="cl">Total Bill</span><span class="cv" id="cBill">৳ 0</span></div>
+      <div class="cr"><span class="cl">Total Discount</span><span class="cv">− <span id="cDisc">৳ 0</span></span></div>
       <div class="cr div"><span class="cl">Final Bill</span><span class="cv warn" id="cFinal">৳ 0</span></div>
-      <div class="cr"><span class="cl">Prev. Due (client)</span><span class="cv red" id="cPrev">৳ 0</span></div>
+      <div class="cr"><span class="cl">Prev. Due</span><span class="cv red" id="cPrev">৳ 0</span></div>
       <div class="cr div tot"><span class="cl">Total Payable</span><span class="cv big" id="cTotal">৳ 0</span></div>
     </div>
 
@@ -235,13 +226,12 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <div class="card-lbl">Payment</div>
       <div class="fg">
         <div class="fl">Amount Paid (tk)</div>
-        <input type="number" class="fi" id="paid" placeholder="0" min="0" oninput="calc(); checkCashBy()">
+        <input type="number" class="fi" id="paid" placeholder="0" min="0" oninput="calcAll(); checkCashBy()">
       </div>
       <div class="fg">
-        <div class="fl">New Due After This Entry</div>
+        <div class="fl">New Due After Entry</div>
         <input type="text" class="fi big-calc" id="newDue" readonly value="৳ 0">
       </div>
-      <!-- Cash Received by: only shown when paid > 0 -->
       <div class="fg hidden" id="cashByGroup">
         <div class="fl">Cash Received by <span class="req">*</span></div>
         <select class="fi" id="cashBy"></select>
@@ -256,9 +246,11 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       </div>
     </div>
 
+    <button class="sub-btn sale-btn" id="subBtn" onclick="submitEntry()">Submit Sale Entry</button>
+
   </div>
 
-  <!-- COLLECT PAYMENT FORM -->
+  <!-- ===== COLLECT PAYMENT ===== -->
   <div id="paySection" class="hidden">
 
     <div class="due-display">
@@ -274,11 +266,6 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
         <input type="number" class="fi" id="pPaid" placeholder="0" min="0" oninput="calcPay()">
       </div>
       <div class="fg">
-        <div class="fl">Remaining Due</div>
-        <input type="text" class="fi big-calc" id="pRemain" readonly value="৳ 0">
-      </div>
-      <!-- Always required in Collect Payment -->
-      <div class="fg">
         <div class="fl">Cash Received by <span class="req">*</span></div>
         <select class="fi" id="pCashBy"></select>
       </div>
@@ -292,15 +279,15 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       </div>
     </div>
 
-  </div>
+    <button class="sub-btn pay-btn" id="payBtn" onclick="submitEntry()">Submit Payment</button>
 
-  <button class="sub-btn" id="subBtn" onclick="submitEntry()">Submit Entry</button>
+  </div>
 
 </div>
 
 <!-- History Drawer -->
 <div class="overlay" id="histOverlay">
-  <div class="drawer" id="histDrawer">
+  <div class="drawer">
     <div class="handle"></div>
     <div class="d-hdr">
       <div class="d-title" id="dTitle">Transaction History</div>
@@ -315,451 +302,416 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <script>
 const SHEET_ID = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
 const AS_URL   = 'https://script.google.com/macros/s/AKfycbzNbCaVCEC0X1NewgiyqYnkaTD-BYl5_SaejXj5bBDo6UvtJKq7AC_zF3aMMv067E16ZQ/exec';
+const CACHE_KEY = 'enkore_sales_data';
 
-// Products and staff loaded dynamically from Control tab
-
-let clients = [], mode = 'sale', selClient = null, giftOn = false;
+let clients = [], mode = 'sale', selClient = null;
+let CURRENT_PRODUCTS = [], prodRowCount = 0;
 
 // ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   setHeaderDate();
-  loadAllData(); // fetches everything once, caches in sessionStorage
+  loadAllData();
+  addProdRow(); // start with one product row
   document.addEventListener('click', e => { if (!e.target.closest('.cs-wrap')) closeDd(); });
-
-  // Fix mobile history drawer scroll
   const overlay = document.getElementById('histOverlay');
   const dBody   = document.getElementById('dBody');
   overlay.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
-  dBody.addEventListener('touchmove',   e => e.stopPropagation(), { passive: true });
+  dBody.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
   overlay.addEventListener('click', e => { if (e.target === overlay) closeHistory(); });
 });
 
-// ── DATE HELPERS ─────────────────────────────────────────────
-function ordinal(n) {
-  const s = ['th','st','nd','rd'], v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
-}
+// ── DATE ─────────────────────────────────────────────────────
+function ordinal(n) { const s=['th','st','nd','rd'],v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
 
 function setHeaderDate() {
-  const d = new Date();
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const mos  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const d=new Date(), days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+    mos=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   document.getElementById('hdrDate').textContent =
     `${days[d.getDay()]}, ${ordinal(d.getDate())} ${mos[d.getMonth()]} '${String(d.getFullYear()).slice(-2)}`;
 }
-
 function fmtDate(d) {
-  const mos = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mos=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${d.getDate()} ${mos[d.getMonth()]}, ${String(d.getFullYear()).slice(-2)}`;
 }
-
-// Format gviz date cell → "2nd Feb, '26"
 function fmtGvizDate(cell) {
-  if (!cell) return { display: '', ts: 0 };
-  let display = cell.f || String(cell.v || '');
-  let ts = 0;
+  if (!cell) return { display:'', ts:0 };
+  let display=cell.f||String(cell.v||''), ts=0;
   if (cell.v) {
-    const m = String(cell.v).match(/Date\((\d+),(\d+),(\d+)\)/);
+    const m=String(cell.v).match(/Date\((\d+),(\d+),(\d+)\)/);
     if (m) {
-      const dt = new Date(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]));
-      ts = dt.getTime();
-      const mos = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      display = `${ordinal(dt.getDate())} ${mos[dt.getMonth()]}, '${String(dt.getFullYear()).slice(-2)}`;
+      const dt=new Date(+m[1],+m[2],+m[3]);
+      ts=dt.getTime();
+      const mos=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      display=`${ordinal(dt.getDate())} ${mos[dt.getMonth()]}, '${String(dt.getFullYear()).slice(-2)}`;
     } else {
-      // fallback: parse string like "1 Jan, 26"
-      const sm = display.match(/(\d+)\s+(\w+),?\s*'?(\d+)/);
-      if (sm) {
-        ts = new Date(`${sm[2]} ${sm[1]}, 20${sm[3]}`).getTime() || 0;
-        display = `${ordinal(parseInt(sm[1]))} ${sm[2]}, '${sm[3]}`;
-      }
+      const sm=display.match(/(\d+)\s+(\w+),?\s*'?(\d+)/);
+      if (sm) { ts=new Date(`${sm[2]} ${sm[1]}, 20${sm[3]}`).getTime()||0; display=`${ordinal(+sm[1])} ${sm[2]}, '${sm[3]}`; }
     }
   }
   return { display, ts };
 }
+function tk(n) { if(n===''||n===null||n===undefined) return '৳ 0'; return '৳ '+Number(n).toLocaleString('en-IN'); }
 
-function tk(n) {
-  if (n === '' || n === null || n === undefined) return '৳ 0';
-  return '৳ ' + Number(n).toLocaleString('en-IN');
-}
-
-// ── ALL DATA: fetch once, cache in sessionStorage ─────────────
-const CACHE_KEY = 'enkore_sales_data';
-
+// ── DATA LOADING ──────────────────────────────────────────────
 async function loadAllData() {
-  // Read from cache first — instant, no fetch
   try {
     const cached = sessionStorage.getItem(CACHE_KEY);
     if (cached) {
       const { products, staff, clientList } = JSON.parse(cached);
-      fillProductSelect(products);
-      fillStaffSelects(staff);
-      clients = clientList;
-      return;
+      fillProductSelects(products); fillStaffSelects(staff); clients = clientList; return;
     }
   } catch(_) {}
-
-  // Not cached — fetch all three sources in parallel
   try {
     const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
     const [prodTxt, staffTxt, clientTxt] = await Promise.all([
-      fetch(`${base}&sheet=Control&range=F3:F`).then(r => r.text()),
-      fetch(`${base}&sheet=Control&range=K3:K`).then(r => r.text()),
-      fetch(`${base}&sheet=Clients%20Info`).then(r => r.text()),
+      fetch(`${base}&sheet=Control&range=F3:F`).then(r=>r.text()),
+      fetch(`${base}&sheet=Control&range=K3:K`).then(r=>r.text()),
+      fetch(`${base}&sheet=Clients%20Info`).then(r=>r.text()),
     ]);
-
-    // Parse products (F3:F — single column, index 0)
-    const prodData = parseGviz(prodTxt);
-    const products = (prodData?.table.rows || [])
-      .map(r => String(r.c?.[0]?.v || '').trim())
-      .filter(v => v);
-
-    // Parse staff (K3:K — single column, index 0)
-    const staffData = parseGviz(staffTxt);
-    const staff = (staffData?.table.rows || [])
-      .map(r => String(r.c?.[0]?.v || '').trim())
-      .filter(v => v);
-
-    // Parse clients (Clients Info tab)
-    const clientData = parseGviz(clientTxt);
-    const clientList = (clientData?.table.rows || [])
-      .filter(r => r.c?.[7]?.v)
-      .map(r => ({
-        name:  r.c[2]?.v || '',
-        shop:  r.c[3]?.v || '',
-        loc:   r.c[4]?.v || '',
-        zone:  r.c[5]?.v || '',
-        phone: r.c[6]?.v || '',
-        det:   r.c[7]?.v || '',
-        type:  r.c[1]?.v || '',
-        sales: r.c[8]?.v || 0,
-        paid:  r.c[9]?.v || 0,
-        due:   r.c[10]?.v || 0,
-      }));
-
-    // Cache for this session
+    const products  = (parseGviz(prodTxt)?.table.rows||[]).map(r=>String(r.c?.[0]?.v||'').trim()).filter(v=>v);
+    const staff     = (parseGviz(staffTxt)?.table.rows||[]).map(r=>String(r.c?.[0]?.v||'').trim()).filter(v=>v);
+    const clientList= (parseGviz(clientTxt)?.table.rows||[]).filter(r=>r.c?.[7]?.v).map(r=>({
+      name:r.c[2]?.v||'', shop:r.c[3]?.v||'', loc:r.c[4]?.v||'', zone:r.c[5]?.v||'',
+      phone:r.c[6]?.v||'', det:r.c[7]?.v||'', type:r.c[1]?.v||'',
+      sales:r.c[8]?.v||0, paid:r.c[9]?.v||0, due:r.c[10]?.v||0,
+    }));
     sessionStorage.setItem(CACHE_KEY, JSON.stringify({ products, staff, clientList }));
-
-    fillProductSelect(products);
-    fillStaffSelects(staff);
-    clients = clientList;
-
-  } catch(e) {
-    console.error('data load failed:', e);
-  }
+    fillProductSelects(products); fillStaffSelects(staff); clients = clientList;
+  } catch(e) { console.error('data load:', e); }
 }
 
-function fillProductSelect(products) {
-  const sel = document.getElementById('product');
-  sel.innerHTML = '<option value="">— Select Product —</option>';
-  products.forEach(p => sel.add(new Option(p, p)));
+function fillProductSelects(products) {
+  CURRENT_PRODUCTS = products;
+  document.querySelectorAll('.prod-sel').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— Select Product —</option>';
+    products.forEach(p => sel.add(new Option(p, p)));
+    if (cur) sel.value = cur;
+  });
 }
 
 function fillStaffSelects(staff) {
-  [['seller','cashBy'],['pSeller','pCashBy']].forEach(([s, c]) => {
-    const ss = document.getElementById(s), cs = document.getElementById(c);
-    ss.innerHTML = '<option value="">— Select —</option>';
-    cs.innerHTML = '<option value="">— Select —</option>';
-    staff.forEach(e => { ss.add(new Option(e, e)); cs.add(new Option(e, e)); });
+  [['seller','cashBy'],['pSeller','pCashBy']].forEach(([s,c]) => {
+    const ss=document.getElementById(s), cs=document.getElementById(c);
+    ss.innerHTML='<option value="">— Select —</option>';
+    cs.innerHTML='<option value="">— Select —</option>';
+    staff.forEach(e=>{ ss.add(new Option(e,e)); cs.add(new Option(e,e)); });
   });
   autoFillSeller();
 }
 
 function autoFillSeller() {
   try {
-    const u = JSON.parse(window.parent?.sessionStorage?.getItem('erp_user') || 'null');
+    const u = JSON.parse(window.parent?.sessionStorage?.getItem('erp_user')||'null');
     const n = u?.name;
     if (!n) return;
-    // Pre-select logged-in user in Seller AND Cash Received by — all four dropdowns
-    ['seller', 'pSeller', 'cashBy', 'pCashBy'].forEach(id => {
-      const s = document.getElementById(id);
-      for (let i = 0; i < s.options.length; i++) {
-        if (s.options[i].value === n) { s.selectedIndex = i; break; }
-      }
+    ['seller','pSeller','cashBy','pCashBy'].forEach(id => {
+      const s=document.getElementById(id);
+      for (let i=0;i<s.options.length;i++) if(s.options[i].value===n){s.selectedIndex=i;break;}
     });
   } catch(_) {}
 }
 
+// ── PRODUCT ROWS ─────────────────────────────────────────────
+function addProdRow() {
+  const idx = prodRowCount++;
+  const div = document.createElement('div');
+  div.className = 'prod-row';
+  div.id = `pr-${idx}`;
+  div.dataset.gift = 'false';
+  div.innerHTML = `
+    <div class="prod-row-head">
+      <select class="prod-sel" onchange="calcAll()">
+        <option value="">— Select Product —</option>
+        ${CURRENT_PRODUCTS.map(p=>`<option value="${p}">${p}</option>`).join('')}
+      </select>
+      <button class="prod-del" onclick="removeProdRow(${idx})" title="Remove">×</button>
+    </div>
+    <div class="prod-fields">
+      <div>
+        <div class="prod-fl">Rate (tk)</div>
+        <input type="number" class="prod-fi prod-rate" placeholder="0" min="0" oninput="calcAll()">
+      </div>
+      <div>
+        <div class="prod-fl">Qty</div>
+        <div class="qty-row-sm">
+          <button class="qty-btn-sm" onclick="dQtyR(${idx},-1)">−</button>
+          <input type="number" class="prod-fi prod-qty qty-inp-sm" value="1" min="1" oninput="calcAll()">
+          <button class="qty-btn-sm" onclick="dQtyR(${idx},1)">+</button>
+        </div>
+      </div>
+      <div>
+        <div class="prod-fl">Discount (tk)</div>
+        <input type="number" class="prod-fi prod-disc" placeholder="0" min="0" oninput="calcAll()">
+      </div>
+      <div>
+        <div class="prod-fl">Gift?</div>
+        <button class="gift-btn" onclick="togGift(${idx})">🎁 Gift</button>
+      </div>
+    </div>
+    <div class="prod-line-total" id="plt-${idx}">→ ৳ 0</div>
+  `;
+  document.getElementById('prodRows').appendChild(div);
+  updateDelBtns();
+  calcAll();
+}
+
+function removeProdRow(idx) {
+  const rows = document.querySelectorAll('.prod-row');
+  if (rows.length <= 1) return;
+  document.getElementById(`pr-${idx}`).remove();
+  updateDelBtns();
+  calcAll();
+}
+
+function updateDelBtns() {
+  const rows = document.querySelectorAll('.prod-row');
+  rows.forEach(row => { row.querySelector('.prod-del').style.visibility = rows.length > 1 ? 'visible' : 'hidden'; });
+}
+
+function dQtyR(idx, delta) {
+  const row = document.getElementById(`pr-${idx}`);
+  const inp = row.querySelector('.prod-qty');
+  inp.value = Math.max(1, (parseInt(inp.value)||0) + delta);
+  calcAll();
+}
+
+function togGift(idx) {
+  const row = document.getElementById(`pr-${idx}`);
+  const btn = row.querySelector('.gift-btn');
+  const isGift = row.dataset.gift === 'true';
+  row.dataset.gift = String(!isGift);
+  btn.textContent = !isGift ? '✅ Gift' : '🎁 Gift';
+  btn.className = 'gift-btn' + (!isGift ? ' on' : '');
+}
+
+// ── CALCULATIONS ─────────────────────────────────────────────
+function calcAll() {
+  let totalBill=0, totalDisc=0, totalFinal=0;
+  document.querySelectorAll('.prod-row').forEach(row => {
+    const rate = +row.querySelector('.prod-rate').value||0;
+    const qty  = +row.querySelector('.prod-qty').value ||0;
+    const disc = +row.querySelector('.prod-disc').value||0;
+    const bill = rate*qty;
+    const final_= Math.max(0, bill-disc);
+    totalBill  += bill;
+    totalDisc  += disc;
+    totalFinal += final_;
+    const ltEl = row.querySelector('.prod-line-total');
+    if (ltEl) ltEl.textContent = `→ ${tk(final_)}`;
+  });
+  const prev  = selClient?.due||0;
+  const paid  = +document.getElementById('paid').value||0;
+  const total = totalFinal+prev;
+  const newDue= total-paid;
+  document.getElementById('cBill').textContent  = tk(totalBill);
+  document.getElementById('cDisc').textContent  = tk(totalDisc);
+  document.getElementById('cFinal').textContent = tk(totalFinal);
+  document.getElementById('cPrev').textContent  = tk(prev);
+  document.getElementById('cTotal').textContent = tk(total);
+  document.getElementById('newDue').value        = tk(newDue);
+}
+
+function calcPay() {
+  const due  = selClient?.due||0;
+  const paid = +document.getElementById('pPaid').value||0;
+  document.getElementById('pRemain').value = tk(due-paid);
+}
+
+function checkCashBy() {
+  const paid = +document.getElementById('paid').value||0;
+  document.getElementById('cashByGroup').className = 'fg'+(paid>0?'':' hidden');
+}
+
+// ── CLIENT ───────────────────────────────────────────────────
 function openDd() { renderOpts(clients); document.getElementById('csDd').classList.add('open'); }
 function closeDd() { document.getElementById('csDd').classList.remove('open'); }
 
 function filterClients(q) {
-  const lq = q.toLowerCase().trim();
-  renderOpts(lq ? clients.filter(c =>
-    c.name.toLowerCase().includes(lq) ||
-    c.shop.toLowerCase().includes(lq) ||
-    c.loc.toLowerCase().includes(lq)
-  ) : clients);
+  const lq=q.toLowerCase().trim();
+  renderOpts(lq?clients.filter(c=>c.name.toLowerCase().includes(lq)||c.shop.toLowerCase().includes(lq)||c.loc.toLowerCase().includes(lq)):clients);
   document.getElementById('csDd').classList.add('open');
 }
 
 function renderOpts(list) {
-  const dd = document.getElementById('csDd');
-  if (!list.length) { dd.innerHTML = '<div class="cs-empty">No clients found</div>'; return; }
-  const icon = t => t === 'Retail Shop' ? '🏪' : t === 'Dealer' ? '🏢' : t === 'Brand' ? '🏷️' : '👤';
-  dd.innerHTML = list.slice(0, 60).map(c => `
+  const dd=document.getElementById('csDd');
+  if (!list.length) { dd.innerHTML='<div class="cs-empty">No clients found</div>'; return; }
+  const icon=t=>t==='Retail Shop'?'🏪':t==='Dealer'?'🏢':t==='Brand'?'🏷️':'👤';
+  dd.innerHTML=list.slice(0,60).map(c=>`
     <div class="cs-opt" onclick="pickClient(${JSON.stringify(c.det).replace(/"/g,'&quot;')})">
-      <div class="cs-opt-name">${icon(c.type)} ${c.name || c.shop}</div>
-      <div class="cs-opt-sub">${[c.shop, c.loc, c.zone].filter(Boolean).join(' · ')}</div>
-    </div>
-  `).join('');
+      <div class="cs-opt-name">${icon(c.type)} ${c.name||c.shop}</div>
+      <div class="cs-opt-sub">${[c.shop,c.loc,c.zone].filter(Boolean).join(' · ')}</div>
+    </div>`).join('');
 }
 
 function pickClient(det) {
-  const c = clients.find(x => x.det === det);
+  const c=clients.find(x=>x.det===det);
   if (!c) return;
-  selClient = c;
-  document.getElementById('csInput').value = c.name || c.shop;
-  closeDd();
-  showStatus(c);
-  calc();
-  if (mode === 'payment') updatePayDue(c);
+  selClient=c;
+  document.getElementById('csInput').value=c.name||c.shop;
+  closeDd(); showStatus(c); calcAll();
+  if (mode==='payment') updatePayDue(c);
 }
 
 function showStatus(c) {
-  const due = c.due || 0;
-  document.getElementById('sName').textContent = c.name || c.shop;
-  document.getElementById('sSub').textContent  = [c.shop, c.loc, c.zone, c.phone].filter(Boolean).join(' · ');
-  const dEl = document.getElementById('sDue');
-  dEl.textContent = tk(due);
-  dEl.className   = 'stat-v ' + (due > 0 ? 'red' : 'grn');
-  document.getElementById('sSales').textContent = tk(c.sales);
+  const due=c.due||0;
+  document.getElementById('sName').textContent=c.name||c.shop;
+  document.getElementById('sSub').textContent=[c.shop,c.loc,c.zone,c.phone].filter(Boolean).join(' · ');
+  const dEl=document.getElementById('sDue');
+  dEl.textContent=tk(due); dEl.className='stat-v '+(due>0?'red':'grn');
+  document.getElementById('sSales').textContent=tk(c.sales);
   document.getElementById('csStatus').classList.add('show');
-  document.getElementById('cPrev').textContent  = tk(due);
+  document.getElementById('cPrev').textContent=tk(due);
 }
 
 // ── MODE ─────────────────────────────────────────────────────
 function setMode(m) {
-  mode = m;
-  document.getElementById('tabSale').className = 'tab' + (m === 'sale' ? ' on' : '');
-  document.getElementById('tabPay').className  = 'tab' + (m === 'payment' ? ' on' : '');
-  document.getElementById('saleSection').className = m === 'sale' ? '' : 'hidden';
-  document.getElementById('paySection').className  = m === 'payment' ? '' : 'hidden';
-  if (m === 'payment' && selClient) updatePayDue(selClient);
+  mode=m;
+  const isSale=m==='sale';
+  document.getElementById('tabSale').className='tab sale-tab'+(isSale?' on':'');
+  document.getElementById('tabPay').className='tab pay-tab'+(!isSale?' on':'');
+  document.getElementById('saleSection').className=isSale?'':'hidden';
+  document.getElementById('paySection').className=!isSale?'':'hidden';
+  document.getElementById('mainHdr').className='hdr '+(isSale?'sale':'pay');
+  document.getElementById('hdrTitle').textContent=isSale?'🛒 Sale Entry':'💳 Collect Payment';
+  if (!isSale&&selClient) updatePayDue(selClient);
 }
 
 function updatePayDue(c) {
-  document.getElementById('pdAmt').textContent = tk(c.due || 0);
-  document.getElementById('pdSub').textContent = `${c.name || ''} · ${c.shop || ''}`;
+  document.getElementById('pdAmt').textContent=tk(c.due||0);
+  document.getElementById('pdSub').textContent=`${c.name||''} · ${c.shop||''}`;
   calcPay();
-}
-
-// ── CALCULATIONS ─────────────────────────────────────────────
-function calc() {
-  const rate  = +document.getElementById('rate').value || 0;
-  const qty   = +document.getElementById('qty').value  || 0;
-  const disc  = +document.getElementById('disc').value || 0;
-  const paid  = +document.getElementById('paid').value || 0;
-  const prev  = selClient?.due || 0;
-  const bill  = rate * qty;
-  const final_= Math.max(0, bill - disc);
-  const total = final_ + prev;
-  const newDue= total - paid;
-  document.getElementById('cBill').textContent  = tk(bill);
-  document.getElementById('cDisc').textContent  = tk(disc);
-  document.getElementById('cFinal').textContent = tk(final_);
-  document.getElementById('cPrev').textContent  = tk(prev);
-  document.getElementById('cTotal').textContent = tk(total);
-  document.getElementById('newDue').value       = tk(newDue);
-}
-
-function calcPay() {
-  const due  = selClient?.due || 0;
-  const paid = +document.getElementById('pPaid').value || 0;
-  document.getElementById('pRemain').value = tk(due - paid);
-}
-
-function dQty(d) {
-  const el = document.getElementById('qty');
-  el.value = Math.max(1, (parseInt(el.value) || 0) + d);
-  calc();
-}
-
-function setGift(v) {
-  giftOn = v;
-  document.getElementById('gNo').className  = 'tog-btn' + (!v ? ' on' : '');
-  document.getElementById('gYes').className = 'tog-btn' + (v  ? ' on' : '');
-}
-
-// Show Cash Received by only when paid > 0
-function checkCashBy() {
-  const paid = +document.getElementById('paid').value || 0;
-  document.getElementById('cashByGroup').className = 'fg' + (paid > 0 ? '' : ' hidden');
 }
 
 // ── HISTORY ──────────────────────────────────────────────────
 async function openHistory() {
-  if (!selClient) { toast('Select a client first', 'err'); return; }
-  document.getElementById('dTitle').textContent = selClient.name || selClient.shop;
-  document.getElementById('dSub').textContent   = [selClient.shop, selClient.zone].filter(Boolean).join(' · ');
-  document.getElementById('dBody').innerHTML    = '<div class="d-loading">⏳ Loading history…</div>';
+  if (!selClient) { toast('Select a client first','err'); return; }
+  document.getElementById('dTitle').textContent=selClient.name||selClient.shop;
+  document.getElementById('dSub').textContent=[selClient.shop,selClient.zone].filter(Boolean).join(' · ');
+  document.getElementById('dBody').innerHTML='<div class="d-loading">⏳ Loading history…</div>';
   document.getElementById('histOverlay').classList.add('open');
-
   try {
-    const url  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sale%20Entry&t=${Date.now()}`;
-    const data = parseGviz(await fetch(url).then(r => r.text()));
+    const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sale%20Entry&t=${Date.now()}`;
+    const data=parseGviz(await fetch(url).then(r=>r.text()));
     if (!data) throw new Error('parse fail');
-
-    const rows = data.table.rows
-      .filter(r => r.c?.[1]?.v === selClient.det)
-      .map(r => {
-        const dateInfo = fmtGvizDate(r.c[0]);
-        return {
-          dateDisplay: dateInfo.display,
-          dateTs:      dateInfo.ts,
-          prod:    r.c[3]?.v  || '',
-          bill:    r.c[9]?.v  || r.c[7]?.v || 0,
-          paid:    r.c[12]?.v || 0,
-          due:     r.c[13]?.v || 0,
-          comment: r.c[14]?.v || '',
-          seller:  r.c[15]?.v || '',
-        };
-      })
-      .sort((a, b) => b.dateTs - a.dateTs); // recent first
-
-    if (!rows.length) {
-      document.getElementById('dBody').innerHTML = '<div class="d-empty">No transactions found.</div>';
-      return;
-    }
-
-    document.getElementById('dBody').innerHTML = rows.map(h => `
-      <div class="h-item ${!h.prod ? 'pay' : ''}">
-        <div class="h-top">
-          <span class="h-date">${h.dateDisplay}</span>
-          <span class="h-seller">${h.seller}</span>
-        </div>
-        <div class="h-prod">${h.prod || '💳 Payment Collection'}</div>
+    const rows=data.table.rows.filter(r=>r.c?.[1]?.v===selClient.det).map(r=>{
+      const di=fmtGvizDate(r.c[0]);
+      return { dateDisplay:di.display, dateTs:di.ts, prod:r.c[3]?.v||'',
+        bill:r.c[9]?.v||r.c[7]?.v||0, paid:r.c[12]?.v||0, due:r.c[13]?.v||0,
+        comment:r.c[14]?.v||'', seller:r.c[15]?.v||'' };
+    }).sort((a,b)=>b.dateTs-a.dateTs);
+    if (!rows.length) { document.getElementById('dBody').innerHTML='<div class="d-empty">No transactions found.</div>'; return; }
+    document.getElementById('dBody').innerHTML=rows.map(h=>`
+      <div class="h-item ${!h.prod?'pay':''}">
+        <div class="h-top"><span class="h-date">${h.dateDisplay}</span><span class="h-seller">${h.seller}</span></div>
+        <div class="h-prod">${h.prod||'💳 Payment Collection'}</div>
         <div class="h-amts">
           <div class="chip chip-b"><div class="chip-lbl">Bill</div><div class="chip-val">${tk(h.bill)}</div></div>
           <div class="chip chip-p"><div class="chip-lbl">Paid</div><div class="chip-val">${tk(h.paid)}</div></div>
           <div class="chip chip-d"><div class="chip-lbl">Due</div><div class="chip-val">${tk(h.due)}</div></div>
         </div>
-        ${h.comment ? `<div class="h-note">💬 ${h.comment}</div>` : ''}
-      </div>
-    `).join('');
-  } catch(e) {
-    document.getElementById('dBody').innerHTML = '<div class="d-empty">Failed to load. Check internet.</div>';
-  }
+        ${h.comment?`<div class="h-note">💬 ${h.comment}</div>`:''}
+      </div>`).join('');
+  } catch(e) { document.getElementById('dBody').innerHTML='<div class="d-empty">Failed to load. Check internet.</div>'; }
 }
-
-function closeHistory() {
-  document.getElementById('histOverlay').classList.remove('open');
-}
+function closeHistory() { document.getElementById('histOverlay').classList.remove('open'); }
 
 // ── SUBMIT ───────────────────────────────────────────────────
 async function submitEntry() {
-  if (!selClient) { toast('Select a client first', 'err'); return; }
-
-  const btn = document.getElementById('subBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span> Submitting…';
-
+  if (!selClient) { toast('Select a client first','err'); return; }
+  const btn = document.getElementById(mode==='sale'?'subBtn':'payBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Submitting…';
   try {
-    const dateStr = fmtDate(new Date());
+    const dateStr=fmtDate(new Date());
     let params, newDueVal;
 
-    if (mode === 'sale') {
-      const product = document.getElementById('product').value;
-      const rate    = +document.getElementById('rate').value  || 0;
-      const qty     = +document.getElementById('qty').value   || 0;
-      const disc    = +document.getElementById('disc').value  || 0;
-      const paid    = +document.getElementById('paid').value  || 0;
-      const seller  = document.getElementById('seller').value;
-      const cashBy  = paid > 0 ? document.getElementById('cashBy').value : '';
-      const comment = document.getElementById('comment').value;
-      const prevDue = selClient.due || 0;
+    if (mode==='sale') {
+      const rows  = document.querySelectorAll('.prod-row');
+      const prods = [];
+      let valid = true;
+      rows.forEach(row => {
+        const product = row.querySelector('.prod-sel').value;
+        const rate    = +row.querySelector('.prod-rate').value||0;
+        const qty     = +row.querySelector('.prod-qty').value ||0;
+        const disc    = +row.querySelector('.prod-disc').value||0;
+        const gift    = row.dataset.gift==='true';
+        if (!product||!rate||!qty) valid=false;
+        prods.push({ product, rate, qty, discount:disc, gift });
+      });
+      const paid   = +document.getElementById('paid').value||0;
+      const seller = document.getElementById('seller').value;
+      const cashBy = paid>0 ? document.getElementById('cashBy').value : '';
+      const comment= document.getElementById('comment').value;
+      const prev   = selClient.due||0;
+      const totalFinal = prods.reduce((s,p)=>s+Math.max(0,p.rate*p.qty-p.discount),0);
+      newDueVal = totalFinal+prev-paid;
 
-      if (!product)      { toast('Select a product', 'err'); resetBtn(); return; }
-      if (!rate || !qty) { toast('Enter Rate and Qty', 'err'); resetBtn(); return; }
-      if (!seller)       { toast('Select a seller', 'err'); resetBtn(); return; }
-      if (paid > 0 && !cashBy) { toast('Select who received cash', 'err'); resetBtn(); return; }
+      if (!valid)  { toast('Fill all product details','err'); resetBtn(btn,'Submit Sale Entry'); return; }
+      if (!seller) { toast('Select a seller','err'); resetBtn(btn,'Submit Sale Entry'); return; }
+      if (paid>0&&!cashBy) { toast('Select who received cash','err'); resetBtn(btn,'Submit Sale Entry'); return; }
 
-      newDueVal = Math.max(0, rate * qty - disc) + prevDue - paid;
-
-      // H(bill), J(finalBill), L(totalPayable), N(due) → formula columns, NOT sent
       params = {
-        action: 'addSaleEntry',
-        date: dateStr, clientInfo: selClient.det,
-        hl: 'FALSE', product, gift: String(giftOn),
-        rate, qty, discount: disc, paid,
-        comment, seller, cashReceivedBy: cashBy,
+        action:'addSaleEntry', date:dateStr, clientInfo:selClient.det,
+        products:JSON.stringify(prods), paid, seller, cashReceivedBy:cashBy, comment
       };
-
     } else {
-      const paid    = +document.getElementById('pPaid').value  || 0;
-      const seller  = document.getElementById('pSeller').value;
-      const cashBy  = document.getElementById('pCashBy').value;
-      const comment = document.getElementById('pComment').value;
-      const prevDue = selClient.due || 0;
+      const paid   = +document.getElementById('pPaid').value||0;
+      const seller = document.getElementById('pSeller').value;
+      const cashBy = document.getElementById('pCashBy').value;
+      const comment= document.getElementById('pComment').value;
+      const prev   = selClient.due||0;
+      newDueVal    = prev-paid;
 
-      if (!paid)   { toast('Enter amount collected', 'err'); resetBtn(); return; }
-      if (!seller) { toast('Select a seller', 'err'); resetBtn(); return; }
-      if (!cashBy) { toast('Select who received cash', 'err'); resetBtn(); return; }
-
-      newDueVal = prevDue - paid;
+      if (!paid)   { toast('Enter amount collected','err'); resetBtn(btn,'Submit Payment'); return; }
+      if (!seller) { toast('Select a seller','err'); resetBtn(btn,'Submit Payment'); return; }
+      if (!cashBy) { toast('Select who received cash','err'); resetBtn(btn,'Submit Payment'); return; }
 
       params = {
-        action: 'addSaleEntry',
-        date: dateStr, clientInfo: selClient.det,
-        hl: 'FALSE', product: '', gift: 'FALSE',
-        rate: '', qty: '', discount: '', paid,
-        comment, seller, cashReceivedBy: cashBy,
+        action:'addSaleEntry', date:dateStr, clientInfo:selClient.det,
+        products:JSON.stringify([]), paid, seller, cashReceivedBy:cashBy, comment
       };
     }
 
-    const qs  = Object.entries(params).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
-    const js  = await fetch(`${AS_URL}?${qs}`).then(r => r.json());
+    const qs  = Object.entries(params).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+    const js  = await fetch(`${AS_URL}?${qs}`).then(r=>r.json());
 
     if (js.success) {
-      toast('✅ Entry saved!', 'ok');
-      // Update local due without full reload
-      selClient.due = newDueVal;
-      const ci = clients.findIndex(x => x.det === selClient.det);
-      if (ci >= 0) clients[ci].due = newDueVal;
+      toast('✅ Entry saved!','ok');
+      selClient.due=newDueVal;
+      const ci=clients.findIndex(x=>x.det===selClient.det);
+      if (ci>=0) clients[ci].due=newDueVal;
       showStatus(selClient);
-      if (mode === 'payment') updatePayDue(selClient);
+      if (mode==='payment') updatePayDue(selClient);
       resetForm();
-    } else {
-      throw new Error(js.error || 'Failed');
-    }
-  } catch(e) {
-    console.error(e);
-    toast('❌ Save failed — check connection', 'err');
-  }
-  resetBtn();
+    } else throw new Error(js.error||'Failed');
+  } catch(e) { console.error(e); toast('❌ Save failed — check connection','err'); }
+  resetBtn(btn, mode==='sale'?'Submit Sale Entry':'Submit Payment');
 }
 
-function resetBtn() {
-  const b = document.getElementById('subBtn');
-  b.disabled = false;
-  b.innerHTML = 'Submit Entry';
-}
+function resetBtn(btn, label) { btn.disabled=false; btn.innerHTML=label; }
 
 function resetForm() {
-  document.getElementById('product').selectedIndex = 0;
-  ['rate','disc','paid','comment','pPaid','pComment'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('qty').value = 1;
-  document.getElementById('cashByGroup').className = 'fg hidden';
-  setGift(false);
-  calc();
-  autoFillSeller(); // restore logged-in user selection after reset
+  document.getElementById('prodRows').innerHTML='';
+  prodRowCount=0;
+  addProdRow();
+  ['paid','comment','pPaid','pComment'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cashByGroup').className='fg hidden';
+  calcAll(); calcPay();
+  autoFillSeller();
 }
 
-// ── TOAST ────────────────────────────────────────────────────
+// ── TOAST ─────────────────────────────────────────────────────
 let toastTimer;
-function toast(msg, type = '') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = `toast ${type} show`;
+function toast(msg,type='') {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className=`toast ${type} show`;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.className = 'toast', 3200);
+  toastTimer=setTimeout(()=>el.className='toast',3200);
 }
 
-// ── GVIZ PARSER ──────────────────────────────────────────────
 function parseGviz(txt) {
-  try {
-    const m = txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
-    return m ? JSON.parse(m[1]) : null;
-  } catch(_) { return null; }
+  try { const m=txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/); return m?JSON.parse(m[1]):null; }
+  catch(_) { return null; }
 }
 </script>
 </body>
