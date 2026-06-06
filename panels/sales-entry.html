@@ -810,19 +810,18 @@ function handlePhotoSelect(input) {
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      // Resize to max 900px to keep file small
+      // Compress aggressively so it fits in a GET URL (~10-15KB target)
       const canvas = document.createElement('canvas');
       let w = img.width, h = img.height;
-      const max = 900;
-      if (w > max || h > max) {
-        if (w > h) { h = Math.round(h * max / w); w = max; }
-        else       { w = Math.round(w * max / h); h = max; }
-      }
+      const max = 480;
+      if (w > h) { h = Math.round(h * max / w); w = max; }
+      else       { w = Math.round(w * max / h); h = max; }
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const compressed = canvas.toDataURL('image/jpeg', 0.75);
+      const compressed = canvas.toDataURL('image/jpeg', 0.5);
       window._ncPhotoData = compressed;
-      document.getElementById('ncPhotoImg').src = compressed;
+      // Show preview using original (better quality for display)
+      document.getElementById('ncPhotoImg').src = e.target.result;
       document.getElementById('ncPhotoPreview').classList.remove('hidden');
     };
     img.src = e.target.result;
@@ -909,26 +908,21 @@ async function submitNewClient() {
       pickClient(js.det);
       toast('✅ New client saved!', 'ok');
 
-      // Phase 2 — upload photo in background (text/plain JSON avoids redirect issue with Apps Script)
+      // Phase 2 — upload photo via GET (same reliable method as all other requests)
       if (photoData) {
         toast('📷 Uploading photo…', '');
         (async () => {
           try {
-            const res = await fetch(AS_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({
-                action: 'uploadClientPhoto',
-                det: js.det,
-                photoData: photoData,
-                clientName: name || shop
-              })
-            });
+            const qs = 'action=uploadClientPhoto'
+              + '&det='        + encodeURIComponent(js.det)
+              + '&clientName=' + encodeURIComponent(name || shop)
+              + '&photoData='  + encodeURIComponent(photoData);
+            const res    = await fetch(`${AS_URL}?${qs}`);
             const result = await res.json();
             if (result.success) toast('📷 Photo saved to Drive', 'ok');
-            else toast('📷 Photo upload failed: ' + (result.error || ''), 'err');
+            else toast('📷 Upload failed: ' + (result.error || 'unknown'), 'err');
           } catch(e) {
-            toast('📷 Photo upload error', 'err');
+            toast('📷 Upload error', 'err');
             console.error('Photo upload:', e);
           }
         })();
