@@ -399,19 +399,36 @@ window.addEventListener('DOMContentLoaded', () => {
   const ncOverlay = document.getElementById('ncOverlay');
   ncOverlay.addEventListener('click', e => { if (e.target === ncOverlay) closeNewClient(); });
 
-  // ── KEYBOARD: pad body + resize overlays when keyboard opens ──
+  // ── BODY SCROLL LOCK (position:fixed method — safe for Android drawers) ──
+  let _lockY = 0;
+  window._lockBodyScroll = () => {
+    _lockY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top      = `-${_lockY}px`;
+    document.body.style.width    = '100%';
+  };
+  window._unlockBodyScroll = () => {
+    document.body.style.position = '';
+    document.body.style.top      = '';
+    document.body.style.width    = '';
+    window.scrollTo(0, _lockY);
+  };
+
+  // ── KEYBOARD: pad body + resize overlays + drawer when keyboard opens ──
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
       const vv  = window.visualViewport;
       const kbH = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
 
-      // Add bottom padding so main panel scrolls above keyboard
+      // Main panel: add padding so content scrolls above keyboard
       document.querySelector('.body').style.paddingBottom = kbH > 80 ? (kbH + 20) + 'px' : '';
 
-      // Resize any open overlay drawer to fit above keyboard
+      // Open drawers: shrink to fit above keyboard and let inner body scroll
       document.querySelectorAll('.overlay.open').forEach(ov => {
         ov.style.height = vv.height + 'px';
         ov.style.top    = vv.offsetTop + 'px';
+        const drawer = ov.querySelector('.drawer');
+        if (drawer) drawer.style.maxHeight = Math.max(180, vv.height - 10) + 'px';
       });
     });
   }
@@ -748,7 +765,7 @@ function openNewClient() {
   document.getElementById('ncZoneNew').classList.add('hidden');
 
   closeDd();
-  document.body.style.overflow = 'hidden';
+  window._lockBodyScroll();
   document.getElementById('ncOverlay').classList.add('open');
 }
 
@@ -768,7 +785,8 @@ function closeNewClient() {
   const ov = document.getElementById('ncOverlay');
   ov.classList.remove('open');
   ov.style.height = ''; ov.style.top = '';
-  document.body.style.overflow = '';
+  const dr = ov.querySelector('.drawer'); if (dr) dr.style.maxHeight = '';
+  window._unlockBodyScroll();
 }
 
 async function submitNewClient() {
@@ -854,7 +872,7 @@ async function openHistory() {
   document.getElementById('dTitle').textContent = selClient.name || selClient.shop;
   document.getElementById('dSub').textContent   = `${mos[now.getMonth()]} ${now.getFullYear()} · loading…`;
   document.getElementById('dBody').innerHTML    = '<div class="d-loading">⏳ Loading…</div>';
-  document.body.style.overflow = 'hidden';
+  window._lockBodyScroll();
   document.getElementById('histOverlay').classList.add('open');
 
   try {
@@ -979,7 +997,8 @@ function closeHistory() {
   const ov = document.getElementById('histOverlay');
   ov.classList.remove('open');
   ov.style.height = ''; ov.style.top = '';
-  document.body.style.overflow = '';
+  const dr = ov.querySelector('.drawer'); if (dr) dr.style.maxHeight = '';
+  window._unlockBodyScroll();
 }
 
 // ── SUBMIT ───────────────────────────────────────────────────
