@@ -185,6 +185,20 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .nc-save-btn:disabled{opacity:.5;cursor:not-allowed}
 .nc-save-btn:active{transform:scale(.98)}
 
+/* NEW CLIENT TRIGGER BUTTON (in card header) */
+.card-lbl-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.card-lbl-row .card-lbl{margin-bottom:0}
+.nc-trigger-btn{background:var(--g);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.3px;white-space:nowrap}
+.nc-trigger-btn:active{background:var(--g2);transform:scale(.97)}
+
+/* PHOTO UPLOAD */
+.photo-btns{display:flex;gap:8px;margin-top:6px}
+.photo-btn{flex:1;padding:11px 6px;background:#f8f9fa;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;color:var(--text);transition:.15s;text-align:center}
+.photo-btn:active{background:var(--gbg);border-color:var(--g)}
+.photo-preview{position:relative;margin-top:8px}
+.photo-preview img{width:100%;border-radius:8px;max-height:160px;object-fit:cover;display:block}
+.photo-remove{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700}
+
 /* TOAST */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:11px 22px;border-radius:100px;font-size:14px;font-weight:700;z-index:1000;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -213,7 +227,10 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 
   <!-- Client -->
   <div class="card">
-    <div class="card-lbl">Client</div>
+    <div class="card-lbl-row">
+      <div class="card-lbl">Client</div>
+      <button class="nc-trigger-btn" onclick="openNewClient()">＋ New Client</button>
+    </div>
     <div class="cs-wrap">
       <input type="text" class="cs-input" id="csInput" placeholder="Search name, shop, zone or number…" autocomplete="off"
         oninput="filterClients(this.value)" onfocus="openDd()">
@@ -368,6 +385,18 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
       <div class="nc-fg">
         <div class="nc-lbl">Mobile Number <span class="req">*</span></div>
         <input type="tel" class="nc-fi" id="ncPhone" placeholder="01XXXXXXXXX">
+      </div>
+      <div class="nc-fg">
+        <div class="nc-lbl">Shop Photo / Document <span style="color:var(--muted);font-weight:400;text-transform:none;font-size:10px;letter-spacing:0">optional</span></div>
+        <div class="photo-btns">
+          <button class="photo-btn" onclick="triggerPhoto('camera')">📷 Camera</button>
+          <button class="photo-btn" onclick="triggerPhoto('gallery')">🖼 Gallery</button>
+        </div>
+        <input type="file" id="ncPhotoInput" accept="image/*" style="display:none" onchange="handlePhotoSelect(this)">
+        <div id="ncPhotoPreview" class="photo-preview hidden">
+          <img id="ncPhotoImg" src="" alt="">
+          <button class="photo-remove" onclick="clearPhoto()">×</button>
+        </div>
       </div>
       <button class="nc-save-btn" id="ncSaveBtn" onclick="submitNewClient()">💾 Save New Client</button>
     </div>
@@ -707,21 +736,15 @@ function renderOpts(list) {
   const dd   = document.getElementById('csDd');
   const icon = t => t==='Retail Shop'?'🏪':t==='Dealer'?'🏢':t==='Brand'?'🏷️':t==='End Customer'?'👤':'👤';
 
-  const addNewHtml = `
-    <div class="cs-opt cs-add-new" onclick="openNewClient()">
-      <div class="cs-opt-name">➕ Add New Client</div>
-      <div class="cs-opt-sub">Save a new client to the sheet</div>
-    </div>`;
-
   if (!list.length) {
-    dd.innerHTML = `<div class="cs-empty">No clients found</div>${addNewHtml}`;
+    dd.innerHTML = `<div class="cs-empty">No clients found</div>`;
     return;
   }
   dd.innerHTML = list.slice(0, 80).map(c => `
     <div class="cs-opt" onclick="pickClient(${JSON.stringify(c.det).replace(/"/g,'&quot;')})">
       <div class="cs-opt-name">${icon(c.type)} ${c.name||c.shop}</div>
       <div class="cs-opt-sub">${[c.shop, c.loc, c.zone, c.phone].filter(Boolean).join(' · ')}</div>
-    </div>`).join('') + addNewHtml;
+    </div>`).join('');
 }
 
 function pickClient(det) {
@@ -763,10 +786,58 @@ function openNewClient() {
   document.getElementById('ncZoneSelect').selectedIndex = 0;
   document.getElementById('ncZoneNew').value = '';
   document.getElementById('ncZoneNew').classList.add('hidden');
+  clearPhoto();
 
   closeDd();
   window._lockBodyScroll();
   document.getElementById('ncOverlay').classList.add('open');
+}
+
+// ── PHOTO HELPERS ─────────────────────────────────────────────
+window._ncPhotoData = null;
+
+function triggerPhoto(source) {
+  const input = document.getElementById('ncPhotoInput');
+  if (source === 'camera') input.setAttribute('capture', 'environment');
+  else input.removeAttribute('capture');
+  input.click();
+}
+
+function handlePhotoSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      // Resize to max 900px to keep file small
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      const max = 900;
+      if (w > max || h > max) {
+        if (w > h) { h = Math.round(h * max / w); w = max; }
+        else       { w = Math.round(w * max / h); h = max; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.75);
+      window._ncPhotoData = compressed;
+      document.getElementById('ncPhotoImg').src = compressed;
+      document.getElementById('ncPhotoPreview').classList.remove('hidden');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPhoto() {
+  const input = document.getElementById('ncPhotoInput');
+  if (input) input.value = '';
+  const img = document.getElementById('ncPhotoImg');
+  if (img) img.src = '';
+  const preview = document.getElementById('ncPhotoPreview');
+  if (preview) preview.classList.add('hidden');
+  window._ncPhotoData = null;
 }
 
 function handleZoneSelect() {
@@ -808,17 +879,25 @@ async function submitNewClient() {
   if (!zone)  { toast('Select or type a zone', 'err'); return; }
   if (!phone) { toast('Enter mobile number', 'err'); return; }
 
+  // Get logged-in user name to record who added the client
+  const addedBy = (() => {
+    try { return JSON.parse(window.parent?.sessionStorage?.getItem('erp_user') || 'null')?.name || ''; }
+    catch(_) { return ''; }
+  })();
+  const photoData = window._ncPhotoData || '';
+
   const btn = document.getElementById('ncSaveBtn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span> Saving…';
 
   try {
-    const params = { action: 'addNewClient', type, name, shop, loc, zone, phone };
-    const qs = Object.entries(params).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+    // Phase 1 — save client info immediately via GET (fast, no photo)
+    const qs = Object.entries({ action: 'addNewClient', type, name, shop, loc, zone, phone, addedBy })
+      .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
     const js = await fetch(`${AS_URL}?${qs}`).then(r => r.json());
 
     if (js.success) {
-      // Add to local clients list using the det returned from the sheet (column H formula result)
+      // Instantly add to local list and select — user sees result immediately
       const newClient = { type, name, shop, loc, zone, phone, det: js.det, sales: 0, paid: 0, due: 0 };
       clients.push(newClient);
       try {
@@ -829,6 +908,20 @@ async function submitNewClient() {
       closeNewClient();
       pickClient(js.det);
       toast('✅ New client saved!', 'ok');
+
+      // Phase 2 — upload photo silently in background (user already back on main form)
+      if (photoData) {
+        (async () => {
+          try {
+            const fd = new FormData();
+            fd.append('action', 'uploadClientPhoto');
+            fd.append('det', js.det);
+            fd.append('photoData', photoData);
+            fd.append('clientName', name || shop);
+            await fetch(AS_URL, { method: 'POST', body: fd });
+          } catch(_) {} // silent — never blocks the user
+        })();
+      }
     } else {
       throw new Error(js.error || 'Failed');
     }
