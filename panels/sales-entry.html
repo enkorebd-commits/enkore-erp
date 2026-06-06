@@ -137,7 +137,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .sub-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
 
 /* HISTORY DRAWER */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;backdrop-filter:blur(3px);touch-action:none}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;backdrop-filter:blur(3px)}
 .overlay.open{display:flex;align-items:flex-end}
 .drawer{width:100%;background:#fff;border-radius:20px 20px 0 0;max-height:82vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.4,0,.2,1)}
 .overlay.open .drawer{transform:translateY(0)}
@@ -392,14 +392,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
   const histOverlay = document.getElementById('histOverlay');
   const dBody       = document.getElementById('dBody');
-  histOverlay.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
-  dBody.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
   histOverlay.addEventListener('click', e => { if (e.target === histOverlay) closeHistory(); });
 
   const ncOverlay = document.getElementById('ncOverlay');
-  const ncDBody   = ncOverlay.querySelector('.nc-d-body');
-  ncOverlay.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
-  ncDBody.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
   ncOverlay.addEventListener('click', e => { if (e.target === ncOverlay) closeNewClient(); });
 
   // ── KEYBOARD: pad body + resize overlays when keyboard opens ──
@@ -741,6 +736,7 @@ function openNewClient() {
   document.getElementById('ncZoneNew').classList.add('hidden');
 
   closeDd();
+  document.body.style.overflow = 'hidden';
   document.getElementById('ncOverlay').classList.add('open');
 }
 
@@ -760,6 +756,7 @@ function closeNewClient() {
   const ov = document.getElementById('ncOverlay');
   ov.classList.remove('open');
   ov.style.height = ''; ov.style.top = '';
+  document.body.style.overflow = '';
 }
 
 async function submitNewClient() {
@@ -845,6 +842,7 @@ async function openHistory() {
   document.getElementById('dTitle').textContent = selClient.name || selClient.shop;
   document.getElementById('dSub').textContent   = `${mos[now.getMonth()]} ${now.getFullYear()} · loading…`;
   document.getElementById('dBody').innerHTML    = '<div class="d-loading">⏳ Loading…</div>';
+  document.body.style.overflow = 'hidden';
   document.getElementById('histOverlay').classList.add('open');
 
   try {
@@ -860,6 +858,8 @@ async function openHistory() {
         return {
           dateDisplay: di.display, dateTs: di.ts,
           prod:    r.c[3]?.v  || '',
+          rate:    r.c[5]?.v  || 0,   // F — rate
+          qty:     r.c[6]?.v  || 0,   // G — qty
           bill:    r.c[7]?.v  || 0,   // H — rate×qty
           disc:    r.c[8]?.v  || 0,   // I — discount
           final:   r.c[9]?.v  || 0,   // J — final bill
@@ -891,7 +891,7 @@ function groupByDay(rows) {
     if (r.seller)  g.seller  = r.seller;
     if (r.comment) g.comment = r.comment;
     if (r.prod) {
-      g.products.push({ name: r.prod, final: r.final || r.bill });
+      g.products.push({ name: r.prod, rate: r.rate, qty: r.qty, final: r.final || r.bill });
       g.totalBill += (r.final || r.bill || 0);
     }
     if (r.paid)            g.totalPaid += r.paid;
@@ -932,7 +932,10 @@ function renderHistory(showAll) {
   const itemsHtml = groups.map(g => {
     const isPayOnly = g.products.length === 0;
     const prodLines = g.products.map(p =>
-      `<div class="h-prod-line"><span class="h-prod-name">${p.name}</span><span class="h-prod-amt">${tk(p.final)}</span></div>`
+      `<div class="h-prod-line">
+        <span class="h-prod-name">${p.name}<br><span style="font-size:10px;color:var(--muted);font-weight:400">${p.qty} pcs × ৳${Number(p.rate).toLocaleString('en-IN')}</span></span>
+        <span class="h-prod-amt">${tk(p.final)}</span>
+      </div>`
     ).join('');
     const payLine = g.totalPaid && isPayOnly
       ? `<div class="h-payment-line">💳 Payment Collection</div>`
@@ -964,6 +967,7 @@ function closeHistory() {
   const ov = document.getElementById('histOverlay');
   ov.classList.remove('open');
   ov.style.height = ''; ov.style.top = '';
+  document.body.style.overflow = '';
 }
 
 // ── SUBMIT ───────────────────────────────────────────────────
