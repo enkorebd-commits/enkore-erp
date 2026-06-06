@@ -32,18 +32,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 /* CLIENT SEARCH */
 .cs-wrap{position:relative}
-.cs-input{width:100%;padding:13px 15px;font-size:15px;border:2px solid var(--border);border-radius:10px;outline:none;transition:border .2s;background:#fff;color:var(--text);font-weight:500}
+.cs-input{width:100%;padding:13px 40px 13px 15px;font-size:15px;border:2px solid var(--border);border-radius:10px;outline:none;transition:border .2s;background:#fff;color:var(--text);font-weight:500}
 .cs-input:focus{border-color:var(--g)}
-.cs-dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:280px;overflow-y:auto;z-index:300;display:none}
+.cs-clear{display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:none;background:#e9ecef;border-radius:50%;font-size:16px;line-height:1;cursor:pointer;color:var(--muted);align-items:center;justify-content:center;font-weight:700;transition:.15s}
+.cs-clear:active{background:var(--border)}
+.cs-dd{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#1a1a2e;border:1.5px solid #2d3748;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.35);max-height:280px;overflow-y:auto;z-index:300;display:none}
 .cs-dd.open{display:block}
-.cs-opt{padding:11px 14px;cursor:pointer;border-bottom:1px solid #f1f3f5;transition:background .15s}
+.cs-opt{padding:11px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.07);transition:background .15s}
 .cs-opt:last-child{border-bottom:none}
-.cs-opt:hover,.cs-opt:active{background:var(--gbg)}
-.cs-opt-name{font-weight:700;font-size:14px}
-.cs-opt-sub{font-size:11px;color:var(--muted);margin-top:2px}
-.cs-empty{padding:12px 14px;color:var(--muted);font-size:13px}
-.cs-add-new{background:var(--gbg);border-top:2px dashed var(--g) !important;position:sticky;bottom:0}
-.cs-add-new .cs-opt-name{color:var(--g)}
+.cs-opt:hover,.cs-opt:active{background:rgba(255,255,255,.08)}
+.cs-opt-name{font-weight:700;font-size:14px;color:#e2e8f0}
+.cs-opt-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}
+.cs-empty{padding:12px 14px;color:rgba(255,255,255,.4);font-size:13px}
+.cs-add-new{background:var(--g);border-top:none !important;position:sticky;bottom:0;margin:4px;border-radius:8px}
+.cs-add-new:hover,.cs-add-new:active{background:var(--g2) !important}
+.cs-add-new .cs-opt-name{color:#fff;font-size:13px}
+.cs-add-new .cs-opt-sub{color:rgba(255,255,255,.65)}
 
 /* CLIENT STATUS */
 .cs-status{display:none;background:linear-gradient(135deg,#1b6b3a,#2d8a52);color:#fff;border-radius:var(--r);padding:14px;margin-bottom:10px}
@@ -86,7 +90,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 /* PRODUCT ROWS */
 .prod-row{background:#f8f9fa;border:1.5px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;position:relative}
 .prod-row-head{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.prod-sel{flex:1;padding:9px 30px 9px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:7px;outline:none;background:#fff;color:var(--text);font-weight:500;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;cursor:pointer}
+.prod-sel{flex:1;min-width:0;padding:9px 26px 9px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:7px;outline:none;background:#fff;color:var(--text);font-weight:500;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer;overflow:hidden;text-overflow:ellipsis}
 .prod-sel:focus{border-color:var(--g)}
 .prod-del{width:32px;height:32px;border:1.5px solid #ffc9c9;background:#fff5f5;border-radius:7px;color:var(--red);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;transition:.15s}
 .prod-del:active{transform:scale(.9)}
@@ -146,10 +150,15 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .d-body{overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;flex:1;padding:10px 14px 20px;min-height:0}
 .h-item{background:#f8f9fa;border-radius:10px;padding:11px;margin-bottom:8px;border-left:3px solid var(--g)}
 .h-item.pay{border-left-color:var(--blue)}
-.h-top{display:flex;justify-content:space-between;margin-bottom:5px}
+.h-top{display:flex;justify-content:space-between;margin-bottom:8px}
 .h-date{font-size:11px;color:var(--muted);font-weight:700}
 .h-seller{font-size:10px;color:var(--muted)}
-.h-prod{font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px}
+.h-prod-line{font-size:12px;color:var(--text);display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #e9ecef}
+.h-prod-line:last-child{border-bottom:none}
+.h-prod-name{flex:1;padding-right:8px}
+.h-prod-amt{font-weight:700;white-space:nowrap;color:var(--g)}
+.h-prod-list{margin-bottom:8px}
+.h-payment-line{font-size:12px;color:var(--blue);font-weight:700;padding:4px 0;margin-bottom:4px}
 .h-amts{display:flex;gap:6px}
 .chip{flex:1;text-align:center;padding:5px 3px;border-radius:6px}
 .chip-lbl{font-size:9px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px}
@@ -206,6 +215,7 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
     <div class="cs-wrap">
       <input type="text" class="cs-input" id="csInput" placeholder="Search name, shop, zone or number…" autocomplete="off"
         oninput="filterClients(this.value)" onfocus="openDd()">
+      <button class="cs-clear" id="csClear" onclick="clearClient()">×</button>
       <div class="cs-dd" id="csDd"></div>
     </div>
   </div>
@@ -339,7 +349,7 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
         <input type="text" class="nc-fi" id="ncName" placeholder="Client person name">
       </div>
       <div class="nc-fg">
-        <div class="nc-lbl">Shop / Business Name</div>
+        <div class="nc-lbl">Shop / Business Name <span class="req">*</span></div>
         <input type="text" class="nc-fi" id="ncShop" placeholder="Shop or business name">
       </div>
       <div class="nc-fg">
@@ -347,14 +357,14 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
         <input type="text" class="nc-fi" id="ncLoc" placeholder="Area or address">
       </div>
       <div class="nc-fg">
-        <div class="nc-lbl">Zone</div>
+        <div class="nc-lbl">Zone <span class="req">*</span></div>
         <select class="nc-fi" id="ncZoneSelect" onchange="handleZoneSelect()">
           <option value="">— Select Zone —</option>
         </select>
         <input type="text" class="nc-fi hidden" id="ncZoneNew" placeholder="Type new zone name…" style="margin-top:6px">
       </div>
       <div class="nc-fg">
-        <div class="nc-lbl">Mobile Number</div>
+        <div class="nc-lbl">Mobile Number <span class="req">*</span></div>
         <input type="tel" class="nc-fi" id="ncPhone" placeholder="01XXXXXXXXX">
       </div>
       <button class="nc-save-btn" id="ncSaveBtn" onclick="submitNewClient()">💾 Save New Client</button>
@@ -392,10 +402,16 @@ window.addEventListener('DOMContentLoaded', () => {
   ncDBody.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
   ncOverlay.addEventListener('click', e => { if (e.target === ncOverlay) closeNewClient(); });
 
-  // ── KEYBOARD: resize open overlays so drawer stays above keyboard ──
+  // ── KEYBOARD: pad body + resize overlays when keyboard opens ──
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
-      const vv = window.visualViewport;
+      const vv  = window.visualViewport;
+      const kbH = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+
+      // Add bottom padding so main panel scrolls above keyboard
+      document.querySelector('.body').style.paddingBottom = kbH > 80 ? (kbH + 20) + 'px' : '';
+
+      // Resize any open overlay drawer to fit above keyboard
       document.querySelectorAll('.overlay.open').forEach(ov => {
         ov.style.height = vv.height + 'px';
         ov.style.top    = vv.offsetTop + 'px';
@@ -403,10 +419,18 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── KEYBOARD: scroll focused input into view on main panel ──
+  // ── KEYBOARD: scroll focused input into center of visible area ──
   document.addEventListener('focusin', e => {
     if (!e.target.matches('input, select')) return;
-    if (e.target.closest('.overlay')) return; // drawer scrolls itself
+    if (e.target.closest('.overlay')) {
+      // Inside drawer — scroll the drawer body to show the input
+      setTimeout(() => {
+        const scrollParent = e.target.closest('.d-body, .nc-d-body');
+        if (scrollParent) e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350);
+      return;
+    }
+    // Main panel — scroll page so input is in center of visible area
     setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350);
   });
 });
@@ -630,8 +654,20 @@ function checkCashBy() {
 function openDd() { renderOpts(clients); document.getElementById('csDd').classList.add('open'); }
 function closeDd() { document.getElementById('csDd').classList.remove('open'); }
 
+function clearClient() {
+  document.getElementById('csInput').value = '';
+  document.getElementById('csClear').style.display = 'none';
+  selClient = null;
+  document.getElementById('csStatus').classList.remove('show');
+  document.getElementById('cPrev').textContent = tk(0);
+  calcAll();
+  closeDd();
+  document.getElementById('csInput').focus();
+}
+
 function filterClients(q) {
   const lq = q.toLowerCase().trim();
+  document.getElementById('csClear').style.display = q ? 'flex' : 'none';
   const filtered = lq ? clients.filter(c =>
     c.name.toLowerCase().includes(lq)  ||
     c.shop.toLowerCase().includes(lq)  ||
@@ -669,6 +705,7 @@ function pickClient(det) {
   if (!c) return;
   selClient = c;
   document.getElementById('csInput').value = c.name || c.shop;
+  document.getElementById('csClear').style.display = 'flex';
   closeDd(); showStatus(c); calcAll();
   if (mode === 'payment') updatePayDue(c);
 }
@@ -737,10 +774,12 @@ async function submitNewClient() {
     ? document.getElementById('ncZoneNew').value.trim()
     : zoneSelectVal;
 
-  if (!type) { toast('Select a client type', 'err'); return; }
-  if (!name) { toast('Enter client name', 'err'); return; }
-  if (!loc)  { toast('Enter location', 'err'); return; }
-  if (zoneSelectVal === '__new__' && !zone) { toast('Type the new zone name', 'err'); return; }
+  if (!type)  { toast('Select a client type', 'err'); return; }
+  if (!name)  { toast('Enter client name', 'err'); return; }
+  if (!shop)  { toast('Enter shop / business name', 'err'); return; }
+  if (!loc)   { toast('Enter location', 'err'); return; }
+  if (!zone)  { toast('Select or type a zone', 'err'); return; }
+  if (!phone) { toast('Enter mobile number', 'err'); return; }
 
   const btn = document.getElementById('ncSaveBtn');
   btn.disabled = true;
@@ -813,6 +852,7 @@ async function openHistory() {
     const data = parseGviz(await fetch(url).then(r => r.text()));
     if (!data) throw new Error('parse fail');
 
+    // Keep in sheet (chronological) order for correct grouping — sort later
     histAllRows = data.table.rows
       .filter(r => r.c?.[1]?.v === selClient.det)
       .map(r => {
@@ -820,19 +860,44 @@ async function openHistory() {
         return {
           dateDisplay: di.display, dateTs: di.ts,
           prod:    r.c[3]?.v  || '',
-          bill:    r.c[9]?.v  || r.c[7]?.v || 0,
-          paid:    r.c[12]?.v || 0,
-          due:     r.c[13]?.v || 0,
+          bill:    r.c[7]?.v  || 0,   // H — rate×qty
+          disc:    r.c[8]?.v  || 0,   // I — discount
+          final:   r.c[9]?.v  || 0,   // J — final bill
+          paid:    r.c[12]?.v || 0,   // M — paid
+          due:     r.c[13]?.v,        // N — running due (keep 0 as valid)
           comment: r.c[14]?.v || '',
           seller:  r.c[15]?.v || ''
         };
-      })
-      .sort((a, b) => b.dateTs - a.dateTs);
+      });
 
     renderHistory(false);
   } catch(e) {
     document.getElementById('dBody').innerHTML = '<div class="d-empty">Failed to load. Check internet.</div>';
   }
+}
+
+function groupByDay(rows) {
+  // rows must be in chronological (sheet insertion) order
+  const groups = [];
+  const seen   = new Map();
+  rows.forEach(r => {
+    const key = r.dateDisplay || String(r.dateTs);
+    if (!seen.has(key)) {
+      const g = { dateDisplay: r.dateDisplay, dateTs: r.dateTs, seller: '', products: [], totalBill: 0, totalPaid: 0, due: undefined, comment: '' };
+      seen.set(key, g);
+      groups.push(g);
+    }
+    const g = seen.get(key);
+    if (r.seller)  g.seller  = r.seller;
+    if (r.comment) g.comment = r.comment;
+    if (r.prod) {
+      g.products.push({ name: r.prod, final: r.final || r.bill });
+      g.totalBill += (r.final || r.bill || 0);
+    }
+    if (r.paid)            g.totalPaid += r.paid;
+    if (r.due !== undefined) g.due = r.due; // last row's due = final state
+  });
+  return groups.reverse(); // newest first
 }
 
 function renderHistory(showAll) {
@@ -842,41 +907,54 @@ function renderHistory(showAll) {
     return;
   }
 
-  const now  = new Date();
-  const cy   = now.getFullYear(), cm = now.getMonth();
-  const mos  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now = new Date();
+  const cy  = now.getFullYear(), cm = now.getMonth();
+  const mos = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  let rows;
+  // Filter raw rows first, then group
+  let filtered;
   if (showAll) {
-    rows = histAllRows;
-    document.getElementById('dSub').textContent = `All ${histAllRows.length} transactions`;
+    filtered = histAllRows;
+    document.getElementById('dSub').textContent = `All transactions`;
   } else {
-    rows = histAllRows.filter(r => {
+    filtered = histAllRows.filter(r => {
       if (!r.dateTs) return false;
       const d = new Date(r.dateTs);
       return d.getFullYear() === cy && d.getMonth() === cm;
     });
-    document.getElementById('dSub').textContent = `${mos[cm]} ${cy} · ${rows.length} transaction${rows.length !== 1 ? 's' : ''}`;
+    document.getElementById('dSub').textContent = `${mos[cm]} ${cy}`;
   }
 
-  const hasMore      = !showAll && histAllRows.length > rows.length;
-  const remainCount  = histAllRows.length - rows.length;
+  const groups = groupByDay(filtered);
+  const hasMore     = !showAll && histAllRows.length > filtered.length;
+  const remainCount = histAllRows.length - filtered.length;
 
-  const itemsHtml = rows.map(h => `
-    <div class="h-item ${!h.prod ? 'pay' : ''}">
-      <div class="h-top"><span class="h-date">${h.dateDisplay}</span><span class="h-seller">${h.seller}</span></div>
-      <div class="h-prod">${h.prod || '💳 Payment Collection'}</div>
+  const itemsHtml = groups.map(g => {
+    const isPayOnly = g.products.length === 0;
+    const prodLines = g.products.map(p =>
+      `<div class="h-prod-line"><span class="h-prod-name">${p.name}</span><span class="h-prod-amt">${tk(p.final)}</span></div>`
+    ).join('');
+    const payLine = g.totalPaid && isPayOnly
+      ? `<div class="h-payment-line">💳 Payment Collection</div>`
+      : (g.totalPaid && !isPayOnly ? `<div class="h-payment-line">💳 + Payment: ${tk(g.totalPaid)}</div>` : '');
+
+    return `
+    <div class="h-item ${isPayOnly ? 'pay' : ''}">
+      <div class="h-top"><span class="h-date">${g.dateDisplay}</span><span class="h-seller">${g.seller}</span></div>
+      ${g.products.length ? `<div class="h-prod-list">${prodLines}</div>` : ''}
+      ${payLine}
       <div class="h-amts">
-        <div class="chip chip-b"><div class="chip-lbl">Bill</div><div class="chip-val">${tk(h.bill)}</div></div>
-        <div class="chip chip-p"><div class="chip-lbl">Paid</div><div class="chip-val">${tk(h.paid)}</div></div>
-        <div class="chip chip-d"><div class="chip-lbl">Due</div><div class="chip-val">${tk(h.due)}</div></div>
+        <div class="chip chip-b"><div class="chip-lbl">Bill</div><div class="chip-val">${tk(g.totalBill)}</div></div>
+        <div class="chip chip-p"><div class="chip-lbl">Paid</div><div class="chip-val">${tk(g.totalPaid)}</div></div>
+        <div class="chip chip-d"><div class="chip-lbl">Due</div><div class="chip-val">${tk(g.due)}</div></div>
       </div>
-      ${h.comment ? `<div class="h-note">💬 ${h.comment}</div>` : ''}
-    </div>`).join('');
+      ${g.comment ? `<div class="h-note">💬 ${g.comment}</div>` : ''}
+    </div>`;
+  }).join('');
 
-  const emptyMsg    = !rows.length ? `<div class="d-empty">No transactions this month.</div>` : '';
+  const emptyMsg    = !groups.length ? `<div class="d-empty">No transactions this month.</div>` : '';
   const loadMoreBtn = hasMore
-    ? `<button class="load-more-btn" onclick="renderHistory(true)">📂 Load All — ${remainCount} older transaction${remainCount !== 1 ? 's' : ''}</button>`
+    ? `<button class="load-more-btn" onclick="renderHistory(true)">📂 Load All — ${remainCount} more older entries</button>`
     : '';
 
   document.getElementById('dBody').innerHTML = emptyMsg + itemsHtml + loadMoreBtn;
