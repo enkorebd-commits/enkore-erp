@@ -908,21 +908,30 @@ async function submitNewClient() {
       pickClient(js.det);
       toast('✅ New client saved!', 'ok');
 
-      // Phase 2 — upload photo via GET (same reliable method as all other requests)
+      // Phase 2 — chunked photo upload in background (each chunk fits in a safe URL size)
       if (photoData) {
         toast('📷 Uploading photo…', '');
         (async () => {
           try {
-            const qs = 'action=uploadClientPhoto'
-              + '&det='        + encodeURIComponent(js.det)
-              + '&clientName=' + encodeURIComponent(name || shop)
-              + '&photoData='  + encodeURIComponent(photoData);
-            const res    = await fetch(`${AS_URL}?${qs}`);
-            const result = await res.json();
-            if (result.success) toast('📷 Photo saved to Drive', 'ok');
-            else toast('📷 Upload failed: ' + (result.error || 'unknown'), 'err');
+            const uploadId = 'u' + Date.now();
+            const CHUNK    = 6000;
+            const chunks   = [];
+            for (let i = 0; i < photoData.length; i += CHUNK)
+              chunks.push(photoData.substring(i, i + CHUNK));
+
+            // Upload all chunks in parallel
+            const results = await Promise.all(chunks.map((c, i) =>
+              fetch(`${AS_URL}?action=uploadPhotoChunk&id=${encodeURIComponent(uploadId)}&idx=${i}&total=${chunks.length}&data=${encodeURIComponent(c)}`).then(r => r.json())
+            ));
+            if (results.some(r => !r.success)) throw new Error('A chunk failed to upload');
+
+            // Assemble chunks on server and upload to Drive
+            const qs = `action=assembleClientPhoto&id=${encodeURIComponent(uploadId)}&total=${chunks.length}&det=${encodeURIComponent(js.det)}&clientName=${encodeURIComponent(name || shop)}`;
+            const final = await fetch(`${AS_URL}?${qs}`).then(r => r.json());
+            if (final.success) toast('📷 Photo saved to Drive', 'ok');
+            else toast('📷 Upload failed: ' + (final.error || ''), 'err');
           } catch(e) {
-            toast('📷 Upload error', 'err');
+            toast('📷 Upload error: ' + e.message, 'err');
             console.error('Photo upload:', e);
           }
         })();
