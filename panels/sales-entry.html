@@ -913,12 +913,12 @@ async function submitNewClient() {
       if (photoData) {
         (async () => {
           try {
-            const fd = new FormData();
-            fd.append('action', 'uploadClientPhoto');
-            fd.append('det', js.det);
-            fd.append('photoData', photoData);
-            fd.append('clientName', name || shop);
-            await fetch(AS_URL, { method: 'POST', body: fd });
+            const body = new URLSearchParams();
+            body.append('action', 'uploadClientPhoto');
+            body.append('det', js.det);
+            body.append('photoData', photoData);
+            body.append('clientName', name || shop);
+            await fetch(AS_URL, { method: 'POST', body });
           } catch(_) {} // silent — never blocks the user
         })();
       }
