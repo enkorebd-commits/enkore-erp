@@ -789,6 +789,7 @@ function openNewClient() {
   document.getElementById('ncZoneNew').classList.add('hidden');
   clearPhoto();
 
+  _ncSubmitting = false;
   closeDd();
   window._lockBodyScroll();
   document.getElementById('ncOverlay').classList.add('open');
@@ -908,7 +909,12 @@ function closeNewClient() {
   window._unlockBodyScroll();
 }
 
+let _ncSubmitting = false; // guard against double-tap
+
 async function submitNewClient() {
+  if (_ncSubmitting) return; // block double-tap
+  _ncSubmitting = true;
+
   const type  = document.getElementById('ncType').value;
   const name  = document.getElementById('ncName').value.trim();
   const shop  = document.getElementById('ncShop').value.trim();
@@ -920,63 +926,64 @@ async function submitNewClient() {
     ? document.getElementById('ncZoneNew').value.trim()
     : zoneSelectVal;
 
-  if (!type)  { toast('Select a client type', 'err'); return; }
-  if (!name)  { toast('Enter client name', 'err'); return; }
-  if (!shop)  { toast('Enter shop / business name', 'err'); return; }
-  if (!loc)   { toast('Enter location', 'err'); return; }
-  if (!zone)  { toast('Select or type a zone', 'err'); return; }
-  if (!phone) { toast('Enter mobile number', 'err'); return; }
+  if (!type)  { toast('Select a client type', 'err'); _ncSubmitting = false; return; }
+  if (!name)  { toast('Enter client name', 'err');    _ncSubmitting = false; return; }
+  if (!shop)  { toast('Enter shop / business name', 'err'); _ncSubmitting = false; return; }
+  if (!loc)   { toast('Enter location', 'err');        _ncSubmitting = false; return; }
+  if (!zone)  { toast('Select or type a zone', 'err'); _ncSubmitting = false; return; }
+  if (!phone) { toast('Enter mobile number', 'err');   _ncSubmitting = false; return; }
 
-  // Get logged-in user name to record who added the client
   const addedBy = (() => {
     try { return JSON.parse(window.parent?.sessionStorage?.getItem('erp_user') || 'null')?.name || ''; }
     catch(_) { return ''; }
   })();
   const photoData = window._ncPhotoData || '';
 
-  const btn = document.getElementById('ncSaveBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span> Saving…';
+  // Compute det immediately — matches the sheet's TEXTJOIN formula exactly
+  const det = [name, shop, loc, zone].filter(Boolean).join(', ');
 
+  // ── INSTANT UX: add client and close drawer right now, no waiting ──
+  const newClient = { type, name, shop, loc, zone, phone, det, sales: 0, paid: 0, due: 0 };
+  clients.push(newClient);
   try {
-    // Phase 1 — save client info immediately via GET (fast, no photo)
-    const qs = Object.entries({ action: 'addNewClient', type, name, shop, loc, zone, phone, addedBy })
+    const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}');
+    cached.clientList = clients;
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+  } catch(_) {}
+  closeNewClient();
+  pickClient(det);
+  toast('✅ New client saved!', 'ok');
+  _ncSubmitting = false;
+
+  // ── BACKGROUND: save to sheet (user is already working) ──
+  try {
+    // submitId prevents duplicate rows if the mobile browser auto-retries the slow request
+    const submitId = 'nc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    const qs = Object.entries({ action: 'addNewClient', type, name, shop, loc, zone, phone, addedBy, submitId })
       .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
     const js = await fetch(`${AS_URL}?${qs}`).then(r => r.json());
 
     if (js.success) {
-      // Instantly add to local list and select — user sees result immediately
-      const newClient = { type, name, shop, loc, zone, phone, det: js.det, sales: 0, paid: 0, due: 0 };
-      clients.push(newClient);
-      try {
-        const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}');
-        cached.clientList = clients;
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify(cached));
-      } catch(_) {}
-      closeNewClient();
-      pickClient(js.det);
-      toast('✅ New client saved!', 'ok');
-
-      // Phase 2 — save photo to localStorage first, then upload
-      // If user closes app mid-upload, it resumes automatically on next open
+      // Start photo upload if present
       if (photoData) {
         try {
           localStorage.setItem('enkore_pending_photo', JSON.stringify({
-            det: js.det, clientName: name || shop, photoData
+            det: js.det || det, clientName: name || shop, photoData
           }));
         } catch(_) {}
-        runPhotoUpload(js.det, name || shop, photoData);
+        runPhotoUpload(js.det || det, name || shop, photoData);
       }
     } else {
-      throw new Error(js.error || 'Failed');
+      // Save failed — remove from local list and warn
+      const idx = clients.findIndex(c => c.det === det);
+      if (idx >= 0) clients.splice(idx, 1);
+      toast('❌ Could not save client — check connection', 'err');
     }
   } catch(e) {
-    console.error(e);
-    toast('❌ Save failed — check connection', 'err');
+    console.error('Background client save:', e);
+    // Client already selected — just warn quietly
+    toast('⚠️ Sheet save failed — retry by reopening the app', 'err');
   }
-
-  btn.disabled = false;
-  btn.innerHTML = '💾 Save New Client';
 }
 
 // ── MODE ─────────────────────────────────────────────────────
