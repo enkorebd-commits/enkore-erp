@@ -9,14 +9,18 @@
   <style>
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     :root {
-      --blue:   #29ABE2;
-      --green:  #00c07a;
-      --red:    #e8394a;
-      --bg:     #f0f2f5;
-      --card:   #ffffff;
-      --text:   #1c1e21;
-      --sub:    #65676b;
-      --border: #e4e6ea;
+      --blue:    #29ABE2;
+      --blue-d:  #1583b3;
+      --green:   #16b07c;
+      --red:     #ef4444;
+      --bg:      #f4f6fa;
+      --card:    #ffffff;
+      --text:    #16181d;
+      --sub:     #82879199;
+      --sub2:    #828791;
+      --border:  #eceff3;
+      --r:       16px;
+      --sh:      0 1px 3px rgba(18,22,33,.06), 0 0 1px rgba(18,22,33,.08);
     }
     body {
       font-family:'Inter',sans-serif;
@@ -24,108 +28,151 @@
       color:var(--text);
       overflow-y:auto;
       min-height:100vh;
-      padding-bottom:24px;
+      padding-bottom:28px;
     }
+
+    /* ── greeting ── */
     .greeting {
-      background:linear-gradient(135deg,#0d1b2a 0%,#1b3a5c 60%,#29ABE2 100%);
-      padding:20px 20px 28px;
-      color:#fff;
-      position:relative;
-      overflow:hidden;
+      background:linear-gradient(120deg,#0c1622 0%,#15334e 55%,#1d6fa3 100%);
+      padding:18px 18px 22px;
+      color:#fff; position:relative; overflow:hidden;
     }
     .greeting::after {
-      content:'';
-      position:absolute; right:-30px; top:-30px;
-      width:160px; height:160px;
-      border-radius:50%;
-      background:rgba(255,255,255,0.05);
+      content:''; position:absolute; right:-40px; top:-50px;
+      width:180px; height:180px; border-radius:50%;
+      background:rgba(255,255,255,.05);
     }
-    .g-date  { font-size:12px; color:rgba(255,255,255,0.55); margin-bottom:6px; font-weight:500; }
-    .g-name  { font-size:24px; font-weight:800; margin-bottom:8px; line-height:1.2; }
-    .g-quote { font-size:12px; color:rgba(255,255,255,0.5); font-style:italic; line-height:1.6; max-width:300px; }
-    .section { padding:16px 16px 0; }
-    .sec-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-    .sec-title { font-size:10px; font-weight:700; letter-spacing:1px; color:var(--sub); text-transform:uppercase; }
-    .metric-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
-    @media(min-width:560px){ .metric-grid { grid-template-columns:repeat(4,1fr); } }
-    .mcard { background:var(--card); border-radius:14px; padding:14px 14px 12px; box-shadow:0 1px 4px rgba(0,0,0,0.07),0 0 1px rgba(0,0,0,0.04); transition:transform 0.1s; }
-    .mcard:active { transform:scale(0.98); }
-    .mcard-label { font-size:11px; color:var(--sub); font-weight:600; margin-bottom:7px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .mcard-val { font-size:19px; font-weight:800; line-height:1; color:var(--text); }
-    .mcard-val.pos { color:var(--green); }
-    .mcard-val.neg { color:var(--red); }
-    .mcard-val.blu { color:var(--blue); }
-    .mcard-unit { font-size:10px; color:var(--sub); margin-top:4px; font-weight:500; }
-    .month-sel {
-      appearance:none; -webkit-appearance:none;
-      background:var(--card); border:1px solid var(--border); border-radius:8px;
-      padding:6px 28px 6px 10px; font-size:12px; font-weight:700; color:var(--text);
-      cursor:pointer; outline:none; font-family:'Inter',sans-serif;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2365676b'/%3E%3C/svg%3E");
-      background-repeat:no-repeat; background-position:right 8px center;
-    }
-    .divider { height:1px; background:var(--border); margin:4px 16px 16px; }
-    .cash-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px; }
-    .ccard { background:var(--card); border-radius:14px; padding:14px; box-shadow:0 1px 4px rgba(0,0,0,0.07); border-top:3px solid var(--blue); }
-    .ccard-name { font-size:11px; color:var(--sub); font-weight:600; margin-bottom:5px; line-height:1.3; }
-    .ccard-val  { font-size:20px; font-weight:800; color:var(--blue); }
-    .ccard-unit { font-size:10px; color:var(--sub); margin-top:3px; font-weight:500; }
-    .state { text-align:center; padding:40px 20px; color:var(--sub); font-size:13px; }
-    .spin { width:22px; height:22px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
-    @keyframes spin { to { transform:rotate(360deg); } }
+    .g-date  { font-size:11px; color:rgba(255,255,255,.55); margin-bottom:4px; font-weight:600; letter-spacing:.3px; }
+    .g-name  { font-size:20px; font-weight:800; line-height:1.2; letter-spacing:-.3px; }
+    .g-quote { font-size:11px; color:rgba(255,255,255,.45); font-style:italic; margin-top:6px; line-height:1.5; max-width:300px; }
 
-    /* ═══ SALES ANALYTICS ═══ */
-    .range-row {
-      display:flex; align-items:center; gap:8px; margin-bottom:10px;
+    .section { padding:14px 14px 0; }
+    .sec-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .sec-title { font-size:10px; font-weight:800; letter-spacing:1.2px; color:var(--sub2); text-transform:uppercase; }
+
+    /* ── amounts with tk unit ── */
+    .amt { display:inline-flex; align-items:flex-end; gap:2px; }
+    .amt .tk { font-size:.55em; font-weight:700; color:var(--sub2); padding-bottom:1px; }
+
+    /* ── compact YTD stats ── */
+    .ytd-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    @media(min-width:560px){ .ytd-grid { grid-template-columns:repeat(7,1fr); } }
+    .ystat {
+      background:var(--card); border-radius:12px; padding:9px 8px 8px;
+      box-shadow:var(--sh); text-align:left;
     }
+    .ystat-l { font-size:8.5px; color:var(--sub2); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ystat-v { font-size:13px; font-weight:800; line-height:1; white-space:nowrap; }
+    .ystat-v.pos { color:var(--green); }
+    .ystat-v.neg { color:var(--red); }
+    .ystat-v.blu { color:var(--blue); }
+
+    /* ── cash ── */
+    .cash-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .ccard {
+      background:var(--card); border-radius:12px; padding:10px 12px;
+      box-shadow:var(--sh); display:flex; align-items:center; gap:10px;
+    }
+    .c-ava {
+      width:30px; height:30px; border-radius:50%; flex-shrink:0;
+      background:linear-gradient(135deg,#29ABE2,#1d6fa3); color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      font-size:11px; font-weight:800;
+    }
+    .ccard-name { font-size:10px; color:var(--sub2); font-weight:600; line-height:1.2; }
+    .ccard-val  { font-size:15px; font-weight:800; color:var(--text); margin-top:1px; }
+
+    /* ── range + chips ── */
+    .range-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
     .date-inp {
       flex:1; min-width:0;
-      background:var(--card); border:1px solid var(--border); border-radius:10px;
-      padding:9px 10px; font-size:13px; font-weight:600; color:var(--text);
+      background:var(--card); border:1px solid var(--border); border-radius:12px;
+      padding:10px 10px; font-size:13px; font-weight:600; color:var(--text);
       font-family:'Inter',sans-serif; outline:none; -webkit-appearance:none;
+      box-shadow:var(--sh); transition:border .15s;
     }
     .date-inp:focus { border-color:var(--blue); }
-    .range-arrow { font-size:12px; color:var(--sub); flex-shrink:0; font-weight:700; }
-    .kpi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:10px; }
+    .range-arrow { font-size:12px; color:var(--sub2); flex-shrink:0; font-weight:700; }
+
+    .kpi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:10px; }
     @media(min-width:560px){ .kpi-grid { grid-template-columns:repeat(4,1fr); } }
-    .metric-grid.p3 { grid-template-columns:repeat(3,1fr); }
-    .kcard { background:var(--card); border-radius:12px; padding:10px 8px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,0.07); }
-    .kcard-l { font-size:9px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px; }
-    .kcard-v { font-size:15px; font-weight:800; line-height:1; }
+    .kcard {
+      background:var(--card); border-radius:12px; padding:10px 12px;
+      box-shadow:var(--sh); border-left:3px solid var(--border);
+    }
+    .kcard.b-blu { border-left-color:var(--blue); }
+    .kcard.b-grn { border-left-color:var(--green); }
+    .kcard.b-red { border-left-color:var(--red); }
+    .kcard-l { font-size:9px; color:var(--sub2); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+    .kcard-v { font-size:16px; font-weight:800; line-height:1; }
     .kcard-v.blu { color:var(--blue); }
     .kcard-v.pos { color:var(--green); }
     .kcard-v.neg { color:var(--red); }
+
+    /* ── chart ── */
     .chart-card {
-      background:var(--card); border-radius:14px; padding:12px 10px 8px;
-      box-shadow:0 1px 4px rgba(0,0,0,0.07); margin-bottom:16px;
-      position:relative; height:240px;
+      background:var(--card); border-radius:var(--r); padding:12px 10px 8px;
+      box-shadow:var(--sh); margin-bottom:10px;
+      position:relative; height:230px;
     }
-    .chart-card .state { padding:80px 20px; }
+    .chart-card .state { padding:75px 20px; }
+
+    /* ── P&L strip (merged) ── */
+    .pnl-strip { display:none; margin-bottom:10px; }
+    .pnl-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .pnl-title { font-size:10px; font-weight:800; letter-spacing:1.2px; color:var(--sub2); text-transform:uppercase; }
+    .month-sel {
+      appearance:none; -webkit-appearance:none;
+      background:var(--card); border:1px solid var(--border); border-radius:20px;
+      padding:6px 26px 6px 12px; font-size:12px; font-weight:700; color:var(--text);
+      cursor:pointer; outline:none; font-family:'Inter',sans-serif; box-shadow:var(--sh);
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23828791'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 10px center;
+    }
+    .pnl-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .pcard { background:var(--card); border-radius:12px; padding:10px 12px; box-shadow:var(--sh); }
+    .pcard-l { font-size:9px; color:var(--sub2); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+    .pcard-v { font-size:14px; font-weight:800; line-height:1; white-space:nowrap; }
+    .pcard-v.pos { color:var(--green); }
+    .pcard-v.neg { color:var(--red); }
+
+    /* ── table ── */
     .tbl-card {
-      background:var(--card); border-radius:14px;
-      box-shadow:0 1px 4px rgba(0,0,0,0.07); margin-bottom:16px; overflow:hidden;
+      background:var(--card); border-radius:var(--r);
+      box-shadow:var(--sh); margin-bottom:16px; overflow:hidden;
     }
     .tbl-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .perf-tbl { width:100%; min-width:480px; border-collapse:collapse; font-size:12px; }
+    .perf-tbl { width:100%; min-width:500px; border-collapse:collapse; font-size:12px; }
     .perf-tbl th {
-      text-align:right; padding:10px 10px; font-size:9px; font-weight:700;
-      text-transform:uppercase; letter-spacing:0.6px; color:var(--sub);
-      border-bottom:1px solid var(--border); white-space:nowrap; background:#fafbfc;
+      text-align:right; padding:11px 10px; font-size:9px; font-weight:800;
+      text-transform:uppercase; letter-spacing:.7px; color:var(--sub2);
+      border-bottom:1px solid var(--border); white-space:nowrap; background:#fafbfd;
     }
-    .perf-tbl th:first-child, .perf-tbl td:first-child { text-align:left; }
+    .perf-tbl th:first-child, .perf-tbl td:first-child { text-align:left; padding-left:14px; }
     .perf-tbl td {
-      padding:10px 10px; text-align:right; font-weight:600;
-      border-bottom:1px solid #f1f3f5; white-space:nowrap;
+      padding:11px 10px; text-align:right; font-weight:600;
+      border-bottom:1px solid #f3f5f8; white-space:nowrap;
     }
     .perf-tbl tr:last-child td { border-bottom:none; }
-    .perf-tbl .seller-n { font-weight:700; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
-    .perf-tbl .tot td { background:#fafbfc; border-top:2px solid var(--border); font-weight:800; }
-    .rate-pill { display:inline-block; padding:2px 7px; border-radius:20px; font-size:11px; font-weight:800; }
-    .rate-hi  { background:#e6f9f1; color:var(--green); }
-    .rate-mid { background:#e7f5fd; color:var(--blue); }
-    .rate-lo  { background:#fdebed; color:var(--red); }
+    .seller-cell { display:flex; align-items:center; gap:8px; }
+    .s-ava {
+      width:26px; height:26px; border-radius:50%; flex-shrink:0;
+      background:#e7f5fd; color:var(--blue-d);
+      display:flex; align-items:center; justify-content:center;
+      font-size:10px; font-weight:800;
+    }
+    .s-name { font-weight:700; max-width:110px; overflow:hidden; text-overflow:ellipsis; }
+    .perf-tbl .tot td { background:#fafbfd; border-top:2px solid var(--border); font-weight:800; }
+    .rate-pill { display:inline-block; padding:3px 8px; border-radius:20px; font-size:11px; font-weight:800; }
+    .rate-hi  { background:#e4f8f0; color:var(--green); }
+    .rate-mid { background:#e7f5fd; color:var(--blue-d); }
+    .rate-lo  { background:#feecec; color:var(--red); }
     .pos-t { color:var(--green); }
     .neg-t { color:var(--red); }
+
+    .state { text-align:center; padding:30px 20px; color:var(--sub2); font-size:13px; }
+    .spin { width:22px; height:22px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -136,12 +183,12 @@
   <div class="g-quote" id="g-quote"></div>
 </div>
 
+<!-- YTD + CASH (live) -->
 <div id="dash-body">
   <div class="state"><div class="spin"></div>Loading dashboard...</div>
 </div>
 
-<!-- ═══ SALES ANALYTICS (independent of worker data) ═══ -->
-<div class="divider"></div>
+<!-- SALES VS COLLECTION (with merged P&L) -->
 <div class="section">
   <div class="sec-hdr"><span class="sec-title">Sales vs Collection</span></div>
   <div class="range-row">
@@ -150,14 +197,22 @@
     <input type="date" class="date-inp" id="d-end" onchange="renderAnalytics()">
   </div>
   <div class="kpi-grid" id="range-kpis" style="display:none">
-    <div class="kcard"><div class="kcard-l">Sales</div><div class="kcard-v blu" id="k-sales">—</div></div>
-    <div class="kcard"><div class="kcard-l">Collection</div><div class="kcard-v pos" id="k-coll">—</div></div>
-    <div class="kcard"><div class="kcard-l">Due</div><div class="kcard-v" id="k-due">—</div></div>
-    <div class="kcard"><div class="kcard-l">Rate</div><div class="kcard-v blu" id="k-rate">—</div></div>
+    <div class="kcard b-blu"><div class="kcard-l">Sales</div><div class="kcard-v blu" id="k-sales">—</div></div>
+    <div class="kcard b-grn"><div class="kcard-l">Collection</div><div class="kcard-v pos" id="k-coll">—</div></div>
+    <div class="kcard" id="k-due-card"><div class="kcard-l">Due</div><div class="kcard-v" id="k-due">—</div></div>
+    <div class="kcard b-blu"><div class="kcard-l">Rate</div><div class="kcard-v blu" id="k-rate">—</div></div>
   </div>
   <div class="chart-card">
     <div class="state" id="an-state"><div class="spin"></div>Loading sales data...</div>
     <canvas id="trendChart" style="display:none"></canvas>
+  </div>
+
+  <div class="pnl-strip" id="pnl-strip">
+    <div class="pnl-head">
+      <span class="pnl-title">P&amp;L</span>
+      <select class="month-sel" id="msel" onchange="switchMonth(this.value)"></select>
+    </div>
+    <div class="pnl-grid" id="mcards"></div>
   </div>
 </div>
 
@@ -169,7 +224,8 @@
 </div>
 
 <script>
-  const FIN_SHEET_ID = '1XE05NQJYc2QPM1qUivoGYUynu-lI1iaTH5Y785dPwJk';
+  const FIN_SHEET_ID   = '1XE05NQJYc2QPM1qUivoGYUynu-lI1iaTH5Y785dPwJk';
+  const SALES_SHEET_ID = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
 
   const qp    = new URLSearchParams(window.location.search);
   const userId = qp.get('userId') || '';
@@ -186,22 +242,20 @@
     "Done is better than perfect."
   ];
 
-  (function() {
-    const now  = new Date();
-    const h    = now.getHours();
-    const wrd  = h<12?'Good Morning':h<17?'Good Afternoon':h<21?'Good Evening':'Working Late';
-    const dstr = now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-    const first = userName.split(' ')[0];
-    document.getElementById('g-date').textContent  = dstr;
-    document.getElementById('g-name').textContent  = wrd + ', ' + first + ' 👋';
-    document.getElementById('g-quote').textContent = '" ' + QUOTES[now.getDay()] + ' "';
-  })();
+  // ── format helpers ──
+  const MMM = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtDate(d) { return d.getDate()+' '+MMM[d.getMonth()]+', '+d.getFullYear(); }   // 26 Jan, 2026
 
   function fmt(v) {
     if (v===''||v===null||v===undefined) return '—';
     const n = Number(v);
     if (isNaN(n)) return String(v);
     return (n<0?'−':'')+Math.abs(Math.round(n)).toLocaleString('en-IN');
+  }
+  function tk(v) {
+    const s = fmt(v);
+    if (s === '—') return s;
+    return '<span class="amt">'+s+'<span class="tk">tk</span></span>';
   }
   function fmtPct(v) {
     if (v===''||v===null||v===undefined) return '—';
@@ -216,64 +270,98 @@
     return n>0?'pos':'neg';
   }
 
+  (function() {
+    const now  = new Date();
+    const h    = now.getHours();
+    const wrd  = h<12?'Good Morning':h<17?'Good Afternoon':h<21?'Good Evening':'Working Late';
+    const wd   = now.toLocaleDateString('en-GB',{weekday:'long'});
+    const first = userName.split(' ')[0];
+    document.getElementById('g-date').textContent  = wd+' · '+fmtDate(now);
+    document.getElementById('g-name').textContent  = wrd + ', ' + first + ' 👋';
+    document.getElementById('g-quote').textContent = '" ' + QUOTES[now.getDay()] + ' "';
+  })();
+
+  // column map of Monthly Dashboard tab
   const C = { month:0, sales:2, paid:3, clrPct:4, due:5, gp:9, exp:20, np:22 };
 
-  function cards(row) {
-    const metrics = [
-      { lbl:'Sales',         val:fmt(row[C.sales]),             cls:'blu', unit:'tk' },
-      { lbl:'Paid',          val:fmt(row[C.paid]),              cls:'pos', unit:'tk' },
-      { lbl:'Clearance %',   val:fmtPct(row[C.clrPct]),        cls: Number(row[C.clrPct])>=0.8?'pos':'blu', unit:'collection rate' },
-      { lbl:'Due',           val:fmt(row[C.due]),               cls: Number(row[C.due])>0?'neg':'pos', unit:'tk outstanding' },
-      { lbl:'Gross Profit',  val:fmt(row[C.gp]),                cls:numClass(row[C.gp]),  unit:'tk actual' },
-      { lbl:'Total Expense', val:fmt(row[C.exp]),               cls:'',                   unit:'tk' },
-      { lbl:'Net Profit',    val:fmt(row[C.np]),                cls:numClass(row[C.np]),  unit:'tk actual' },
+  // ── compact YTD stats ──
+  function ytdGrid(row) {
+    const stats = [
+      { lbl:'Sales',      val:tk(row[C.sales]),     cls:'blu' },
+      { lbl:'Paid',       val:tk(row[C.paid]),      cls:'pos' },
+      { lbl:'Clearance',  val:fmtPct(row[C.clrPct]),cls: Number(row[C.clrPct])>=0.8?'pos':'blu' },
+      { lbl:'Due',        val:tk(row[C.due]),       cls: Number(row[C.due])>0?'neg':'pos' },
+      { lbl:'Gross Pft',  val:tk(row[C.gp]),        cls:numClass(row[C.gp]) },
+      { lbl:'Expense',    val:tk(row[C.exp]),       cls:'' },
+      { lbl:'Net Pft',    val:tk(row[C.np]),        cls:numClass(row[C.np]) },
     ];
-    return '<div class="metric-grid">'+
-      metrics.map(m=>
-        '<div class="mcard">'+
-        '<div class="mcard-label">'+m.lbl+'</div>'+
-        '<div class="mcard-val '+m.cls+'">'+m.val+'</div>'+
-        '<div class="mcard-unit">'+m.unit+'</div>'+
+    return '<div class="ytd-grid">'+
+      stats.map(s=>
+        '<div class="ystat">'+
+        '<div class="ystat-l">'+s.lbl+'</div>'+
+        '<div class="ystat-v '+s.cls+'">'+s.val+'</div>'+
         '</div>'
       ).join('')+
     '</div>';
   }
 
-  function cardsPnl(row) {
+  function pnlCards(row) {
     const metrics = [
-      { lbl:'Gross Profit',  val:fmt(row[C.gp]),  cls:numClass(row[C.gp]), unit:'tk actual' },
-      { lbl:'Total Expense', val:fmt(row[C.exp]), cls:'',                  unit:'tk' },
-      { lbl:'Net Profit',    val:fmt(row[C.np]),  cls:numClass(row[C.np]), unit:'tk actual' },
+      { lbl:'Gross Profit',  val:tk(row[C.gp]),  cls:numClass(row[C.gp]) },
+      { lbl:'Expense',       val:tk(row[C.exp]), cls:'' },
+      { lbl:'Net Profit',    val:tk(row[C.np]),  cls:numClass(row[C.np]) },
     ];
-    return '<div class="metric-grid p3">'+
-      metrics.map(m=>
-        '<div class="mcard">'+
-        '<div class="mcard-label">'+m.lbl+'</div>'+
-        '<div class="mcard-val '+m.cls+'">'+m.val+'</div>'+
-        '<div class="mcard-unit">'+m.unit+'</div>'+
-        '</div>'
-      ).join('')+
-    '</div>';
+    return metrics.map(m=>
+      '<div class="pcard">'+
+      '<div class="pcard-l">'+m.lbl+'</div>'+
+      '<div class="pcard-v '+m.cls+'">'+m.val+'</div>'+
+      '</div>'
+    ).join('');
+  }
+
+  function initials(name) {
+    return String(name).split(' ').filter(Boolean).map(n=>n[0]).slice(0,2).join('').toUpperCase() || '?';
   }
 
   function buildDash(data) {
     const monthly = (data.monthly||[]).filter(r=>r[C.month]);
     window._mdata = monthly;
-    const opts = monthly.map((r,i)=>'<option value="'+i+'">'+r[C.month]+'</option>').join('');
-    const lastIdx = monthly.length-1;
-    const lastRow = monthly[lastIdx]||data.ytd;
+
     let h = '';
-    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div>'+cards(data.ytd)+'</div><div class="divider"></div>';
-    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Monthly P&L</span><select class="month-sel" id="msel" onchange="switchMonth(this.value)">'+opts+'</select></div><div id="mcards">'+cardsPnl(lastRow)+'</div></div><div class="divider"></div>';
-    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Cash in Hand</span></div><div class="cash-grid"><div class="ccard"><div class="ccard-name">Mahedi Islam Chayan</div><div class="ccard-val">'+fmt(data.cash.chayan)+'</div><div class="ccard-unit">tk</div></div><div class="ccard"><div class="ccard-name">Anik Rahman</div><div class="ccard-val">'+fmt(data.cash.anik)+'</div><div class="ccard-unit">tk</div></div></div></div>';
+    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div>'+ytdGrid(data.ytd)+'</div>';
+    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Cash in Hand</span></div><div class="cash-grid">'+
+      '<div class="ccard"><div class="c-ava">MC</div><div><div class="ccard-name">Mahedi Islam Chayan</div><div class="ccard-val">'+tk(data.cash.chayan)+'</div></div></div>'+
+      '<div class="ccard"><div class="c-ava">AR</div><div><div class="ccard-name">Anik Rahman</div><div class="ccard-val">'+tk(data.cash.anik)+'</div></div></div>'+
+      '</div></div>';
     document.getElementById('dash-body').innerHTML = h;
+
+    // P&L strip inside Sales vs Collection
+    const opts = monthly.map((r,i)=>'<option value="'+i+'">'+r[C.month]+'</option>').join('');
     const sel = document.getElementById('msel');
-    if (sel) sel.value = String(lastIdx);
+    sel.innerHTML = opts;
+    const idx = pickMonthIdx();
+    sel.value = String(idx);
+    document.getElementById('mcards').innerHTML = pnlCards(monthly[idx] || data.ytd);
+    document.getElementById('pnl-strip').style.display = 'block';
+  }
+
+  // choose the P&L month matching the selected end date, else last month
+  function pickMonthIdx() {
+    const monthly = window._mdata || [];
+    if (!monthly.length) return 0;
+    const eEl = document.getElementById('d-end');
+    if (eEl && eEl.value) {
+      const d = new Date(eEl.value+'T00:00:00');
+      const key = MMM[d.getMonth()]+', '+String(d.getFullYear()).slice(2);
+      const i = monthly.findIndex(r => String(r[C.month]).trim() === key);
+      if (i >= 0) return i;
+    }
+    return monthly.length-1;
   }
 
   window.switchMonth = function(idx) {
-    const row = window._mdata[parseInt(idx)];
-    if (row) document.getElementById('mcards').innerHTML = cardsPnl(row);
+    const row = (window._mdata||[])[parseInt(idx)];
+    if (row) document.getElementById('mcards').innerHTML = pnlCards(row);
   };
 
   // ── finance data — read live from the Central Finance sheet via gviz ──
@@ -303,7 +391,6 @@
         gvTable(FIN_SHEET_ID, 'Cash in Hand')
       ]);
 
-      // Monthly Dashboard: month rows + the YTD row (blank month, numeric sales)
       let ytd = null; const monthly = [];
       (mt.rows||[]).forEach(r => {
         const c = r.c||[];
@@ -314,7 +401,6 @@
       });
       if (!ytd) throw new Error('YTD row not found');
 
-      // Cash in Hand: "Positive" row → D = Chayan, G = Anik
       let chayan = '', anik = '';
       (ct.rows||[]).forEach(r => {
         const c = r.c||[];
@@ -339,7 +425,7 @@
   }
   loadFinance();
 
-  // ── provisional YTD from the sales sheet while the worker is slow ──
+  // ── provisional YTD from the sales sheet while finance loads ──
   function provisionalDash() {
     if (window._financeLoaded || !AN_ROWS.length) return;
     const y = new Date().getFullYear();
@@ -348,16 +434,15 @@
     const row = [];
     row[C.sales] = s; row[C.paid] = p; row[C.clrPct] = s ? p/s : ''; row[C.due] = s - p;
     document.getElementById('dash-body').innerHTML =
-      '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div>'+cards(row)+'</div>'+
-      '<div class="state" id="pl-wait" style="padding:10px 20px 14px"><div class="spin"></div>Loading P&L and cash...</div>';
+      '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div>'+ytdGrid(row)+'</div>'+
+      '<div class="state" id="pl-wait" style="padding:10px 20px 0"><div class="spin"></div>Loading P&L and cash...</div>';
   }
 
   /* ═══════════════════════════════════════════════════════════
-     SALES ANALYTICS — reads "Sale Entry" tab directly via gviz
-     Columns: A(0) Date · B(1) Client · J(9) Final Bill ·
-              M(12) Paid · P(15) Seller
+     SALES ANALYTICS — reads "Sale Entry" tab live via gviz
+     select A,B,J,M,P → 0 Date · 1 Client · 2 Final Bill ·
+                        3 Paid · 4 Seller
      ═══════════════════════════════════════════════════════════ */
-  const SALES_SHEET_ID = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
   let AN_ROWS = [], trendChart = null;
 
   function isoLocal(d) {
@@ -369,7 +454,7 @@
     const s = String(v);
     let m = s.match(/Date\((\d+),(\d+),(\d+)/);
     if (m) return new Date(+m[1], +m[2], +m[3]);
-    m = s.match(/^(\d{1,2})\s+([A-Za-z]+),?\s+(\d{2,4})$/);       // "1 Jan, 26"
+    m = s.match(/^(\d{1,2})\s+([A-Za-z]+),?\s+(\d{2,4})$/);
     if (m) {
       const y = m[3].length===2 ? 2000+ +m[3] : +m[3];
       const d = new Date(m[1]+' '+m[2]+' '+y);
@@ -383,7 +468,6 @@
   function cellStr(c)  { return (c && c.v!==null && c.v!==undefined) ? String(c.v).trim() : ''; }
 
   async function loadAnalytics() {
-    // live fetch — only the 5 columns we need (A,B,J,M,P)
     try {
       const url = 'https://docs.google.com/spreadsheets/d/'+SALES_SHEET_ID+
                   '/gviz/tq?tqx=out:json&headers=1&sheet='+encodeURIComponent('Sale Entry')+
@@ -414,7 +498,6 @@
   }
 
   window.renderAnalytics = function() {
-    if (!AN_ROWS.length && !trendChart) { /* data not in yet */ }
     const sEl = document.getElementById('d-start');
     const eEl = document.getElementById('d-end');
     if (!sEl.value || !eEl.value) return;
@@ -424,15 +507,16 @@
 
     const rows = AN_ROWS.filter(r => r.d >= start && r.d <= end);
 
-    // ── daily buckets ──
+    // daily buckets
     const dayMs = 86400000;
     const nDays = Math.round((end - start)/dayMs) + 1;
-    const labels = [], salesArr = [], paidArr = [];
+    const labels = [], fullDates = [], salesArr = [], paidArr = [];
     const idx = {};
     for (let i=0; i<nDays; i++) {
       const d = new Date(start.getTime() + i*dayMs);
       idx[isoLocal(d)] = i;
-      labels.push(d.getDate()+' '+d.toLocaleDateString('en-GB',{month:'short'}));
+      labels.push(d.getDate()+' '+MMM[d.getMonth()]);
+      fullDates.push(fmtDate(d));
       salesArr.push(0); paidArr.push(0);
     }
     let tSales = 0, tPaid = 0;
@@ -443,17 +527,18 @@
       tSales += r.sales; tPaid += r.paid;
     });
 
-    // ── KPIs ──
+    // KPIs
     const due = tSales - tPaid;
     document.getElementById('range-kpis').style.display = 'grid';
-    document.getElementById('k-sales').textContent = fmt(tSales);
-    document.getElementById('k-coll').textContent  = fmt(tPaid);
+    document.getElementById('k-sales').innerHTML = tk(tSales);
+    document.getElementById('k-coll').innerHTML  = tk(tPaid);
     const kd = document.getElementById('k-due');
-    kd.textContent = fmt(due);
+    kd.innerHTML = tk(due);
     kd.className = 'kcard-v ' + (due>0 ? 'neg' : 'pos');
+    document.getElementById('k-due-card').className = 'kcard ' + (due>0 ? 'b-red' : 'b-grn');
     document.getElementById('k-rate').textContent = tSales ? Math.round(tPaid/tSales*100)+'%' : '—';
 
-    // ── chart ──
+    // chart
     document.getElementById('an-state').style.display = 'none';
     const cv = document.getElementById('trendChart');
     cv.style.display = 'block';
@@ -462,9 +547,9 @@
       data: {
         labels: labels,
         datasets: [
-          { type:'bar',  label:'Sales',      data:salesArr, backgroundColor:'rgba(41,171,226,0.55)', borderRadius:3, order:2 },
-          { type:'line', label:'Collection', data:paidArr,  borderColor:'#00c07a', backgroundColor:'#00c07a',
-            tension:0.3, pointRadius:2, pointHoverRadius:4, borderWidth:2, order:1 }
+          { type:'bar',  label:'Sales',      data:salesArr, backgroundColor:'rgba(41,171,226,0.5)', borderRadius:4, order:2 },
+          { type:'line', label:'Collection', data:paidArr,  borderColor:'#16b07c', backgroundColor:'#16b07c',
+            tension:0.35, pointRadius:2, pointHoverRadius:4, borderWidth:2, order:1 }
         ]
       },
       options: {
@@ -472,16 +557,29 @@
         interaction:{ mode:'index', intersect:false },
         plugins:{
           legend:{ labels:{ boxWidth:10, font:{ family:'Inter', size:10, weight:'700' } } },
-          tooltip:{ callbacks:{ label: ctx => ' '+ctx.dataset.label+': ৳ '+fmt(ctx.parsed.y) } }
+          tooltip:{
+            callbacks:{
+              title: items => items.length ? fullDates[items[0].dataIndex] : '',
+              label: ctx => ' '+ctx.dataset.label+': '+fmt(ctx.parsed.y)+' tk'
+            }
+          }
         },
         scales:{
           x:{ grid:{ display:false }, ticks:{ font:{ family:'Inter', size:9 }, maxRotation:0, autoSkip:true, maxTicksLimit:8 } },
-          y:{ beginAtZero:true, ticks:{ font:{ family:'Inter', size:9 }, callback:v => v>=1000 ? (v/1000)+'k' : v } }
+          y:{ beginAtZero:true, grid:{ color:'#f0f2f6' }, ticks:{ font:{ family:'Inter', size:9 }, callback:v => v>=1000 ? (v/1000)+'k' : v } }
         }
       }
     });
 
-    // ── salesman table ──
+    // sync P&L month with the selected end date
+    if (window._financeLoaded && window._mdata && window._mdata.length) {
+      const i = pickMonthIdx();
+      const sel = document.getElementById('msel');
+      sel.value = String(i);
+      document.getElementById('mcards').innerHTML = pnlCards(window._mdata[i]);
+    }
+
+    // salesman table
     const by = {};
     rows.forEach(r => {
       const k = r.seller;
@@ -500,7 +598,8 @@
     }
     function dueCell(v) {
       if (v===0) return '<td>0</td>';
-      return v>0 ? '<td class="neg-t">'+fmt(v)+'</td>' : '<td class="pos-t">'+fmt(v)+'</td>';
+      const inner = '<span class="amt">'+fmt(v)+'<span class="tk">tk</span></span>';
+      return v>0 ? '<td class="neg-t">'+inner+'</td>' : '<td class="pos-t">'+inner+'</td>';
     }
 
     let h = '<thead><tr><th>Seller</th><th>Sales</th><th>Coll.</th><th>Due</th><th>Rate</th><th>Clients</th></tr></thead><tbody>';
@@ -509,16 +608,16 @@
       const o = by[k];
       o.clients.forEach(c => totC.add(c));
       h += '<tr>'+
-        '<td class="seller-n">'+k+'</td>'+
-        '<td>'+fmt(o.sales)+'</td>'+
-        '<td>'+fmt(o.paid)+'</td>'+
+        '<td><div class="seller-cell"><div class="s-ava">'+initials(k)+'</div><span class="s-name">'+k+'</span></div></td>'+
+        '<td>'+tk(o.sales)+'</td>'+
+        '<td>'+tk(o.paid)+'</td>'+
         dueCell(o.sales - o.paid)+
         '<td>'+ratePill(o.sales, o.paid)+'</td>'+
         '<td>'+o.clients.size+'</td>'+
       '</tr>';
     });
     h += '<tr class="tot">'+
-      '<td>Total</td><td>'+fmt(tSales)+'</td><td>'+fmt(tPaid)+'</td>'+
+      '<td>Total</td><td>'+tk(tSales)+'</td><td>'+tk(tPaid)+'</td>'+
       dueCell(due)+'<td>'+ratePill(tSales, tPaid)+'</td><td>'+totC.size+'</td>'+
     '</tr></tbody>';
     document.getElementById('perf-tbl').innerHTML = h;
