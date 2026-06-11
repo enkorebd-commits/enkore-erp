@@ -389,28 +389,13 @@
       buildDash({ ok:true, ytd:ytd, monthly:monthly, cash:{ chayan:chayan, anik:anik } });
     } catch(e) {
       console.error(e);
-      const w = document.getElementById('pl-wait');
-      if (w) { w.innerHTML = '⚠️ Could not load P&L and cash data.'; }
-      else if (!window._financeLoaded) {
+      if (!window._financeLoaded) {
         document.getElementById('dash-body').innerHTML =
           '<div class="state">⚠️ Could not load finance data.<br><small>Central Finance sheet must be shared: Anyone with link · Viewer.</small></div>';
       }
     }
   }
   loadFinance();
-
-  // ── provisional YTD from the sales sheet while finance loads ──
-  function provisionalDash() {
-    if (window._financeLoaded || !AN_ROWS.length) return;
-    const y = new Date().getFullYear();
-    let s = 0, p = 0;
-    AN_ROWS.forEach(r => { if (r.d.getFullYear() === y) { s += r.sales; p += r.paid; } });
-    const row = [];
-    row[C.sales] = s; row[C.paid] = p; row[C.clrPct] = s ? p/s : ''; row[C.due] = s - p;
-    document.getElementById('dash-body').innerHTML =
-      '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div>'+ytdGrid(row)+'</div>'+
-      '<div class="state" id="pl-wait" style="padding:10px 20px 0"><div class="spin"></div>Loading P&L and cash...</div>';
-  }
 
   /* ═══════════════════════════════════════════════════════════
      SALES ANALYTICS — reads "Sale Entry" tab live via gviz
@@ -470,7 +455,6 @@
         };
       }).filter(Boolean);
       AN_ROWS = rows;
-      provisionalDash();
       renderAnalytics();
     } catch(e) {
       document.getElementById('an-state').innerHTML = '⚠️ Could not load sales data.';
