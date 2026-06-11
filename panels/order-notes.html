@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Order Notes — Enkore</title>
+<style>
+:root {
+  --acc:#e67e22;--acc2:#d35400;--accbg:#fef3e8;--accbrd:#f5cba7;
+  --green:#1b6b3a;--gbg:#edf7f1;
+  --red:#e03131;--blue:#1971c2;
+  --text:#1a1a2e;--muted:#868e96;
+  --border:#dee2e6;--bg:#f3f4f6;--card:#fff;
+  --r:12px;--sh:0 2px 8px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior:none}
+
+/* ── HEADER ── */
+.hdr{background:linear-gradient(135deg,#b7410e 0%,#e67e22 100%);color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.hdr-title{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.hdr-date{font-size:11px;opacity:.75;font-weight:600}
+.tabs{display:flex;gap:2px}
+.tab{flex:1;padding:9px 8px;text-align:center;font-size:13px;font-weight:700;color:rgba(255,255,255,.5);border-bottom:3px solid transparent;cursor:pointer;transition:.2s;user-select:none}
+.tab.on{color:#fff;border-bottom-color:#ffd43b}
+
+/* ── BODY ── */
+.body{padding:14px;max-width:560px;margin:0 auto;padding-bottom:90px}
+
+/* ── STATS BAR ── */
+.stats-bar{display:flex;gap:8px;margin-bottom:14px}
+.sbar{flex:1;background:var(--card);border-radius:10px;padding:10px 8px;text-align:center;box-shadow:var(--sh)}
+.sbar-v{font-size:22px;font-weight:900;line-height:1}
+.sbar-v.tot{color:var(--blue)}
+.sbar-v.pend{color:var(--acc)}
+.sbar-v.done{color:var(--green)}
+.sbar-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+
+/* ── NOTE CARDS ── */
+.note-card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh);border-left:4px solid var(--acc);transition:opacity .2s}
+.note-card.delivered{border-left-color:var(--green);opacity:.72}
+.note-card.loaded{border-left-color:var(--blue)}
+
+.nc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.nc-client{flex:1;min-width:0}
+.nc-name{font-size:15px;font-weight:800;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nc-sub{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nc-chip{padding:3px 10px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;margin-left:8px;margin-top:2px;white-space:nowrap}
+.nc-chip.pending{background:#fff3e0;color:var(--acc)}
+.nc-chip.delivered{background:var(--gbg);color:var(--green)}
+.nc-chip.loaded{background:#e7f5ff;color:var(--blue)}
+
+.nc-prods{font-size:12px;color:var(--text);margin-bottom:8px;padding:8px 10px;background:#f8f9fa;border-radius:8px;line-height:1.7}
+.nc-prods b{font-weight:800;color:var(--acc)}
+
+.nc-note{font-size:13px;color:#444;margin-bottom:8px;line-height:1.55;font-style:italic;padding-left:10px;border-left:3px solid var(--accbrd)}
+
+.nc-expiry{font-size:11px;color:var(--blue);font-weight:700;margin-bottom:8px}
+
+.nc-footer{display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)}
+.nc-meta{font-size:10px;color:var(--muted);line-height:1.7}
+
+.nc-actions{display:flex;gap:6px;flex-shrink:0;margin-left:8px}
+.btn-del{width:32px;height:32px;border:1.5px solid #ffc9c9;background:#fff5f5;border-radius:8px;color:var(--red);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:.15s;flex-shrink:0}
+.btn-del:active{transform:scale(.9)}
+.btn-load{padding:6px 11px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;transition:.2s;line-height:1.3;text-align:center}
+.btn-load:active{transform:scale(.97);background:#155f34}
+.btn-load.loaded{background:var(--blue)}
+
+/* ── EMPTY / LOADING ── */
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty-icon{font-size:42px;margin-bottom:12px}
+.empty-txt{font-size:15px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.empty-sub{font-size:12px}
+.loading-state{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+.spin{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:24px;right:18px;width:56px;height:56px;background:linear-gradient(135deg,#b7410e,#e67e22);color:#fff;border:none;border-radius:50%;font-size:28px;cursor:pointer;box-shadow:0 4px 20px rgba(183,65,14,.4);display:flex;align-items:center;justify-content:center;z-index:200;transition:.2s;line-height:1}
+.fab:active{transform:scale(.9)}
+
+/* ── OVERLAY / DRAWER ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;backdrop-filter:blur(3px)}
+.overlay.open{display:flex;align-items:flex-end}
+.drawer{width:100%;background:#fff;border-radius:20px 20px 0 0;max-height:90vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.4,0,.2,1)}
+.overlay.open .drawer{transform:translateY(0)}
+.handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0;flex-shrink:0}
+.d-hdr{padding:10px 18px 14px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;justify-content:space-between;align-items:flex-start}
+.d-title{font-size:15px;font-weight:800}
+.d-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.d-close{background:none;border:none;font-size:24px;cursor:pointer;color:var(--muted);padding:0 0 0 10px;line-height:1}
+.d-body{overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;flex:1;padding:14px 14px 28px;min-height:0}
+
+/* ── FORM ── */
+.fg{margin-bottom:12px}
+.fl{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;display:flex;align-items:center;gap:3px;text-transform:uppercase;letter-spacing:.5px}
+.req{color:var(--red)}
+.fi{width:100%;padding:12px 13px;font-size:15px;border:1.5px solid var(--border);border-radius:8px;outline:none;transition:border .2s;background:#fff;color:var(--text);font-weight:500}
+.fi:focus{border-color:var(--acc)}
+select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer}
+textarea.fi{resize:vertical;min-height:80px;font-size:14px;line-height:1.5}
+
+/* ── CLIENT SEARCH ── */
+.cs-wrap{position:relative}
+.cs-inp{width:100%;padding:13px 15px;font-size:15px;border:2px solid var(--border);border-radius:10px;outline:none;transition:border .2s;background:#fff;color:var(--text);font-weight:500}
+.cs-inp:focus{border-color:var(--acc)}
+.cs-dd{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#1a1a2e;border:1.5px solid #2d3748;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.35);max-height:240px;overflow-y:auto;z-index:600;display:none}
+.cs-dd.open{display:block}
+.cs-opt{padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.07);transition:background .12s}
+.cs-opt:last-child{border-bottom:none}
+.cs-opt:active{background:rgba(255,255,255,.08)}
+.cs-opt-name{font-weight:700;font-size:14px;color:#e2e8f0}
+.cs-opt-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}
+.cs-empty{padding:12px 14px;color:rgba(255,255,255,.4);font-size:13px}
+
+.cs-selected{display:none;padding:10px 12px;background:var(--accbg);border:1.5px solid var(--accbrd);border-radius:8px;margin-top:6px;align-items:center;justify-content:space-between;gap:8px}
+.cs-selected.show{display:flex}
+.cs-sel-name{font-size:13px;font-weight:800;color:var(--acc2)}
+.cs-sel-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.cs-sel-x{background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:0;line-height:1;flex-shrink:0}
+
+/* ── PRODUCT ROWS ── */
+.pe-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.pe-sel{flex:2;padding:10px 26px 10px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:8px;outline:none;appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E") no-repeat right 8px center;color:var(--text);font-weight:500;cursor:pointer}
+.pe-sel:focus{border-color:var(--acc)}
+.pe-qty{width:62px;padding:10px 6px;font-size:14px;border:1.5px solid var(--border);border-radius:8px;text-align:center;outline:none;font-weight:700}
+.pe-qty:focus{border-color:var(--acc)}
+.pe-del{width:32px;height:36px;border:1.5px solid #ffc9c9;background:#fff5f5;border-radius:8px;color:var(--red);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;transition:.15s}
+.pe-del:active{transform:scale(.9)}
+.btn-add-prod{width:100%;padding:10px;background:var(--accbg);border:1.5px dashed var(--acc);border-radius:8px;color:var(--acc);font-size:13px;font-weight:800;cursor:pointer;text-align:center;margin-top:2px;transition:.15s}
+.btn-add-prod:active{background:#fde8cc}
+
+/* ── SUBMIT ── */
+.sub-btn{width:100%;padding:15px;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#b7410e,#e67e22);box-shadow:0 4px 16px rgba(183,65,14,.3);transition:.2s;margin-top:6px}
+.sub-btn:active{transform:scale(.98)}
+.sub-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:11px 22px;border-radius:100px;font-size:14px;font-weight:700;z-index:1000;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--green)}
+.toast.err{background:var(--red)}
+.toast.info{background:var(--blue)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="hdr-title">📋 Order Notes</div>
+    <div class="hdr-date" id="hdrDate"></div>
+  </div>
+  <div class="tabs">
+    <div class="tab on" id="tab-all"       onclick="setFilter('all')">All</div>
+    <div class="tab"    id="tab-pending"   onclick="setFilter('pending')">⏳ Pending</div>
+    <div class="tab"    id="tab-delivered" onclick="setFilter('delivered')">✅ Done</div>
+  </div>
+</div>
+
+<div class="body">
+  <div class="stats-bar">
+    <div class="sbar"><div class="sbar-v tot"  id="st-total">0</div><div class="sbar-l">Total</div></div>
+    <div class="sbar"><div class="sbar-v pend" id="st-pending">0</div><div class="sbar-l">Pending</div></div>
+    <div class="sbar"><div class="sbar-v done" id="st-done">0</div><div class="sbar-l">Done</div></div>
+  </div>
+  <div id="noteList"><div class="loading-state"><span class="spin"></span>Loading…</div></div>
+</div>
+
+<button class="fab" onclick="openDrawer()" title="New Note">＋</button>
+
+<!-- NEW NOTE DRAWER -->
+<div class="overlay" id="noteOverlay">
+  <div class="drawer">
+    <div class="handle"></div>
+    <div class="d-hdr">
+      <div>
+        <div class="d-title">📋 New Order Note</div>
+        <div class="d-sub">Log a deal — submit to Sales Entry when delivered</div>
+      </div>
+      <button class="d-close" onclick="closeDrawer()">×</button>
+    </div>
+    <div class="d-body">
+
+      <div class="fg">
+        <div class="fl">Client <span class="req">*</span></div>
+        <div class="cs-wrap">
+          <input type="text" class="cs-inp" id="csInp" placeholder="Search name, shop, zone…"
+            autocomplete="off" oninput="filterClients(this.value)" onfocus="showDd()">
+          <div class="cs-dd" id="csDd"></div>
+        </div>
+        <div class="cs-selected" id="csSelected">
+          <div>
+            <div class="cs-sel-name" id="csSelName"></div>
+            <div class="cs-sel-sub"  id="csSelSub"></div>
+          </div>
+          <button class="cs-sel-x" onclick="clearClient()">×</button>
+        </div>
+      </div>
+
+      <div class="fg">
+        <div class="fl">Products <span class="req">*</span></div>
+        <div id="peRows"></div>
+        <button class="btn-add-prod" onclick="addProdRow()">＋ Add Product</button>
+      </div>
+
+      <div class="fg">
+        <div class="fl">Deal Note <span class="req">*</span></div>
+        <textarea class="fi" id="fnote" placeholder="e.g. Agreed 5 bottles Chain Lube, will collect payment on delivery. Client wants invoice…"></textarea>
+      </div>
+
+      <div class="fg">
+        <div class="fl">Expected Delivery</div>
+        <input type="date" class="fi" id="fdate">
+      </div>
+
+      <div class="fg">
+        <div class="fl">Salesman <span class="req">*</span></div>
+        <select class="fi" id="fseller"></select>
+      </div>
+
+      <button class="sub-btn" id="subBtn" onclick="saveNote()">💾 Save Note</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+const SHEET_ID = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
+
+// Get userId from URL param (set by ERP shell on loadPanel)
+const URL_PARAMS = new URLSearchParams(location.search);
+const USER_ID    = URL_PARAMS.get('userId') || 'default';
+const NOTES_KEY  = 'enkore_notes_' + USER_ID;
+
+let clients = [], products = [], staff = [];
+let selClient = null;
+let allNotes  = [];
+let curFilter = 'all';
+let peCount   = 0;
+
+// ── INIT ──────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  setHeaderDate();
+  loadSheetData();
+  loadNotes();
+
+  // Close dropdown when tapping outside
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.cs-wrap')) closeDd();
+  });
+  document.getElementById('noteOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('noteOverlay')) closeDrawer();
+  });
+
+  // Keyboard: resize overlay + scroll focused input into view
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      const vv  = window.visualViewport;
+      const kbH = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      document.querySelector('.body').style.paddingBottom = kbH > 80 ? (kbH + 80) + 'px' : '90px';
+      const ov = document.getElementById('noteOverlay');
+      if (ov.classList.contains('open')) {
+        ov.style.height = vv.height + 'px';
+        ov.style.top    = vv.offsetTop + 'px';
+        const dr = ov.querySelector('.drawer');
+        if (dr) dr.style.maxHeight = Math.max(200, vv.height - 10) + 'px';
+      }
+    });
+  }
+  document.addEventListener('focusin', e => {
+    if (!e.target.matches('input,select,textarea')) return;
+    if (e.target.closest('.overlay')) {
+      setTimeout(() => {
+        const sp = e.target.closest('.d-body');
+        if (sp) e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350);
+    }
+  });
+});
+
+// ── DATE ─────────────────────────────────────────────────────
+function ordinal(n) { const s=['th','st','nd','rd'],v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+function setHeaderDate() {
+  const d=new Date(), days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+    mos=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('hdrDate').textContent =
+    `${days[d.getDay()]}, ${ordinal(d.getDate())} ${mos[d.getMonth()]} '${String(d.getFullYear()).slice(-2)}`;
+}
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d   = new Date(iso + (iso.includes('T') ? '' : 'T00:00:00'));
+  const mos = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getDate()} ${mos[d.getMonth()]}, '${String(d.getFullYear()).slice(-2)}`;
+}
+
+// ── SHEET DATA ────────────────────────────────────────────────
+async function loadSheetData() {
+  try {
+    const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+    const [pTxt, sTxt, cTxt] = await Promise.all([
+      fetch(`${base}&sheet=Control&range=F3:F`).then(r => r.text()),
+      fetch(`${base}&sheet=Control&range=K3:K`).then(r => r.text()),
+      fetch(`${base}&sheet=Clients%20Info`).then(r => r.text()),
+    ]);
+    products = (parseGviz(pTxt)?.table.rows || [])
+      .map(r => String(r.c?.[0]?.v || '').trim()).filter(Boolean);
+    staff = (parseGviz(sTxt)?.table.rows || [])
+      .map(r => String(r.c?.[0]?.v || '').trim()).filter(Boolean);
+    clients = (parseGviz(cTxt)?.table.rows || [])
+      .filter(r => r.c?.[7]?.v)
+      .map(r => ({
+        name:  r.c[2]?.v || '',
+        shop:  r.c[3]?.v || '',
+        loc:   r.c[4]?.v || '',
+        zone:  r.c[5]?.v || '',
+        phone: String(r.c[6]?.v || ''),
+        det:   r.c[7]?.v || '',
+        type:  r.c[1]?.v || '',
+      }));
+
+    // Populate staff select
+    const sel = document.getElementById('fseller');
+    sel.innerHTML = '<option value="">— Select —</option>';
+    staff.forEach(s => sel.add(new Option(s, s)));
+    autoFillSeller();
+  } catch(e) { console.error('Sheet data load:', e); }
+}
+
+function autoFillSeller() {
+  try {
+    const u = JSON.parse(window.parent?.sessionStorage?.getItem('erp_user') || 'null');
+    if (!u?.name) return;
+    const sel = document.getElementById('fseller');
+    for (let i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === u.name) { sel.selectedIndex = i; break; }
+    }
+  } catch(_) {}
+}
+
+// ── NOTES: LOAD / SAVE ────────────────────────────────────────
+function loadNotes() {
+  try { allNotes = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]'); }
+  catch(_) { allNotes = []; }
+  allNotes.sort((a, b) => b.ts - a.ts);
+  renderNotes();
+}
+
+function persistNotes() {
+  try { localStorage.setItem(NOTES_KEY, JSON.stringify(allNotes)); }
+  catch(_) {}
+}
+
+// ── FILTER / RENDER ───────────────────────────────────────────
+function setFilter(f) {
+  curFilter = f;
+  ['all', 'pending', 'delivered'].forEach(x =>
+    document.getElementById('tab-' + x).classList.toggle('on', x === f)
+  );
+  renderNotes();
+}
+
+function renderNotes() {
+  const total   = allNotes.length;
+  const pending = allNotes.filter(n => n.status === 'pending').length;
+  const done    = allNotes.filter(n => n.status !== 'pending').length;
+  document.getElementById('st-total').textContent   = total;
+  document.getElementById('st-pending').textContent = pending;
+  document.getElementById('st-done').textContent    = done;
+
+  const list = allNotes.filter(n =>
+    curFilter === 'all' ||
+    (curFilter === 'pending'   && n.status === 'pending') ||
+    (curFilter === 'delivered' && n.status !== 'pending')
+  );
+
+  const el = document.getElementById('noteList');
+  if (!list.length) {
+    const msgs = {
+      all:       ['📭', 'No notes yet',           'Tap + to add your first order note'],
+      pending:   ['⏳', 'No pending notes',        'All orders accounted for!'],
+      delivered: ['✅', 'No delivered notes yet',  'Mark pending notes done after dispatch'],
+    };
+    const [icon, txt, sub] = msgs[curFilter];
+    el.innerHTML = `<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-txt">${txt}</div><div class="empty-sub">${sub}</div></div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(n => {
+    const isPending  = n.status === 'pending';
+    const isLoaded   = n.status === 'loaded';
+    const chipCls    = isPending ? 'pending' : isLoaded ? 'loaded' : 'delivered';
+    const chipTxt    = isPending ? '⏳ Pending' : isLoaded ? '📤 Sent to Sale' : '✅ Done';
+    const cardCls    = isPending ? '' : isLoaded ? 'loaded' : 'delivered';
+
+    const prodHtml = (n.products || []).length
+      ? `<div class="nc-prods">${n.products.map(p => `<b>${p.qty}×</b> ${p.name}`).join('&ensp;·&ensp;')}</div>`
+      : '';
+    const noteHtml  = n.note   ? `<div class="nc-note">${escHtml(n.note)}</div>` : '';
+    const expiryHtml = n.expDate
+      ? `<div class="nc-expiry">📅 Expected: ${fmtDate(n.expDate)}</div>` : '';
+
+    const loadBtn = isPending
+      ? `<button class="btn-load" onclick="loadToSale('${n.id}')">📤 Load to Sale</button>`
+      : isLoaded
+      ? `<button class="btn-load loaded" onclick="loadToSale('${n.id}')">↩ Re-send</button>`
+      : '';
+
+    return `
+    <div class="note-card ${cardCls}" id="nc-${n.id}">
+      <div class="nc-top">
+        <div class="nc-client">
+          <div class="nc-name">${escHtml(n.clientName)}</div>
+          <div class="nc-sub">${escHtml(n.clientSub)}</div>
+        </div>
+        <span class="nc-chip ${chipCls}">${chipTxt}</span>
+      </div>
+      ${prodHtml}
+      ${noteHtml}
+      ${expiryHtml}
+      <div class="nc-footer">
+        <div class="nc-meta">
+          <div>🗓 ${fmtDate(n.date.split('T')[0])}</div>
+          <div>👤 ${escHtml(n.seller)}</div>
+        </div>
+        <div class="nc-actions">
+          <button class="btn-del" onclick="deleteNote('${n.id}')" title="Delete">🗑</button>
+          ${loadBtn}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── LOAD TO SALE ──────────────────────────────────────────────
+// Stores prefill in sessionStorage and asks parent to navigate to sales-entry.
+// When sales-entry panel loads, it reads this key and pre-fills the form.
+// Works whether this panel and sales-entry are the same file or separate panels.
+function loadToSale(id) {
+  const note = allNotes.find(n => n.id === id);
+  if (!note) return;
+
+  // Build prefill payload
+  const prefill = {
+    clientDet:  note.clientDet,
+    clientName: note.clientName,
+    products:   note.products,  // [{name, qty}]
+    noteId:     note.id,
+    fromNote:   true,
+  };
+
+  // Store in sessionStorage so sales-entry can pick it up on load
+  try { sessionStorage.setItem('enkore_note_prefill', JSON.stringify(prefill)); }
+  catch(_) {}
+
+  // Mark note as "loaded to sale" so the card reflects it
+  note.status = 'loaded';
+  persistNotes();
+  renderNotes();
+
+  // Ask parent ERP shell to navigate to the sales-entry panel
+  // Parent listens for ENKORE_NAV_PANEL and calls its own loadPanel()
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'ENKORE_NAV_PANEL', panel: 'sales-entry' }, '*');
+  }
+
+  toast('📤 Opening Sales Entry…', 'info');
+}
+
+// ── DELETE ────────────────────────────────────────────────────
+function deleteNote(id) {
+  if (!confirm('Delete this note?')) return;
+  allNotes = allNotes.filter(n => n.id !== id);
+  persistNotes();
+  renderNotes();
+  toast('Note deleted');
+}
+
+// ── DRAWER ────────────────────────────────────────────────────
+function openDrawer() {
+  // Reset form
+  selClient = null;
+  document.getElementById('csInp').value = '';
+  document.getElementById('csSelected').classList.remove('show');
+  document.getElementById('fnote').value  = '';
+  document.getElementById('fdate').value  = '';
+  document.getElementById('peRows').innerHTML = '';
+  peCount = 0;
+  addProdRow();
+  closeDd();
+  autoFillSeller();
+  lockBody();
+  document.getElementById('noteOverlay').classList.add('open');
+}
+
+function closeDrawer() {
+  const ov = document.getElementById('noteOverlay');
+  ov.classList.remove('open');
+  ov.style.height = ''; ov.style.top = '';
+  const dr = ov.querySelector('.drawer');
+  if (dr) dr.style.maxHeight = '';
+  unlockBody();
+}
+
+// ── PRODUCT ROWS ─────────────────────────────────────────────
+function addProdRow() {
+  const idx = peCount++;
+  const div = document.createElement('div');
+  div.className = 'pe-row';
+  div.id = `pe-${idx}`;
+  div.innerHTML = `
+    <select class="pe-sel">
+      <option value="">— Product —</option>
+      ${products.map(p => `<option value="${escAttr(p)}">${escHtml(p)}</option>`).join('')}
+    </select>
+    <input type="number" class="pe-qty" value="1" min="1" placeholder="Qty">
+    <button class="pe-del" onclick="removeProdRow(${idx})">×</button>`;
+  document.getElementById('peRows').appendChild(div);
+  syncDelBtns();
+}
+
+function removeProdRow(idx) {
+  if (document.querySelectorAll('.pe-row').length <= 1) return;
+  document.getElementById(`pe-${idx}`)?.remove();
+  syncDelBtns();
+}
+
+function syncDelBtns() {
+  const rows = document.querySelectorAll('.pe-row');
+  rows.forEach(r => {
+    r.querySelector('.pe-del').style.visibility = rows.length > 1 ? 'visible' : 'hidden';
+  });
+}
+
+// ── CLIENT SEARCH ─────────────────────────────────────────────
+function showDd() {
+  renderOpts(clients);
+  document.getElementById('csDd').classList.add('open');
+}
+function closeDd() { document.getElementById('csDd').classList.remove('open'); }
+
+function filterClients(q) {
+  const lq = q.toLowerCase().trim();
+  const res = lq
+    ? clients.filter(c =>
+        c.name.toLowerCase().includes(lq) ||
+        c.shop.toLowerCase().includes(lq) ||
+        c.loc.toLowerCase().includes(lq)  ||
+        c.zone.toLowerCase().includes(lq) ||
+        c.phone.includes(lq))
+    : clients;
+  renderOpts(res);
+  document.getElementById('csDd').classList.add('open');
+}
+
+function renderOpts(list) {
+  const dd   = document.getElementById('csDd');
+  const icon = t => t==='Retail Shop'?'🏪':t==='Dealer'?'🏢':t==='Brand'?'🏷️':'👤';
+  if (!list.length) { dd.innerHTML = `<div class="cs-empty">No clients found</div>`; return; }
+  dd.innerHTML = list.slice(0, 60).map(c => `
+    <div class="cs-opt" onclick="pickClient(${JSON.stringify(c.det).replace(/"/g,'&quot;')})">
+      <div class="cs-opt-name">${icon(c.type)} ${escHtml(c.name || c.shop)}</div>
+      <div class="cs-opt-sub">${escHtml([c.shop, c.loc, c.zone, c.phone].filter(Boolean).join(' · '))}</div>
+    </div>`).join('');
+}
+
+function pickClient(det) {
+  const c = clients.find(x => x.det === det);
+  if (!c) return;
+  selClient = c;
+  document.getElementById('csInp').value = '';
+  closeDd();
+  document.getElementById('csSelName').textContent = c.name || c.shop;
+  document.getElementById('csSelSub').textContent  = [c.shop, c.loc, c.zone, c.phone].filter(Boolean).join(' · ');
+  document.getElementById('csSelected').classList.add('show');
+}
+
+function clearClient() {
+  selClient = null;
+  document.getElementById('csSelected').classList.remove('show');
+  document.getElementById('csInp').value = '';
+  document.getElementById('csInp').focus();
+}
+
+// ── SAVE NOTE ────────────────────────────────────────────────
+function saveNote() {
+  if (!selClient) { toast('Select a client', 'err'); return; }
+
+  const prods = [];
+  document.querySelectorAll('.pe-row').forEach(row => {
+    const name = row.querySelector('.pe-sel').value;
+    const qty  = parseInt(row.querySelector('.pe-qty').value) || 1;
+    if (name) prods.push({ name, qty });
+  });
+  if (!prods.length) { toast('Select at least one product', 'err'); return; }
+
+  const note   = document.getElementById('fnote').value.trim();
+  const expDate = document.getElementById('fdate').value;
+  const seller = document.getElementById('fseller').value;
+
+  if (!note)   { toast('Add a deal note', 'err'); return; }
+  if (!seller) { toast('Select a salesman', 'err'); return; }
+
+  const newNote = {
+    id:         'n' + Date.now() + Math.random().toString(36).substr(2, 4),
+    ts:         Date.now(),
+    date:       new Date().toISOString(),
+    clientName: selClient.name || selClient.shop,
+    clientSub:  [selClient.shop, selClient.loc, selClient.zone].filter(Boolean).join(' · '),
+    clientDet:  selClient.det,
+    products:   prods,
+    note,
+    expDate:    expDate || '',
+    seller,
+    status:     'pending',
+  };
+
+  allNotes.unshift(newNote);
+  persistNotes();
+  closeDrawer();
+  setFilter('pending');
+  toast('📋 Note saved!', 'ok');
+}
+
+// ── SCROLL LOCK ───────────────────────────────────────────────
+let _lockY = 0;
+function lockBody() {
+  _lockY = window.scrollY;
+  document.body.style.cssText += `;position:fixed;top:-${_lockY}px;width:100%`;
+}
+function unlockBody() {
+  document.body.style.position = '';
+  document.body.style.top      = '';
+  document.body.style.width    = '';
+  window.scrollTo(0, _lockY);
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+let _tt;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = `toast ${type} show`;
+  clearTimeout(_tt);
+  _tt = setTimeout(() => (el.className = 'toast'), 3200);
+}
+
+// ── HELPERS ──────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) { return escHtml(s); }
+
+function parseGviz(txt) {
+  try {
+    const m = txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+    return m ? JSON.parse(m[1]) : null;
+  } catch(_) { return null; }
+}
+</script>
+</body>
+</html>
