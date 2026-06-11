@@ -376,9 +376,8 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
       <div class="sbar"><div class="sbar-v fwd" id="nst-fwd">—</div><div class="sbar-l">Forwarded</div></div>
     </div>
     <div class="nfilter">
-      <button class="nfbtn on" id="nf-all"       onclick="setNFilter('all')">All</button>
-      <button class="nfbtn"    id="nf-pending"   onclick="setNFilter('pending')">⏳ Pending</button>
-      <button class="nfbtn"    id="nf-forwarded" onclick="setNFilter('forwarded')">📤 Forwarded</button>
+      <button class="nfbtn on" id="nf-all"     onclick="setNFilter('all')">All</button>
+      <button class="nfbtn"    id="nf-pending" onclick="setNFilter('pending')">⏳ Pending</button>
     </div>
     <div id="noteCards"></div>
   </div>
@@ -474,20 +473,8 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
       <button class="d-close" onclick="closeNoteDrawer()">×</button>
     </div>
     <div class="nc-d-body">
-      <!-- Client -->
-      <div class="nc-fg">
-        <div class="nc-lbl">Client <span class="req">*</span></div>
-        <div class="cs-wrap" style="margin-top:5px">
-          <input type="text" class="cs-input" id="ndCsInput" placeholder="Search name, shop, zone…"
-            autocomplete="off" oninput="ndFilterClients(this.value)" onfocus="ndOpenDd()">
-          <div class="cs-dd" id="ndCsDd"></div>
-        </div>
-        <div class="cs-status" id="ndCsStatus" style="margin-bottom:0">
-          <div class="cs-status-name" id="ndCsName"></div>
-          <div class="cs-status-sub" id="ndCsSub" style="margin-bottom:6px"></div>
-          <button class="hist-btn" style="margin-top:0" onclick="ndClearClient()">✕ Change Client</button>
-        </div>
-      </div>
+      <!-- Client (auto-filled from main panel selection) -->
+      <div id="ndClientInfo" style="margin-bottom:12px"></div>
       <!-- Products -->
       <div class="nc-fg">
         <div class="nc-lbl">Products <span class="req">*</span></div>
@@ -1382,9 +1369,10 @@ let allNotes = [], noteFilter = 'all', noteProdCount = 0, noteSelClient = null, 
 // ── FILTER ────────────────────────────────────────────────────
 function setNFilter(f) {
   noteFilter = f;
-  ['all','pending','forwarded'].forEach(x =>
-    document.getElementById('nf-' + x).classList.toggle('on', x === f)
-  );
+  ['all','pending'].forEach(x => {
+    const el = document.getElementById('nf-' + x);
+    if (el) el.classList.toggle('on', x === f);
+  });
   renderNoteCards();
 }
 
@@ -1421,16 +1409,17 @@ function renderNoteCards() {
     const dispSub   = String(n.client||'').split(',').slice(1).join(',').trim();
 
     const prodLines = (n.products||[]).map(p => {
-      const gift   = p.gift === 'YES' ? ' 🎁' : '';
+      const isGift = String(p.gift||'').trim().toUpperCase() === 'YES';
+      const giftTag= isGift ? ' 🎁' : '';
       const lineTx = +p.price > 0 ? `৳${Number(p.price).toLocaleString('en-IN')} × ${p.qty}` : `${p.qty} pcs`;
-      const tot    = +p.price > 0 ? `→ ৳${(p.price*p.qty-(+p.discount||0)).toLocaleString('en-IN')}` : '';
-      return `<div><b>${p.qty}×</b> ${p.product}${gift} <span style="color:var(--muted);font-size:11px">${lineTx} ${tot}</span></div>`;
+      const tot    = isGift ? '(Gift)' : (+p.price > 0 ? `→ ৳${(p.price*p.qty-(+p.discount||0)).toLocaleString('en-IN')}` : '');
+      return `<div><b>${p.qty}×</b> ${p.product}${giftTag} <span style="color:var(--muted);font-size:11px">${lineTx} ${tot}</span></div>`;
     }).join('');
 
     const deadline = n.deadline ? `<div class="nc-deadline">📅 Delivery: ${n.deadline}</div>` : '';
     const noteText = n.comment  ? `<div class="nc-notetext">${n.comment}</div>`               : '';
     const fwdBtn   = isPending
-      ? `<button class="nc-fwd-btn" onclick="forwardToSale('${n.noteId}')">📤 Forward</button>`
+      ? `<button class="nc-fwd-btn" onclick="forwardToSale('${n.noteId}')">📤 Forward to Sales Entry</button>`
       : `<span style="font-size:11px;color:var(--green);font-weight:700">✅ Forwarded</span>`;
 
     return `
@@ -1442,7 +1431,7 @@ function renderNoteCards() {
       <div class="nc-prods">${prodLines||'—'}</div>
       ${noteText}${deadline}
       <div class="nc-foot">
-        <div class="nc-meta"><div>🗓 ${(n.ts||'').split(' ')[0]||''}</div><div>👤 ${n.sellerName||''}</div></div>
+        <div class="nc-meta"><div>🗓 ${fmtNoteDate(n.ts)}</div><div>👤 ${n.sellerName||''}</div></div>
         <div class="nc-acts">
           <button class="nc-del-btn" onclick="deleteNote('${n.noteId}')" title="Delete">🗑</button>
           ${fwdBtn}
@@ -1475,10 +1464,14 @@ async function loadNotes() {
 
 // ── NOTE DRAWER ───────────────────────────────────────────────
 function openNoteDrawer() {
-  noteSelClient = null;
-  document.getElementById('ndCsInput').value = '';
-  document.getElementById('ndCsStatus').classList.remove('show');
-  ndCloseDd();
+  if (!selClient) { toast('Select a client first', 'err'); return; }
+  // Show current client info (read-only)
+  document.getElementById('ndClientInfo').innerHTML = `
+    <div style="background:linear-gradient(135deg,#1565c0,#1971c2);color:#fff;border-radius:10px;padding:12px 14px">
+      <div style="font-size:11px;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Client</div>
+      <div style="font-size:15px;font-weight:800">${selClient.name||selClient.shop}</div>
+      <div style="font-size:11px;opacity:.75;margin-top:2px">${[selClient.shop,selClient.loc,selClient.zone,selClient.phone].filter(Boolean).join(' · ')}</div>
+    </div>`;
   document.getElementById('ndProdRows').innerHTML = '';
   noteProdCount = 0;
   addNoteProdRow();
@@ -1599,54 +1592,14 @@ function calcNote() {
   document.getElementById('ndcFinal').textContent = tk(final_);
 }
 
-// ── NOTE CLIENT SEARCH ────────────────────────────────────────
-function ndOpenDd()  { ndRenderOpts(clients); document.getElementById('ndCsDd').classList.add('open'); }
-function ndCloseDd() { document.getElementById('ndCsDd')?.classList.remove('open'); }
-
-function ndFilterClients(q) {
-  const lq = q.toLowerCase().trim();
-  const res = lq ? clients.filter(c =>
-    c.name.toLowerCase().includes(lq) || c.shop.toLowerCase().includes(lq) ||
-    c.loc.toLowerCase().includes(lq)  || c.zone.toLowerCase().includes(lq) || c.phone.includes(lq)
-  ) : clients;
-  ndRenderOpts(res);
-  document.getElementById('ndCsDd').classList.add('open');
-}
-
-function ndRenderOpts(list) {
-  const dd   = document.getElementById('ndCsDd');
-  const icon = t => t==='Retail Shop'?'🏪':t==='Dealer'?'🏢':t==='Brand'?'🏷️':'👤';
-  if (!list.length) { dd.innerHTML = `<div class="cs-empty">No clients found</div>`; return; }
-  dd.innerHTML = list.slice(0,80).map(c => `
-    <div class="cs-opt" onclick="ndPickClient(${JSON.stringify(c.det).replace(/"/g,'&quot;')})">
-      <div class="cs-opt-name">${icon(c.type)} ${c.name||c.shop}</div>
-      <div class="cs-opt-sub">${[c.shop,c.loc,c.zone,c.phone].filter(Boolean).join(' · ')}</div>
-    </div>`).join('');
-}
-
-function ndPickClient(det) {
-  const c = clients.find(x => x.det === det); if (!c) return;
-  noteSelClient = c;
-  document.getElementById('ndCsInput').value = '';
-  ndCloseDd();
-  document.getElementById('ndCsName').textContent = c.name || c.shop;
-  document.getElementById('ndCsSub').textContent  = [c.shop,c.loc,c.zone,c.phone].filter(Boolean).join(' · ');
-  document.getElementById('ndCsStatus').classList.add('show');
-}
-
-function ndClearClient() {
-  noteSelClient = null;
-  document.getElementById('ndCsStatus').classList.remove('show');
-  document.getElementById('ndCsInput').value = '';
-  document.getElementById('ndCsInput').focus();
-}
+function ndCloseDd() {} // no-op (kept for compatibility with click listener)
 
 // ── SAVE NOTE ─────────────────────────────────────────────────
 let _ndSubmitting = false;
 
 async function saveNote() {
   if (_ndSubmitting) return;
-  if (!noteSelClient) { toast('Select a client', 'err'); return; }
+  if (!selClient) { toast('Select a client first from the panel', 'err'); return; }
 
   const products = [];
   document.querySelectorAll('#ndProdRows .prod-row').forEach(row => {
@@ -1671,7 +1624,7 @@ async function saveNote() {
   try {
     const qs = new URLSearchParams({
       action:     'addOrderNote',
-      client:     noteSelClient.det,
+      client:     selClient.det,
       seller:     NOTES_USER_ID,
       sellerName: seller,
       products:   JSON.stringify(products),
@@ -1747,11 +1700,25 @@ async function deleteNote(noteId) {
 
 // ── UPDATE STATUS ─────────────────────────────────────────────
 async function updateNoteRemoteStatus(noteId, status) {
-  const note = allNotes.find(n => n.noteId === noteId);
-  if (note) { note.status = status; renderNoteCards(); }
+  // If forwarded, remove from local list so it disappears from view
+  if (status === 'Forwarded') {
+    allNotes = allNotes.filter(n => n.noteId !== noteId);
+    renderNoteCards();
+  } else {
+    const note = allNotes.find(n => n.noteId === noteId);
+    if (note) { note.status = status; renderNoteCards(); }
+  }
   try {
     await fetch(`${NOTES_AS_URL}?action=updateNoteStatus&noteId=${encodeURIComponent(noteId)}&status=${encodeURIComponent(status)}`);
   } catch(e) { console.error('Status update:', e); }
+}
+
+// ── DATE FORMAT FOR NOTES ──────────────────────────────────────
+function fmtNoteDate(ts) {
+  const mos = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const d = new Date(String(ts||'').replace(' ','T'));
+  if (isNaN(d.getTime())) return String(ts||'').split(' ')[0] || '';
+  return `${d.getDate()} ${mos[d.getMonth()]}, ${String(d.getFullYear()).slice(-2)}`;
 }
 </script>
 </body>
