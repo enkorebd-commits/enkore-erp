@@ -31,8 +31,9 @@
     }
 
     /* ── greeting ── */
+    /* brand navy — deep shades of the Enkore blue (#29ABE2) */
     .greeting {
-      background:linear-gradient(120deg,#0c1622 0%,#15334e 55%,#1d6fa3 100%);
+      background:linear-gradient(140deg,#0a1f30 0%,#0f3552 70%,#13507c 100%);
       padding:18px 18px 22px;
       color:#fff; position:relative; overflow:hidden;
     }
@@ -83,9 +84,9 @@
 
     /* ═══ SALES VS COLLECTION — distinct dark card ═══ */
     .sc-wrap {
-      background:linear-gradient(150deg,#0f2233 0%,#163e5c 70%,#1a5278 100%);
+      background:linear-gradient(140deg,#0a1f30 0%,#0f3552 70%,#13507c 100%);
       border-radius:18px; padding:14px 12px 12px;
-      box-shadow:0 6px 20px rgba(15,40,62,.25);
+      box-shadow:0 6px 20px rgba(10,31,48,.3);
       color:#fff;
     }
     .sc-title { font-size:10px; font-weight:800; letter-spacing:1.2px; color:rgba(255,255,255,.55); text-transform:uppercase; margin-bottom:10px; }
@@ -114,13 +115,15 @@
 
     .sc-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:10px; }
     .gtile {
-      background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.07);
-      border-radius:12px; padding:8px 9px;
+      background:rgba(255,255,255,.17); border:1px solid rgba(255,255,255,.24);
+      border-radius:12px; padding:9px 10px;
+      box-shadow:0 4px 12px rgba(5,18,29,.35);
     }
-    .gtile-l { font-size:8.5px; color:rgba(255,255,255,.5); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .gtile-v { font-size:13.5px; font-weight:800; line-height:1; white-space:nowrap; color:#fff; }
-    .gtile-v.pos { color:#3fe0a8; }
-    .gtile-v.neg { color:#ff8a8a; }
+    .gtile-l { font-size:9px; color:rgba(255,255,255,.7); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .gtile-v { font-size:14px; font-weight:800; line-height:1; white-space:nowrap; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.25); }
+    .gtile-v.pos { color:#4ef0b6; }
+    .gtile-v.neg { color:#ff9494; }
+    .sc-wrap .amt .tk { color:rgba(255,255,255,.6); }
 
     .chart-panel {
       background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.07);
@@ -139,8 +142,8 @@
     .perf-tbl { width:100%; min-width:520px; border-collapse:collapse; font-size:12px; }
     .perf-tbl th {
       text-align:right; padding:11px 10px; font-size:9px; font-weight:800;
-      text-transform:uppercase; letter-spacing:.6px; color:var(--sub2);
-      border-bottom:1px solid var(--border); white-space:nowrap; background:#fafbfd;
+      text-transform:uppercase; letter-spacing:.6px; color:rgba(255,255,255,.85);
+      white-space:nowrap; background:#0f3552; border-bottom:none;
     }
     .perf-tbl th:first-child, .perf-tbl td:first-child { text-align:left; padding-left:14px; }
     .perf-tbl td {
@@ -156,7 +159,7 @@
       font-size:10px; font-weight:800;
     }
     .s-name { font-weight:700; max-width:110px; overflow:hidden; text-overflow:ellipsis; }
-    .perf-tbl .tot td { background:#fafbfd; border-top:2px solid var(--border); font-weight:800; }
+    .perf-tbl .tot td { background:#e7f5fd; border-top:2px solid var(--blue); font-weight:800; }
     .rate-pill { display:inline-block; padding:3px 8px; border-radius:20px; font-size:11px; font-weight:800; }
     .rate-hi  { background:#e4f8f0; color:var(--green); }
     .rate-mid { background:#e7f5fd; color:var(--blue-d); }
