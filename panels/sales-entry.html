@@ -237,6 +237,8 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .nc-acts{display:flex;gap:6px}
 .nc-del-btn{width:32px;height:32px;border:1.5px solid #ffc9c9;background:#fff5f5;border-radius:8px;color:var(--red);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:.15s}
 .nc-del-btn:active{transform:scale(.9)}
+.nc-edit-btn{width:32px;height:32px;border:1.5px solid #c9deff;background:#f0f6ff;border-radius:8px;color:var(--blue);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.nc-edit-btn:active{transform:scale(.9)}
 .nc-fwd-btn{padding:6px 11px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;transition:.2s}
 .nc-fwd-btn:active{transform:scale(.97)}
 .n-add-btn{width:100%;padding:13px;background:#e7f5ff;border:2px dashed var(--blue);border-radius:var(--r);color:var(--blue);font-size:14px;font-weight:800;cursor:pointer;text-align:center;margin-bottom:12px;transition:.15s}
@@ -470,8 +472,8 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
     <div class="handle"></div>
     <div class="d-hdr">
       <div class="d-hdr-left">
-        <div class="d-title">📋 New Order Note</div>
-        <div class="d-sub">Log a deal — forward to Sale Entry when ready</div>
+        <div class="d-title" id="ndTitle">📋 New Order Note</div>
+        <div class="d-sub" id="ndSub">Log a deal — forward to Sale Entry when ready</div>
       </div>
       <button class="d-close" onclick="closeNoteDrawer()">×</button>
     </div>
@@ -838,6 +840,7 @@ function clearClient() {
   selClient = null;
   document.getElementById('csStatus').classList.remove('show');
   document.getElementById('cPrev').textContent = tk(0);
+  resetForm();
   calcAll();
   closeDd();
   document.getElementById('csInput').focus();
@@ -1388,6 +1391,7 @@ const NOTES_AS_URL  = 'https://script.google.com/macros/s/AKfycbxYl0JUK_C63JW9h7
 const NOTES_USER_ID = new URLSearchParams(location.search).get('userId') || '';
 
 let allNotes = [], noteFilter = 'all', noteProdCount = 0, noteSelClient = null, notesLoaded = false;
+let _editNoteId = null;
 
 // ── FILTER (removed — always shows pending only) ───────────────
 function setNFilter(f) {
@@ -1440,6 +1444,7 @@ function renderNoteCards() {
       <div class="nc-foot">
         <div class="nc-meta"><div>🗓 ${fmtNoteDate(n.ts)}</div></div>
         <div class="nc-acts">
+          <button class="nc-edit-btn" onclick="openNoteDrawer('${n.noteId}')" title="Edit">✏️</button>
           <button class="nc-del-btn" onclick="deleteNote('${n.noteId}')" title="Delete">🗑</button>
           ${fwdBtn}
         </div>
@@ -1531,20 +1536,66 @@ async function loadNotes() {
 }
 
 // ── NOTE DRAWER ───────────────────────────────────────────────
-function openNoteDrawer() {
-  if (!selClient) { toast('Select a client first', 'err'); return; }
-  // Show current client info (read-only)
+function openNoteDrawer(noteId) {
+  _editNoteId = noteId || null;
+  const isEdit = !!_editNoteId;
+
+  // For new note: require selClient. For edit: use note's stored client.
+  let note = null;
+  if (isEdit) {
+    note = allNotes.find(n => n.noteId === _editNoteId);
+    if (!note) { toast('Note not found', 'err'); return; }
+  } else {
+    if (!selClient) { toast('Select a client first', 'err'); return; }
+  }
+
+  // Update drawer header
+  document.getElementById('ndTitle').textContent = isEdit ? '✏️ Edit Order Note' : '📋 New Order Note';
+  document.getElementById('ndSub').textContent   = isEdit ? 'Update products, deadline or comment' : 'Log a deal — forward to Sale Entry when ready';
+  document.getElementById('ndSaveBtn').innerHTML = isEdit ? '💾 Update Note' : '💾 Save Order Note';
+
+  // Client info banner
+  const clientName = isEdit
+    ? (String(note.client||'').split(',')[0].trim() || note.client)
+    : (selClient.name || selClient.shop);
+  const clientSub = isEdit
+    ? String(note.client||'').split(',').slice(1).join(',').trim()
+    : [selClient.shop, selClient.loc, selClient.zone, selClient.phone].filter(Boolean).join(' · ');
+
   document.getElementById('ndClientInfo').innerHTML = `
     <div style="background:linear-gradient(135deg,#1565c0,#1971c2);color:#fff;border-radius:10px;padding:12px 14px">
       <div style="font-size:11px;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Client</div>
-      <div style="font-size:15px;font-weight:800">${selClient.name||selClient.shop}</div>
-      <div style="font-size:11px;opacity:.75;margin-top:2px">${[selClient.shop,selClient.loc,selClient.zone,selClient.phone].filter(Boolean).join(' · ')}</div>
+      <div style="font-size:15px;font-weight:800">${clientName}</div>
+      <div style="font-size:11px;opacity:.75;margin-top:2px">${clientSub}</div>
     </div>`;
+
+  // Products
   document.getElementById('ndProdRows').innerHTML = '';
   noteProdCount = 0;
-  addNoteProdRow();
-  document.getElementById('ndDeadline').value = '';
-  document.getElementById('ndComment').value  = '';
+
+  if (isEdit && note.products && note.products.length) {
+    note.products.forEach(p => {
+      const idx = noteProdCount; addNoteProdRow();
+      const row = document.getElementById(`npe-${idx}`); if (!row) return;
+      const sel = row.querySelector('.prod-sel');
+      sel.value = p.product; showNoteProdName(sel);
+      row.querySelector('.prod-rate').value = p.price    || '';
+      row.querySelector('.prod-qty').value  = p.qty      || 1;
+      row.querySelector('.prod-disc').value = p.discount || '';
+      if (p.gift === 'YES') {
+        row.dataset.gift = 'true';
+        const gb = row.querySelector('.gift-btn');
+        if (gb) { gb.textContent = '✅ Gift/Sample'; gb.className = 'gift-btn on'; }
+      }
+    });
+    document.getElementById('ndDeadline').value = note.deadline || '';
+    document.getElementById('ndComment').value  = note.comment  || '';
+  } else {
+    addNoteProdRow();
+    document.getElementById('ndDeadline').value = '';
+    document.getElementById('ndComment').value  = '';
+  }
+
   ndSyncSeller();
   calcNote();
   window._lockBodyScroll();
@@ -1556,6 +1607,7 @@ function closeNoteDrawer() {
   ov.classList.remove('open');
   ov.style.height = ''; ov.style.top = '';
   const dr = ov.querySelector('.drawer'); if (dr) dr.style.maxHeight = '';
+  _editNoteId = null;
   window._unlockBodyScroll();
 }
 
@@ -1667,7 +1719,19 @@ let _ndSubmitting = false;
 
 async function saveNote() {
   if (_ndSubmitting) return;
-  if (!selClient) { toast('Select a client first from the panel', 'err'); return; }
+
+  const isEdit = !!_editNoteId;
+
+  // For new note require selClient; edit uses the note's stored client
+  let clientDet = '';
+  if (isEdit) {
+    const n = allNotes.find(x => x.noteId === _editNoteId);
+    if (!n) { toast('Note not found', 'err'); return; }
+    clientDet = n.client;
+  } else {
+    if (!selClient) { toast('Select a client first from the panel', 'err'); return; }
+    clientDet = selClient.det;
+  }
 
   const products = [];
   document.querySelectorAll('#ndProdRows .prod-row').forEach(row => {
@@ -1690,20 +1754,34 @@ async function saveNote() {
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Saving…';
 
   try {
-    const submitId = 'nc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-    const qs = new URLSearchParams({
-      action:     'addOrderNote',
-      submitId,
-      client:     selClient.det,
-      seller:     NOTES_USER_ID,
-      sellerName: seller,
-      products:   JSON.stringify(products),
-      deadline,
-      comment
-    }).toString();
+    let qs;
+    if (isEdit) {
+      qs = new URLSearchParams({
+        action:     'updateOrderNote',
+        noteId:     _editNoteId,
+        client:     clientDet,
+        seller:     NOTES_USER_ID,
+        sellerName: seller,
+        products:   JSON.stringify(products),
+        deadline,
+        comment
+      }).toString();
+    } else {
+      const submitId = 'nc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+      qs = new URLSearchParams({
+        action:     'addOrderNote',
+        submitId,
+        client:     clientDet,
+        seller:     NOTES_USER_ID,
+        sellerName: seller,
+        products:   JSON.stringify(products),
+        deadline,
+        comment
+      }).toString();
+    }
     const res = await fetch(`${NOTES_AS_URL}?${qs}`).then(r => r.json());
-    if (!res.success) throw new Error(res.error || 'Save failed');
-    toast('📋 Note saved!', 'ok');
+    if (!res.success) throw new Error(res.error || (isEdit ? 'Update failed' : 'Save failed'));
+    toast(isEdit ? '✏️ Note updated!' : '📋 Note saved!', 'ok');
     notesLoaded = false;
     closeNoteDrawer();
     await loadNotes();
@@ -1712,7 +1790,7 @@ async function saveNote() {
     toast('❌ Save failed — check connection', 'err');
   } finally {
     _ndSubmitting = false;
-    btn.disabled = false; btn.innerHTML = '💾 Save Order Note';
+    btn.disabled = false; btn.innerHTML = isEdit ? '💾 Update Note' : '💾 Save Order Note';
   }
 }
 
