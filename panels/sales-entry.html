@@ -1803,7 +1803,12 @@ function forwardToSale(noteId) {
 
   // Pick client
   const c = clients.find(x => x.det === note.client);
-  if (c) { selClient = c; showStatus(c); calcAll(); }
+  if (c) {
+    selClient = c;
+    document.getElementById('csInput').value = c.name || c.shop;
+    document.getElementById('csClear').style.display = 'flex';
+    showStatus(c); calcAll();
+  }
 
   // Reset and pre-fill product rows
   document.getElementById('prodRows').innerHTML = '';
