@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     :root {
@@ -72,6 +73,57 @@
     .state { text-align:center; padding:40px 20px; color:var(--sub); font-size:13px; }
     .spin { width:22px; height:22px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
     @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ═══ SALES ANALYTICS ═══ */
+    .range-row {
+      display:flex; align-items:center; gap:8px; margin-bottom:10px;
+    }
+    .date-inp {
+      flex:1; min-width:0;
+      background:var(--card); border:1px solid var(--border); border-radius:10px;
+      padding:9px 10px; font-size:13px; font-weight:600; color:var(--text);
+      font-family:'Inter',sans-serif; outline:none; -webkit-appearance:none;
+    }
+    .date-inp:focus { border-color:var(--blue); }
+    .range-arrow { font-size:12px; color:var(--sub); flex-shrink:0; font-weight:700; }
+    .kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:10px; }
+    .kcard { background:var(--card); border-radius:12px; padding:10px 8px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,0.07); }
+    .kcard-l { font-size:9px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px; }
+    .kcard-v { font-size:15px; font-weight:800; line-height:1; }
+    .kcard-v.blu { color:var(--blue); }
+    .kcard-v.pos { color:var(--green); }
+    .kcard-v.neg { color:var(--red); }
+    .chart-card {
+      background:var(--card); border-radius:14px; padding:12px 10px 8px;
+      box-shadow:0 1px 4px rgba(0,0,0,0.07); margin-bottom:16px;
+      position:relative; height:240px;
+    }
+    .chart-card .state { padding:80px 20px; }
+    .tbl-card {
+      background:var(--card); border-radius:14px;
+      box-shadow:0 1px 4px rgba(0,0,0,0.07); margin-bottom:16px; overflow:hidden;
+    }
+    .tbl-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .perf-tbl { width:100%; min-width:480px; border-collapse:collapse; font-size:12px; }
+    .perf-tbl th {
+      text-align:right; padding:10px 10px; font-size:9px; font-weight:700;
+      text-transform:uppercase; letter-spacing:0.6px; color:var(--sub);
+      border-bottom:1px solid var(--border); white-space:nowrap; background:#fafbfc;
+    }
+    .perf-tbl th:first-child, .perf-tbl td:first-child { text-align:left; }
+    .perf-tbl td {
+      padding:10px 10px; text-align:right; font-weight:600;
+      border-bottom:1px solid #f1f3f5; white-space:nowrap;
+    }
+    .perf-tbl tr:last-child td { border-bottom:none; }
+    .perf-tbl .seller-n { font-weight:700; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+    .perf-tbl .tot td { background:#fafbfc; border-top:2px solid var(--border); font-weight:800; }
+    .rate-pill { display:inline-block; padding:2px 7px; border-radius:20px; font-size:11px; font-weight:800; }
+    .rate-hi  { background:#e6f9f1; color:var(--green); }
+    .rate-mid { background:#e7f5fd; color:var(--blue); }
+    .rate-lo  { background:#fdebed; color:var(--red); }
+    .pos-t { color:var(--green); }
+    .neg-t { color:var(--red); }
   </style>
 </head>
 <body>
@@ -84,6 +136,33 @@
 
 <div id="dash-body">
   <div class="state"><div class="spin"></div>Loading dashboard...</div>
+</div>
+
+<!-- ═══ SALES ANALYTICS (independent of worker data) ═══ -->
+<div class="divider"></div>
+<div class="section">
+  <div class="sec-hdr"><span class="sec-title">Sales vs Collection</span></div>
+  <div class="range-row">
+    <input type="date" class="date-inp" id="d-start" onchange="renderAnalytics()">
+    <span class="range-arrow">→</span>
+    <input type="date" class="date-inp" id="d-end" onchange="renderAnalytics()">
+  </div>
+  <div class="kpi-grid" id="range-kpis" style="display:none">
+    <div class="kcard"><div class="kcard-l">Sales</div><div class="kcard-v blu" id="k-sales">—</div></div>
+    <div class="kcard"><div class="kcard-l">Collection</div><div class="kcard-v pos" id="k-coll">—</div></div>
+    <div class="kcard"><div class="kcard-l">Due</div><div class="kcard-v" id="k-due">—</div></div>
+  </div>
+  <div class="chart-card">
+    <div class="state" id="an-state"><div class="spin"></div>Loading sales data...</div>
+    <canvas id="trendChart" style="display:none"></canvas>
+  </div>
+</div>
+
+<div class="section" id="perf-section" style="display:none; padding-top:0;">
+  <div class="sec-hdr"><span class="sec-title">Salesman Performance</span></div>
+  <div class="tbl-card"><div class="tbl-scroll">
+    <table class="perf-tbl" id="perf-tbl"></table>
+  </div></div>
 </div>
 
 <script>
@@ -195,6 +274,186 @@
     };
     s.src = WORKER+'?type=finance&callback='+cb;
     document.head.appendChild(s);
+  })();
+
+  /* ═══════════════════════════════════════════════════════════
+     SALES ANALYTICS — reads "Sale Entry" tab directly via gviz
+     Columns: A(0) Date · B(1) Client · J(9) Final Bill ·
+              M(12) Paid · P(15) Seller
+     ═══════════════════════════════════════════════════════════ */
+  const SALES_SHEET_ID = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
+  let AN_ROWS = [], trendChart = null;
+
+  function isoLocal(d) {
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+
+  function gvDate(v) {
+    if (v===null || v===undefined || v==='') return null;
+    const s = String(v);
+    let m = s.match(/Date\((\d+),(\d+),(\d+)/);
+    if (m) return new Date(+m[1], +m[2], +m[3]);
+    m = s.match(/^(\d{1,2})\s+([A-Za-z]+),?\s+(\d{2,4})$/);       // "1 Jan, 26"
+    if (m) {
+      const y = m[3].length===2 ? 2000+ +m[3] : +m[3];
+      const d = new Date(m[1]+' '+m[2]+' '+y);
+      return isNaN(d) ? null : d;
+    }
+    const d = new Date(s);
+    return isNaN(d) ? null : d;
+  }
+
+  function cellNum(c)  { return (c && c.v!==null && c.v!==undefined && c.v!=='') ? (Number(c.v)||0) : 0; }
+  function cellStr(c)  { return (c && c.v!==null && c.v!==undefined) ? String(c.v).trim() : ''; }
+
+  async function loadAnalytics() {
+    try {
+      const url = 'https://docs.google.com/spreadsheets/d/'+SALES_SHEET_ID+
+                  '/gviz/tq?tqx=out:json&sheet='+encodeURIComponent('Sale Entry')+'&t='+Date.now();
+      const txt = await fetch(url).then(r => r.text());
+      const m = txt.match(/setResponse\(([\s\S]*)\)\s*;?\s*$/);
+      if (!m) throw new Error('parse');
+      const data = JSON.parse(m[1]);
+      AN_ROWS = (data.table.rows||[]).map(r => {
+        const c = r.c||[];
+        const d = gvDate(c[0] ? c[0].v : null);
+        if (!d) return null;
+        return {
+          d:      new Date(d.getFullYear(), d.getMonth(), d.getDate()),
+          client: cellStr(c[1]),
+          sales:  cellNum(c[9]),
+          paid:   cellNum(c[12]),
+          seller: cellStr(c[15]) || '(No seller)'
+        };
+      }).filter(Boolean);
+      renderAnalytics();
+    } catch(e) {
+      document.getElementById('an-state').innerHTML = '⚠️ Could not load sales data.';
+      console.error(e);
+    }
+  }
+
+  window.renderAnalytics = function() {
+    if (!AN_ROWS.length && !trendChart) { /* data not in yet */ }
+    const sEl = document.getElementById('d-start');
+    const eEl = document.getElementById('d-end');
+    if (!sEl.value || !eEl.value) return;
+    let start = new Date(sEl.value+'T00:00:00');
+    let end   = new Date(eEl.value+'T00:00:00');
+    if (end < start) { const t = start; start = end; end = t; }
+
+    const rows = AN_ROWS.filter(r => r.d >= start && r.d <= end);
+
+    // ── daily buckets ──
+    const dayMs = 86400000;
+    const nDays = Math.round((end - start)/dayMs) + 1;
+    const labels = [], salesArr = [], paidArr = [];
+    const idx = {};
+    for (let i=0; i<nDays; i++) {
+      const d = new Date(start.getTime() + i*dayMs);
+      idx[isoLocal(d)] = i;
+      labels.push(d.getDate()+' '+d.toLocaleDateString('en-GB',{month:'short'}));
+      salesArr.push(0); paidArr.push(0);
+    }
+    let tSales = 0, tPaid = 0;
+    rows.forEach(r => {
+      const i = idx[isoLocal(r.d)];
+      if (i===undefined) return;
+      salesArr[i] += r.sales; paidArr[i] += r.paid;
+      tSales += r.sales; tPaid += r.paid;
+    });
+
+    // ── KPIs ──
+    const due = tSales - tPaid;
+    document.getElementById('range-kpis').style.display = 'grid';
+    document.getElementById('k-sales').textContent = fmt(tSales);
+    document.getElementById('k-coll').textContent  = fmt(tPaid);
+    const kd = document.getElementById('k-due');
+    kd.textContent = fmt(due);
+    kd.className = 'kcard-v ' + (due>0 ? 'neg' : 'pos');
+
+    // ── chart ──
+    document.getElementById('an-state').style.display = 'none';
+    const cv = document.getElementById('trendChart');
+    cv.style.display = 'block';
+    if (trendChart) trendChart.destroy();
+    trendChart = new Chart(cv, {
+      data: {
+        labels: labels,
+        datasets: [
+          { type:'bar',  label:'Sales',      data:salesArr, backgroundColor:'rgba(41,171,226,0.55)', borderRadius:3, order:2 },
+          { type:'line', label:'Collection', data:paidArr,  borderColor:'#00c07a', backgroundColor:'#00c07a',
+            tension:0.3, pointRadius:2, pointHoverRadius:4, borderWidth:2, order:1 }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        interaction:{ mode:'index', intersect:false },
+        plugins:{
+          legend:{ labels:{ boxWidth:10, font:{ family:'Inter', size:10, weight:'700' } } },
+          tooltip:{ callbacks:{ label: ctx => ' '+ctx.dataset.label+': ৳ '+fmt(ctx.parsed.y) } }
+        },
+        scales:{
+          x:{ grid:{ display:false }, ticks:{ font:{ family:'Inter', size:9 }, maxRotation:0, autoSkip:true, maxTicksLimit:8 } },
+          y:{ beginAtZero:true, ticks:{ font:{ family:'Inter', size:9 }, callback:v => v>=1000 ? (v/1000)+'k' : v } }
+        }
+      }
+    });
+
+    // ── salesman table ──
+    const by = {};
+    rows.forEach(r => {
+      const k = r.seller;
+      if (!by[k]) by[k] = { sales:0, paid:0, clients:new Set() };
+      by[k].sales += r.sales;
+      by[k].paid  += r.paid;
+      if (r.client) by[k].clients.add(r.client.toLowerCase());
+    });
+    const sellers = Object.keys(by).sort((a,b) => by[b].sales - by[a].sales);
+
+    function ratePill(sales, paid) {
+      if (!sales) return '<span class="rate-pill rate-mid">—</span>';
+      const p = Math.round(paid/sales*100);
+      const cls = p>=80 ? 'rate-hi' : p>=50 ? 'rate-mid' : 'rate-lo';
+      return '<span class="rate-pill '+cls+'">'+p+'%</span>';
+    }
+    function dueCell(v) {
+      if (v===0) return '<td>0</td>';
+      return v>0 ? '<td class="neg-t">'+fmt(v)+'</td>' : '<td class="pos-t">'+fmt(v)+'</td>';
+    }
+
+    let h = '<thead><tr><th>Seller</th><th>Sales</th><th>Coll.</th><th>Due</th><th>Rate</th><th>Clients</th></tr></thead><tbody>';
+    let totC = new Set();
+    sellers.forEach(k => {
+      const o = by[k];
+      o.clients.forEach(c => totC.add(c));
+      h += '<tr>'+
+        '<td class="seller-n">'+k+'</td>'+
+        '<td>'+fmt(o.sales)+'</td>'+
+        '<td>'+fmt(o.paid)+'</td>'+
+        dueCell(o.sales - o.paid)+
+        '<td>'+ratePill(o.sales, o.paid)+'</td>'+
+        '<td>'+o.clients.size+'</td>'+
+      '</tr>';
+    });
+    h += '<tr class="tot">'+
+      '<td>Total</td><td>'+fmt(tSales)+'</td><td>'+fmt(tPaid)+'</td>'+
+      dueCell(due)+'<td>'+ratePill(tSales, tPaid)+'</td><td>'+totC.size+'</td>'+
+    '</tr></tbody>';
+    document.getElementById('perf-tbl').innerHTML = h;
+    document.getElementById('perf-section').style.display = 'block';
+  };
+
+  (function initAnalytics() {
+    const now   = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const sEl = document.getElementById('d-start');
+    const eEl = document.getElementById('d-end');
+    sEl.value = isoLocal(first);
+    eEl.value = isoLocal(now);
+    sEl.max = isoLocal(now);
+    eEl.max = isoLocal(now);
+    loadAnalytics();
   })();
 </script>
 </body>
