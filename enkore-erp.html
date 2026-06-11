@@ -74,15 +74,15 @@
     /* TOP BAR */
     .topbar {
       position:fixed; top:0; left:0; right:0; height:52px;
-      background:var(--black); border-bottom:1px solid var(--dark2);
+      background:#fff; border-bottom:1px solid #eee;
       display:flex; align-items:center; padding:0 14px 0 16px; gap:10px; z-index:100;
     }
     .tb-logo img { height:24px; }
     .tb-spacer { flex:1; }
-    .tb-panel { font-size:13px; color:#666; font-weight:500; display:none; }
-    .tb-uinfo .tbun { font-size:12px; font-weight:600; color:#fff; }
-    .tb-uinfo .tbur { font-size:10px; color:#666; }
-    .tb-uinfo .tbuid { font-size:9px; color:#444; letter-spacing:0.3px; }
+    .tb-panel { font-size:13px; color:#999; font-weight:500; display:none; }
+    .tb-uinfo .tbun { font-size:12px; font-weight:600; color:#111; }
+    .tb-uinfo .tbur { font-size:10px; color:#888; }
+    .tb-uinfo .tbuid { font-size:9px; color:#aaa; letter-spacing:0.3px; }
     .tb-avatar {
       width:34px; height:34px; border-radius:50%;
       background:var(--blue); color:#fff;
@@ -91,31 +91,31 @@
     }
     .btn-logout-desk {
       display:none; padding:7px 14px;
-      background:var(--dark2); border:1px solid var(--dark3); border-radius:7px;
-      font-size:12px; color:#aaa; font-family:inherit;
+      background:#f5f5f5; border:1px solid #e8e8e8; border-radius:7px;
+      font-size:12px; color:#555; font-family:inherit;
       cursor:pointer; font-weight:500; white-space:nowrap;
     }
-    .btn-logout-desk:hover { background:#2a0a0a; border-color:#7f2222; color:#ef4444; }
+    .btn-logout-desk:hover { background:#fef2f2; border-color:#fca5a5; color:#ef4444; }
 
     /* USER MENU */
     .user-menu {
       position:fixed; top:56px; right:12px;
-      background:var(--dark1); border:1px solid var(--dark3); border-radius:12px; padding:6px 0;
-      min-width:190px; box-shadow:0 8px 28px rgba(0,0,0,0.5);
+      background:#fff; border:1px solid #e8e8e8; border-radius:12px; padding:6px 0;
+      min-width:190px; box-shadow:0 8px 28px rgba(0,0,0,0.12);
       z-index:300; display:none;
     }
     .user-menu.open { display:block; }
-    .um-info { padding:10px 16px; border-bottom:1px solid var(--dark2); margin-bottom:4px; }
-    .um-info .um-n { font-size:13px; font-weight:600; color:#fff; }
-    .um-info .um-r { font-size:11px; color:#666; margin-top:2px; }
-    .um-item { padding:11px 16px; font-size:13px; color:#aaa; cursor:pointer; display:flex; align-items:center; gap:9px; }
-    .um-item:hover { background:var(--dark2); }
+    .um-info { padding:10px 16px; border-bottom:1px solid #f0f0f0; margin-bottom:4px; }
+    .um-info .um-n { font-size:13px; font-weight:600; color:#111; }
+    .um-info .um-r { font-size:11px; color:#888; margin-top:2px; }
+    .um-item { padding:11px 16px; font-size:13px; color:#444; cursor:pointer; display:flex; align-items:center; gap:9px; }
+    .um-item:hover { background:#fafafa; }
     .um-item.danger { color:#ef4444; }
 
     /* CONTENT */
     .content {
       position:fixed; top:52px; left:0; right:0;
-      bottom:calc(62px + env(safe-area-inset-bottom,0px));
+      bottom:calc(58px + env(safe-area-inset-bottom,0px));
       background:#f4f6f8;
     }
     .content iframe { width:100%; height:100%; border:none; display:block; }
@@ -123,23 +123,26 @@
     /* BOTTOM NAV */
     .bottom-nav {
       position:fixed; bottom:0; left:0; right:0;
-      height:calc(62px + env(safe-area-inset-bottom,0px));
+      height:calc(58px + env(safe-area-inset-bottom,0px));
       padding-bottom:env(safe-area-inset-bottom,0px);
-      background:var(--black); border-top:1px solid var(--dark2);
-      display:flex; align-items:stretch;
+      background:#fff; border-top:1px solid #eee;
+      display:flex; align-items:center;
       overflow-x:auto; -webkit-overflow-scrolling:touch;
-      z-index:100; scrollbar-width:none;
+      z-index:100; scrollbar-width:none; padding-left:8px; padding-right:8px; gap:6px;
     }
     .bottom-nav::-webkit-scrollbar { display:none; }
     .bnav-item {
       display:flex; flex-direction:column; align-items:center; justify-content:center;
-      min-width:68px; padding:0 6px; gap:4px;
+      min-width:52px; padding:0 4px; gap:3px;
       cursor:pointer; flex-shrink:0; user-select:none;
-      border-top:2px solid transparent; transition:border-color 0.15s;
     }
-    .bnav-item.active { border-top-color:var(--blue); }
-    .bnav-icon { font-size:20px; line-height:1; }
-    .bnav-label { font-size:9px; font-weight:500; color:#666; white-space:nowrap; }
+    .bnav-icon {
+      width:36px; height:36px; border-radius:50%;
+      background:#f4f6f8; display:flex; align-items:center; justify-content:center;
+      font-size:16px; line-height:1; transition:background 0.15s;
+    }
+    .bnav-item.active .bnav-icon { background:var(--blue); }
+    .bnav-label { font-size:8px; font-weight:500; color:#999; white-space:nowrap; }
     .bnav-item.active .bnav-label { color:var(--blue); font-weight:600; }
 
     /* SIDEBAR */
@@ -213,7 +216,7 @@
 <!-- SHELL -->
 <div id="shell">
   <div class="topbar">
-    <div class="tb-logo"><img src="assets/logo-white.png" alt="Enkore" /></div>
+    <div class="tb-logo"><img src="https://enkorebd.com/wp-content/uploads/2026/03/Black.png" alt="Enkore" /></div>
     <div class="tb-panel" id="tb-panel"></div>
     <div class="tb-spacer"></div>
     <div class="tb-uinfo"><div class="tbun" id="tb-name">-</div><div class="tbur" id="tb-role">-</div><div class="tbuid" id="tb-uid">-</div></div>
