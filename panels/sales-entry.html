@@ -245,6 +245,17 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .n-empty-icon{font-size:38px;margin-bottom:10px}
 .n-empty-txt{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
 .n-loading{text-align:center;padding:30px;color:var(--muted);font-size:13px}
+.confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:20px}
+.confirm-overlay.open{display:flex}
+.confirm-box{background:#fff;border-radius:16px;padding:22px 20px 16px;max-width:320px;width:100%;box-shadow:0 16px 48px rgba(0,0,0,.25);text-align:center}
+.confirm-icon{font-size:32px;margin-bottom:10px}
+.confirm-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px}
+.confirm-sub{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:18px}
+.confirm-btns{display:flex;gap:8px}
+.confirm-cancel{flex:1;padding:11px;background:#f1f3f5;border:none;border-radius:10px;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer;transition:.15s}
+.confirm-cancel:active{background:#dee2e6}
+.confirm-ok{flex:1;padding:11px;background:var(--red);border:none;border-radius:10px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;transition:.15s;box-shadow:0 3px 10px rgba(224,49,49,.3)}
+.confirm-ok:active{transform:scale(.97)}
 .note-calc{background:#1a1a2e;color:#fff;border-radius:var(--r);padding:12px 14px;margin-bottom:12px}
 .ncr{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
 .ncr.ntot{font-size:15px;font-weight:900;border-top:1px solid rgba(255,255,255,.15);margin-top:4px;padding-top:8px}
@@ -505,6 +516,19 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   </div>
 </div>
 
+<!-- Delete Confirm Dialog -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-title">Delete this note?</div>
+    <div class="confirm-sub">This action cannot be undone. The order note will be permanently removed.</div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">Keep it</button>
+      <button class="confirm-ok" id="confirmOkBtn">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -521,6 +545,7 @@ window.addEventListener('DOMContentLoaded', () => {
   setHeaderDate();
   loadAllData();
   addProdRow();
+  loadNotes();
   checkPendingPhotoUpload();
   document.addEventListener('click', e => {
     if (!e.target.closest('.cs-wrap')) { closeDd(); ndCloseDd(); }
@@ -1328,6 +1353,11 @@ async function submitEntry() {
       if (ci >= 0) clients[ci].due = newDueVal;
       showStatus(selClient);
       if (mode === 'payment') updatePayDue(selClient);
+      // If sale came from a forwarded note, mark it done and remove from cards
+      if (window._pendingNoteId) {
+        updateNoteRemoteStatus(window._pendingNoteId, 'Forwarded');
+        window._pendingNoteId = null;
+      }
       resetForm();
     } else throw new Error(js.error || 'Failed');
   } catch(e) { console.error(e); toast('❌ Save failed — check connection', 'err'); }
@@ -1341,6 +1371,7 @@ function resetForm() {
   prodRowCount = 0; addProdRow();
   ['paid','comment','pPaid','pComment'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('cashByGroup').className = 'fg hidden';
+  window._pendingNoteId = null;
   calcAll(); calcPay(); autoFillSeller();
 }
 
@@ -1416,8 +1447,8 @@ function renderNoteCards() {
       return `<div><b>${p.qty}×</b> ${p.product}${giftTag} <span style="color:var(--muted);font-size:11px">${lineTx} ${tot}</span></div>`;
     }).join('');
 
-    const deadline = n.deadline ? `<div class="nc-deadline">📅 Delivery: ${n.deadline}</div>` : '';
-    const noteText = n.comment  ? `<div class="nc-notetext">${n.comment}</div>`               : '';
+    const deadline = `<div class="nc-deadline">📅 Delivery: ${n.deadline ? fmtNoteDate(n.deadline) : 'N/A'}</div>`;
+    const noteText = n.comment  ? `<div class="nc-notetext">${n.comment}</div>` : '';
     const fwdBtn   = isPending
       ? `<button class="nc-fwd-btn" onclick="forwardToSale('${n.noteId}')">📤 Forward to Sales Entry</button>`
       : `<span style="font-size:11px;color:var(--green);font-weight:700">✅ Forwarded</span>`;
@@ -1431,7 +1462,7 @@ function renderNoteCards() {
       <div class="nc-prods">${prodLines||'—'}</div>
       ${noteText}${deadline}
       <div class="nc-foot">
-        <div class="nc-meta"><div>🗓 ${fmtNoteDate(n.ts)}</div><div>👤 ${n.sellerName||''}</div></div>
+        <div class="nc-meta"><div>🗓 ${fmtNoteDate(n.ts)}</div></div>
         <div class="nc-acts">
           <button class="nc-del-btn" onclick="deleteNote('${n.noteId}')" title="Delete">🗑</button>
           ${fwdBtn}
@@ -1453,7 +1484,51 @@ async function loadNotes() {
     const url = `${NOTES_AS_URL}?action=getOrderNotes&seller=${encodeURIComponent(NOTES_USER_ID)}`;
     const res = await fetch(url).then(r => r.json());
     if (!res.success) throw new Error(res.error || 'Failed');
-    allNotes = res.notes || [];
+
+    // Group by noteId (handles both per-row and pre-grouped responses)
+    const raw   = res.notes || [];
+    const map   = {};
+    const order = [];
+    raw.forEach(row => {
+      const id = row.noteId;
+      if (!map[id]) {
+        map[id] = {
+          noteId:     id,
+          client:     row.client     || '',
+          seller:     row.seller     || '',
+          sellerName: row.sellerName || '',
+          deadline:   row.deadline   || '',
+          comment:    row.comment    || '',
+          status:     row.status     || 'Pending',
+          ts:         row.ts         || '',
+          products:   []
+        };
+        order.push(id);
+      }
+      // If already grouped (products array), use it; else build from per-row fields
+      if (Array.isArray(row.products) && row.products.length) {
+        map[id].products = row.products;
+      } else if (row.product) {
+        map[id].products.push({
+          product:  row.product  || '',
+          price:    row.price    || 0,
+          qty:      row.quantity || row.qty || 1,
+          discount: row.discount || 0,
+          gift:     row.gift     || 'NO'
+        });
+      }
+    });
+
+    // Only show pending; sort newest first, then by client
+    allNotes = order.map(id => map[id])
+      .filter(n => (n.status||'').toLowerCase() !== 'forwarded')
+      .sort((a, b) => {
+        const da = new Date(String(a.ts||'').replace(' ','T')).getTime() || 0;
+        const db = new Date(String(b.ts||'').replace(' ','T')).getTime() || 0;
+        if (db !== da) return db - da;
+        return String(a.client||'').localeCompare(String(b.client||''));
+      });
+
     notesLoaded = true;
     renderNoteCards();
   } catch(e) {
@@ -1680,22 +1755,30 @@ function forwardToSale(noteId) {
   document.getElementById('comment').value = note.comment || '';
   autoFillSeller();
 
-  updateNoteRemoteStatus(noteId, 'Forwarded');
+  window._pendingNoteId = noteId; // resolved only on actual sale submission
   toast('📋 Loaded from note — add payment and submit', 'ok');
   window.scrollTo(0, 0);
 }
 
 // ── DELETE NOTE ───────────────────────────────────────────────
-async function deleteNote(noteId) {
-  if (!confirm('Delete this note? This cannot be undone.')) return;
-  try {
-    const url = `${NOTES_AS_URL}?action=deleteOrderNote&noteId=${encodeURIComponent(noteId)}`;
-    const res = await fetch(url).then(r => r.json());
-    if (!res.success) throw new Error(res.error);
-    allNotes = allNotes.filter(n => n.noteId !== noteId);
-    renderNoteCards();
-    toast('Note deleted', '');
-  } catch(e) { toast('❌ Delete failed', 'err'); console.error(e); }
+function deleteNote(noteId) {
+  document.getElementById('confirmOverlay').classList.add('open');
+  const btn = document.getElementById('confirmOkBtn');
+  btn.onclick = async () => {
+    closeConfirm();
+    try {
+      const url = `${NOTES_AS_URL}?action=deleteOrderNote&noteId=${encodeURIComponent(noteId)}`;
+      const res = await fetch(url).then(r => r.json());
+      if (!res.success) throw new Error(res.error);
+      allNotes = allNotes.filter(n => n.noteId !== noteId);
+      renderNoteCards();
+      toast('Note deleted', '');
+    } catch(e) { toast('❌ Delete failed', 'err'); console.error(e); }
+  };
+}
+
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('open');
 }
 
 // ── UPDATE STATUS ─────────────────────────────────────────────
