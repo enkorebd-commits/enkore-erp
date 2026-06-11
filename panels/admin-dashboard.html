@@ -16,7 +16,6 @@
       --bg:      #f4f6fa;
       --card:    #ffffff;
       --text:    #16181d;
-      --sub:     #82879199;
       --sub2:    #828791;
       --border:  #eceff3;
       --r:       16px;
@@ -61,7 +60,7 @@
       background:var(--card); border-radius:12px; padding:9px 8px 8px;
       box-shadow:var(--sh); text-align:left;
     }
-    .ystat-l { font-size:8.5px; color:var(--sub2); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ystat-l { font-size:8.5px; color:var(--sub2); font-weight:700; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .ystat-v { font-size:13px; font-weight:800; line-height:1; white-space:nowrap; }
     .ystat-v.pos { color:var(--green); }
     .ystat-v.neg { color:var(--red); }
@@ -82,59 +81,47 @@
     .ccard-name { font-size:10px; color:var(--sub2); font-weight:600; line-height:1.2; }
     .ccard-val  { font-size:15px; font-weight:800; color:var(--text); margin-top:1px; }
 
-    /* ── range + chips ── */
+    /* ═══ SALES VS COLLECTION — distinct dark card ═══ */
+    .sc-wrap {
+      background:linear-gradient(150deg,#0f2233 0%,#163e5c 70%,#1a5278 100%);
+      border-radius:18px; padding:14px 12px 12px;
+      box-shadow:0 6px 20px rgba(15,40,62,.25);
+      color:#fff;
+    }
+    .sc-title { font-size:10px; font-weight:800; letter-spacing:1.2px; color:rgba(255,255,255,.55); text-transform:uppercase; margin-bottom:10px; }
+    .sc-wrap .amt .tk { color:rgba(255,255,255,.45); }
+
     .range-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-    .date-inp {
-      flex:1; min-width:0;
-      background:var(--card); border:1px solid var(--border); border-radius:12px;
-      padding:10px 10px; font-size:13px; font-weight:600; color:var(--text);
-      font-family:'Inter',sans-serif; outline:none; -webkit-appearance:none;
-      box-shadow:var(--sh); transition:border .15s;
+    .dwrap {
+      position:relative; flex:1; min-width:0;
+      background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16);
+      border-radius:12px; padding:10px 6px;
+      font-size:13px; font-weight:700; color:#fff; text-align:center;
+      white-space:nowrap; overflow:hidden;
     }
-    .date-inp:focus { border-color:var(--blue); }
-    .range-arrow { font-size:12px; color:var(--sub2); flex-shrink:0; font-weight:700; }
+    .dwrap input {
+      position:absolute; inset:0; width:100%; height:100%;
+      opacity:0; border:0; cursor:pointer; -webkit-appearance:none;
+    }
+    .range-arrow { font-size:12px; color:rgba(255,255,255,.5); flex-shrink:0; font-weight:700; }
 
-    .kpi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:10px; }
-    @media(min-width:560px){ .kpi-grid { grid-template-columns:repeat(4,1fr); } }
-    .kcard {
-      background:var(--card); border-radius:12px; padding:10px 12px;
-      box-shadow:var(--sh); border-left:3px solid var(--border);
+    .sc-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:10px; }
+    .gtile {
+      background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.07);
+      border-radius:12px; padding:8px 9px;
     }
-    .kcard.b-blu { border-left-color:var(--blue); }
-    .kcard.b-grn { border-left-color:var(--green); }
-    .kcard.b-red { border-left-color:var(--red); }
-    .kcard-l { font-size:9px; color:var(--sub2); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
-    .kcard-v { font-size:16px; font-weight:800; line-height:1; }
-    .kcard-v.blu { color:var(--blue); }
-    .kcard-v.pos { color:var(--green); }
-    .kcard-v.neg { color:var(--red); }
+    .gtile-l { font-size:8.5px; color:rgba(255,255,255,.5); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .gtile-v { font-size:13.5px; font-weight:800; line-height:1; white-space:nowrap; color:#fff; }
+    .gtile-v.pos { color:#3fe0a8; }
+    .gtile-v.neg { color:#ff8a8a; }
 
-    /* ── chart ── */
-    .chart-card {
-      background:var(--card); border-radius:var(--r); padding:12px 10px 8px;
-      box-shadow:var(--sh); margin-bottom:10px;
-      position:relative; height:230px;
+    .chart-panel {
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.07);
+      border-radius:14px; padding:10px 8px 6px;
+      position:relative; height:225px;
     }
-    .chart-card .state { padding:75px 20px; }
-
-    /* ── P&L strip (merged) ── */
-    .pnl-strip { display:none; margin-bottom:10px; }
-    .pnl-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-    .pnl-title { font-size:10px; font-weight:800; letter-spacing:1.2px; color:var(--sub2); text-transform:uppercase; }
-    .month-sel {
-      appearance:none; -webkit-appearance:none;
-      background:var(--card); border:1px solid var(--border); border-radius:20px;
-      padding:6px 26px 6px 12px; font-size:12px; font-weight:700; color:var(--text);
-      cursor:pointer; outline:none; font-family:'Inter',sans-serif; box-shadow:var(--sh);
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23828791'/%3E%3C/svg%3E");
-      background-repeat:no-repeat; background-position:right 10px center;
-    }
-    .pnl-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-    .pcard { background:var(--card); border-radius:12px; padding:10px 12px; box-shadow:var(--sh); }
-    .pcard-l { font-size:9px; color:var(--sub2); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
-    .pcard-v { font-size:14px; font-weight:800; line-height:1; white-space:nowrap; }
-    .pcard-v.pos { color:var(--green); }
-    .pcard-v.neg { color:var(--red); }
+    .chart-panel .state { padding:70px 20px; color:rgba(255,255,255,.55); }
+    .chart-panel .spin { border-color:rgba(255,255,255,.2); border-top-color:#fff; }
 
     /* ── table ── */
     .tbl-card {
@@ -142,10 +129,10 @@
       box-shadow:var(--sh); margin-bottom:16px; overflow:hidden;
     }
     .tbl-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .perf-tbl { width:100%; min-width:500px; border-collapse:collapse; font-size:12px; }
+    .perf-tbl { width:100%; min-width:520px; border-collapse:collapse; font-size:12px; }
     .perf-tbl th {
       text-align:right; padding:11px 10px; font-size:9px; font-weight:800;
-      text-transform:uppercase; letter-spacing:.7px; color:var(--sub2);
+      text-transform:uppercase; letter-spacing:.6px; color:var(--sub2);
       border-bottom:1px solid var(--border); white-space:nowrap; background:#fafbfd;
     }
     .perf-tbl th:first-child, .perf-tbl td:first-child { text-align:left; padding-left:14px; }
@@ -188,35 +175,34 @@
   <div class="state"><div class="spin"></div>Loading dashboard...</div>
 </div>
 
-<!-- SALES VS COLLECTION (with merged P&L) -->
+<!-- SALES VS COLLECTION -->
 <div class="section">
-  <div class="sec-hdr"><span class="sec-title">Sales vs Collection</span></div>
-  <div class="range-row">
-    <input type="date" class="date-inp" id="d-start" onchange="renderAnalytics()">
-    <span class="range-arrow">→</span>
-    <input type="date" class="date-inp" id="d-end" onchange="renderAnalytics()">
-  </div>
-  <div class="kpi-grid" id="range-kpis" style="display:none">
-    <div class="kcard b-blu"><div class="kcard-l">Sales</div><div class="kcard-v blu" id="k-sales">—</div></div>
-    <div class="kcard b-grn"><div class="kcard-l">Collection</div><div class="kcard-v pos" id="k-coll">—</div></div>
-    <div class="kcard" id="k-due-card"><div class="kcard-l">Due</div><div class="kcard-v" id="k-due">—</div></div>
-    <div class="kcard b-blu"><div class="kcard-l">Rate</div><div class="kcard-v blu" id="k-rate">—</div></div>
-  </div>
-  <div class="chart-card">
-    <div class="state" id="an-state"><div class="spin"></div>Loading sales data...</div>
-    <canvas id="trendChart" style="display:none"></canvas>
-  </div>
-
-  <div class="pnl-strip" id="pnl-strip">
-    <div class="pnl-head">
-      <span class="pnl-title">P&amp;L</span>
-      <select class="month-sel" id="msel" onchange="switchMonth(this.value)"></select>
+  <div class="sc-wrap">
+    <div class="sc-title">Sales vs Collection</div>
+    <div class="range-row">
+      <div class="dwrap"><span id="ds-show">—</span><input type="date" id="d-start" onchange="renderAnalytics()"></div>
+      <span class="range-arrow">→</span>
+      <div class="dwrap"><span id="de-show">—</span><input type="date" id="d-end" onchange="renderAnalytics()"></div>
     </div>
-    <div class="pnl-grid" id="mcards"></div>
+    <div class="sc-grid" id="sc-grid" style="display:none">
+      <div class="gtile"><div class="gtile-l">Sales</div><div class="gtile-v" id="k-sales">—</div></div>
+      <div class="gtile"><div class="gtile-l">Due</div><div class="gtile-v" id="k-due">—</div></div>
+      <div class="gtile"><div class="gtile-l">Collection</div><div class="gtile-v" id="k-coll">—</div></div>
+      <div class="gtile"><div class="gtile-l">Collection Rate</div><div class="gtile-v" id="k-crate">—</div></div>
+      <div class="gtile"><div class="gtile-l">Gross Profit</div><div class="gtile-v" id="k-gp">—</div></div>
+      <div class="gtile"><div class="gtile-l">Gross Profit %</div><div class="gtile-v" id="k-gpp">—</div></div>
+      <div class="gtile"><div class="gtile-l">Expense</div><div class="gtile-v" id="k-exp">—</div></div>
+      <div class="gtile"><div class="gtile-l">Net Profit</div><div class="gtile-v" id="k-np">—</div></div>
+      <div class="gtile"><div class="gtile-l">Net Profit %</div><div class="gtile-v" id="k-npp">—</div></div>
+    </div>
+    <div class="chart-panel">
+      <div class="state" id="an-state"><div class="spin"></div>Loading sales data...</div>
+      <canvas id="trendChart" style="display:none"></canvas>
+    </div>
   </div>
 </div>
 
-<div class="section" id="perf-section" style="display:none; padding-top:0;">
+<div class="section" id="perf-section" style="display:none; padding-top:14px;">
   <div class="sec-hdr"><span class="sec-title">Salesman Performance</span></div>
   <div class="tbl-card"><div class="tbl-scroll">
     <table class="perf-tbl" id="perf-tbl"></table>
@@ -287,13 +273,13 @@
   // ── compact YTD stats ──
   function ytdGrid(row) {
     const stats = [
-      { lbl:'Sales',      val:tk(row[C.sales]),     cls:'blu' },
-      { lbl:'Paid',       val:tk(row[C.paid]),      cls:'pos' },
-      { lbl:'Clearance',  val:fmtPct(row[C.clrPct]),cls: Number(row[C.clrPct])>=0.8?'pos':'blu' },
-      { lbl:'Due',        val:tk(row[C.due]),       cls: Number(row[C.due])>0?'neg':'pos' },
-      { lbl:'Gross Pft',  val:tk(row[C.gp]),        cls:numClass(row[C.gp]) },
-      { lbl:'Expense',    val:tk(row[C.exp]),       cls:'' },
-      { lbl:'Net Pft',    val:tk(row[C.np]),        cls:numClass(row[C.np]) },
+      { lbl:'Sales',           val:tk(row[C.sales]),      cls:'blu' },
+      { lbl:'Paid',            val:tk(row[C.paid]),       cls:'pos' },
+      { lbl:'Collection Rate', val:fmtPct(row[C.clrPct]), cls: Number(row[C.clrPct])>=0.8?'pos':'blu' },
+      { lbl:'Due',             val:tk(row[C.due]),        cls: Number(row[C.due])>0?'neg':'pos' },
+      { lbl:'Gross Pft',       val:tk(row[C.gp]),         cls:numClass(row[C.gp]) },
+      { lbl:'Expense',         val:tk(row[C.exp]),        cls:'' },
+      { lbl:'Net Pft',         val:tk(row[C.np]),         cls:numClass(row[C.np]) },
     ];
     return '<div class="ytd-grid">'+
       stats.map(s=>
@@ -303,20 +289,6 @@
         '</div>'
       ).join('')+
     '</div>';
-  }
-
-  function pnlCards(row) {
-    const metrics = [
-      { lbl:'Gross Profit',  val:tk(row[C.gp]),  cls:numClass(row[C.gp]) },
-      { lbl:'Expense',       val:tk(row[C.exp]), cls:'' },
-      { lbl:'Net Profit',    val:tk(row[C.np]),  cls:numClass(row[C.np]) },
-    ];
-    return metrics.map(m=>
-      '<div class="pcard">'+
-      '<div class="pcard-l">'+m.lbl+'</div>'+
-      '<div class="pcard-v '+m.cls+'">'+m.val+'</div>'+
-      '</div>'
-    ).join('');
   }
 
   function initials(name) {
@@ -335,34 +307,9 @@
       '</div></div>';
     document.getElementById('dash-body').innerHTML = h;
 
-    // P&L strip inside Sales vs Collection
-    const opts = monthly.map((r,i)=>'<option value="'+i+'">'+r[C.month]+'</option>').join('');
-    const sel = document.getElementById('msel');
-    sel.innerHTML = opts;
-    const idx = pickMonthIdx();
-    sel.value = String(idx);
-    document.getElementById('mcards').innerHTML = pnlCards(monthly[idx] || data.ytd);
-    document.getElementById('pnl-strip').style.display = 'block';
+    // refresh P&L tiles in Sales vs Collection now that finance data is here
+    if (document.getElementById('d-start').value) renderAnalytics();
   }
-
-  // choose the P&L month matching the selected end date, else last month
-  function pickMonthIdx() {
-    const monthly = window._mdata || [];
-    if (!monthly.length) return 0;
-    const eEl = document.getElementById('d-end');
-    if (eEl && eEl.value) {
-      const d = new Date(eEl.value+'T00:00:00');
-      const key = MMM[d.getMonth()]+', '+String(d.getFullYear()).slice(2);
-      const i = monthly.findIndex(r => String(r[C.month]).trim() === key);
-      if (i >= 0) return i;
-    }
-    return monthly.length-1;
-  }
-
-  window.switchMonth = function(idx) {
-    const row = (window._mdata||[])[parseInt(idx)];
-    if (row) document.getElementById('mcards').innerHTML = pnlCards(row);
-  };
 
   // ── finance data — read live from the Central Finance sheet via gviz ──
   window._financeLoaded = false;
@@ -497,6 +444,29 @@
     }
   }
 
+  // P&L for the months overlapping [start, end], from the finance monthly rows
+  function pnlForRange(start, end) {
+    const monthly = window._mdata || [];
+    if (!monthly.length) return null;
+    const keys = new Set();
+    const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+    while (cur <= end) {
+      keys.add(MMM[cur.getMonth()]+', '+String(cur.getFullYear()).slice(2));
+      cur.setMonth(cur.getMonth()+1);
+    }
+    let sales=0, gp=0, exp=0, np=0, hit=false;
+    monthly.forEach(r => {
+      if (!keys.has(String(r[C.month]).trim())) return;
+      hit = true;
+      sales += Number(r[C.sales])||0;
+      gp    += Number(r[C.gp])||0;
+      exp   += Number(r[C.exp])||0;
+      np    += Number(r[C.np])||0;
+    });
+    if (!hit) return null;
+    return { gp:gp, exp:exp, np:np, gpp: sales? gp/sales : '', npp: sales? np/sales : '' };
+  }
+
   window.renderAnalytics = function() {
     const sEl = document.getElementById('d-start');
     const eEl = document.getElementById('d-end');
@@ -504,6 +474,10 @@
     let start = new Date(sEl.value+'T00:00:00');
     let end   = new Date(eEl.value+'T00:00:00');
     if (end < start) { const t = start; start = end; end = t; }
+
+    // formatted date pills — 26 Jan, 2026
+    document.getElementById('ds-show').textContent = fmtDate(start);
+    document.getElementById('de-show').textContent = fmtDate(end);
 
     const rows = AN_ROWS.filter(r => r.d >= start && r.d <= end);
 
@@ -527,18 +501,33 @@
       tSales += r.sales; tPaid += r.paid;
     });
 
-    // KPIs
+    // tiles
     const due = tSales - tPaid;
-    document.getElementById('range-kpis').style.display = 'grid';
+    document.getElementById('sc-grid').style.display = 'grid';
     document.getElementById('k-sales').innerHTML = tk(tSales);
     document.getElementById('k-coll').innerHTML  = tk(tPaid);
     const kd = document.getElementById('k-due');
     kd.innerHTML = tk(due);
-    kd.className = 'kcard-v ' + (due>0 ? 'neg' : 'pos');
-    document.getElementById('k-due-card').className = 'kcard ' + (due>0 ? 'b-red' : 'b-grn');
-    document.getElementById('k-rate').textContent = tSales ? Math.round(tPaid/tSales*100)+'%' : '—';
+    kd.className = 'gtile-v ' + (due>0 ? 'neg' : 'pos');
+    document.getElementById('k-crate').textContent = tSales ? Math.round(tPaid/tSales*100)+'%' : '—';
 
-    // chart
+    const pnl = pnlForRange(start, end);
+    function setTile(id, html, cls) {
+      const el = document.getElementById(id);
+      el.innerHTML = html;
+      el.className = 'gtile-v' + (cls ? ' '+cls : '');
+    }
+    if (pnl) {
+      setTile('k-gp',  tk(pnl.gp),       numClass(pnl.gp));
+      setTile('k-gpp', fmtPct(pnl.gpp),  numClass(pnl.gpp));
+      setTile('k-exp', tk(pnl.exp),      '');
+      setTile('k-np',  tk(pnl.np),       numClass(pnl.np));
+      setTile('k-npp', fmtPct(pnl.npp),  numClass(pnl.npp));
+    } else {
+      ['k-gp','k-gpp','k-exp','k-np','k-npp'].forEach(id => setTile(id,'—',''));
+    }
+
+    // chart — dark panel styling
     document.getElementById('an-state').style.display = 'none';
     const cv = document.getElementById('trendChart');
     cv.style.display = 'block';
@@ -547,17 +536,22 @@
       data: {
         labels: labels,
         datasets: [
-          { type:'bar',  label:'Sales',      data:salesArr, backgroundColor:'rgba(41,171,226,0.5)', borderRadius:4, order:2 },
-          { type:'line', label:'Collection', data:paidArr,  borderColor:'#16b07c', backgroundColor:'#16b07c',
-            tension:0.35, pointRadius:2, pointHoverRadius:4, borderWidth:2, order:1 }
+          { type:'bar',  label:'Sales',      data:salesArr,
+            backgroundColor:'rgba(99,205,255,0.55)', hoverBackgroundColor:'rgba(99,205,255,0.85)',
+            borderRadius:4, order:2 },
+          { type:'line', label:'Collection', data:paidArr,
+            borderColor:'#3fe0a8', backgroundColor:'rgba(63,224,168,0.12)',
+            fill:true, tension:0.35, pointRadius:2, pointHoverRadius:5,
+            pointBackgroundColor:'#3fe0a8', borderWidth:2, order:1 }
         ]
       },
       options: {
         responsive:true, maintainAspectRatio:false,
         interaction:{ mode:'index', intersect:false },
         plugins:{
-          legend:{ labels:{ boxWidth:10, font:{ family:'Inter', size:10, weight:'700' } } },
+          legend:{ labels:{ boxWidth:10, color:'rgba(255,255,255,.75)', font:{ family:'Inter', size:10, weight:'700' } } },
           tooltip:{
+            backgroundColor:'#0d1b29', titleColor:'#fff', bodyColor:'rgba(255,255,255,.8)',
             callbacks:{
               title: items => items.length ? fullDates[items[0].dataIndex] : '',
               label: ctx => ' '+ctx.dataset.label+': '+fmt(ctx.parsed.y)+' tk'
@@ -565,19 +559,11 @@
           }
         },
         scales:{
-          x:{ grid:{ display:false }, ticks:{ font:{ family:'Inter', size:9 }, maxRotation:0, autoSkip:true, maxTicksLimit:8 } },
-          y:{ beginAtZero:true, grid:{ color:'#f0f2f6' }, ticks:{ font:{ family:'Inter', size:9 }, callback:v => v>=1000 ? (v/1000)+'k' : v } }
+          x:{ grid:{ display:false }, ticks:{ color:'rgba(255,255,255,.5)', font:{ family:'Inter', size:9 }, maxRotation:0, autoSkip:true, maxTicksLimit:8 } },
+          y:{ beginAtZero:true, grid:{ color:'rgba(255,255,255,.07)' }, ticks:{ color:'rgba(255,255,255,.5)', font:{ family:'Inter', size:9 }, callback:v => v>=1000 ? (v/1000)+'k' : v } }
         }
       }
     });
-
-    // sync P&L month with the selected end date
-    if (window._financeLoaded && window._mdata && window._mdata.length) {
-      const i = pickMonthIdx();
-      const sel = document.getElementById('msel');
-      sel.value = String(i);
-      document.getElementById('mcards').innerHTML = pnlCards(window._mdata[i]);
-    }
 
     // salesman table
     const by = {};
@@ -602,7 +588,7 @@
       return v>0 ? '<td class="neg-t">'+inner+'</td>' : '<td class="pos-t">'+inner+'</td>';
     }
 
-    let h = '<thead><tr><th>Seller</th><th>Sales</th><th>Coll.</th><th>Due</th><th>Rate</th><th>Clients</th></tr></thead><tbody>';
+    let h = '<thead><tr><th>Seller</th><th>Sales</th><th>Coll.</th><th>Due</th><th>Collection Rate</th><th>Clients</th></tr></thead><tbody>';
     let totC = new Set();
     sellers.forEach(k => {
       const o = by[k];
@@ -633,6 +619,8 @@
     eEl.value = isoLocal(now);
     sEl.max = isoLocal(now);
     eEl.max = isoLocal(now);
+    document.getElementById('ds-show').textContent = fmtDate(first);
+    document.getElementById('de-show').textContent = fmtDate(now);
     loadAnalytics();
   })();
 </script>
