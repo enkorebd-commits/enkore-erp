@@ -86,7 +86,9 @@
     }
     .date-inp:focus { border-color:var(--blue); }
     .range-arrow { font-size:12px; color:var(--sub); flex-shrink:0; font-weight:700; }
-    .kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:10px; }
+    .kpi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:10px; }
+    @media(min-width:560px){ .kpi-grid { grid-template-columns:repeat(4,1fr); } }
+    .metric-grid.p3 { grid-template-columns:repeat(3,1fr); }
     .kcard { background:var(--card); border-radius:12px; padding:10px 8px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,0.07); }
     .kcard-l { font-size:9px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px; }
     .kcard-v { font-size:15px; font-weight:800; line-height:1; }
@@ -151,6 +153,7 @@
     <div class="kcard"><div class="kcard-l">Sales</div><div class="kcard-v blu" id="k-sales">—</div></div>
     <div class="kcard"><div class="kcard-l">Collection</div><div class="kcard-v pos" id="k-coll">—</div></div>
     <div class="kcard"><div class="kcard-l">Due</div><div class="kcard-v" id="k-due">—</div></div>
+    <div class="kcard"><div class="kcard-l">Rate</div><div class="kcard-v blu" id="k-rate">—</div></div>
   </div>
   <div class="chart-card">
     <div class="state" id="an-state"><div class="spin"></div>Loading sales data...</div>
@@ -166,7 +169,7 @@
 </div>
 
 <script>
-  const WORKER = 'https://rapid-credit-0593.enkorebd.workers.dev';
+  const FIN_SHEET_ID = '1XE05NQJYc2QPM1qUivoGYUynu-lI1iaTH5Y785dPwJk';
 
   const qp    = new URLSearchParams(window.location.search);
   const userId = qp.get('userId') || '';
@@ -236,6 +239,23 @@
     '</div>';
   }
 
+  function cardsPnl(row) {
+    const metrics = [
+      { lbl:'Gross Profit',  val:fmt(row[C.gp]),  cls:numClass(row[C.gp]), unit:'tk actual' },
+      { lbl:'Total Expense', val:fmt(row[C.exp]), cls:'',                  unit:'tk' },
+      { lbl:'Net Profit',    val:fmt(row[C.np]),  cls:numClass(row[C.np]), unit:'tk actual' },
+    ];
+    return '<div class="metric-grid p3">'+
+      metrics.map(m=>
+        '<div class="mcard">'+
+        '<div class="mcard-label">'+m.lbl+'</div>'+
+        '<div class="mcard-val '+m.cls+'">'+m.val+'</div>'+
+        '<div class="mcard-unit">'+m.unit+'</div>'+
+        '</div>'
+      ).join('')+
+    '</div>';
+  }
+
   function buildDash(data) {
     const monthly = (data.monthly||[]).filter(r=>r[C.month]);
     window._mdata = monthly;
@@ -244,7 +264,7 @@
     const lastRow = monthly[lastIdx]||data.ytd;
     let h = '';
     h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div>'+cards(data.ytd)+'</div><div class="divider"></div>';
-    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Monthly</span><select class="month-sel" id="msel" onchange="switchMonth(this.value)">'+opts+'</select></div><div id="mcards">'+cards(lastRow)+'</div></div><div class="divider"></div>';
+    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Monthly P&L</span><select class="month-sel" id="msel" onchange="switchMonth(this.value)">'+opts+'</select></div><div id="mcards">'+cardsPnl(lastRow)+'</div></div><div class="divider"></div>';
     h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Cash in Hand</span></div><div class="cash-grid"><div class="ccard"><div class="ccard-name">Mahedi Islam Chayan</div><div class="ccard-val">'+fmt(data.cash.chayan)+'</div><div class="ccard-unit">tk</div></div><div class="ccard"><div class="ccard-name">Anik Rahman</div><div class="ccard-val">'+fmt(data.cash.anik)+'</div><div class="ccard-unit">tk</div></div></div></div>';
     document.getElementById('dash-body').innerHTML = h;
     const sel = document.getElementById('msel');
@@ -253,28 +273,84 @@
 
   window.switchMonth = function(idx) {
     const row = window._mdata[parseInt(idx)];
-    if (row) document.getElementById('mcards').innerHTML = cards(row);
+    if (row) document.getElementById('mcards').innerHTML = cardsPnl(row);
   };
 
-  (function() {
-    const cb = 'dcb_'+Date.now();
-    window[cb] = function(data) {
-      delete window[cb];
-      if (!data||!data.ok) {
+  // ── finance data — read live from the Central Finance sheet via gviz ──
+  window._financeLoaded = false;
+
+  async function gvTable(sheetId, sheetName) {
+    const url = 'https://docs.google.com/spreadsheets/d/'+sheetId+
+                '/gviz/tq?tqx=out:json&sheet='+encodeURIComponent(sheetName)+'&t='+Date.now();
+    const txt = await fetch(url).then(r => r.text());
+    const m = txt.match(/setResponse\(([\s\S]*)\)\s*;?\s*$/);
+    if (!m) throw new Error('gviz parse');
+    return JSON.parse(m[1]).table;
+  }
+
+  function rowVals(r) {
+    const out = [];
+    (r.c||[]).forEach((cell,i) => { out[i] = (cell && cell.v!==null && cell.v!==undefined) ? cell.v : ''; });
+    return out;
+  }
+
+  const MONTH_RE = /^[A-Z][a-z]{2},?\s*\d{2}$/;
+
+  async function loadFinance() {
+    try {
+      const [mt, ct] = await Promise.all([
+        gvTable(FIN_SHEET_ID, 'Monthly Dashboard'),
+        gvTable(FIN_SHEET_ID, 'Cash in Hand')
+      ]);
+
+      // Monthly Dashboard: month rows + the YTD row (blank month, numeric sales)
+      let ytd = null; const monthly = [];
+      (mt.rows||[]).forEach(r => {
+        const c = r.c||[];
+        const v = rowVals(r);
+        const label = (c[0] && (c[0].f || (c[0].v!==null && c[0].v!==undefined ? String(c[0].v) : '')) || '').trim();
+        if (MONTH_RE.test(label)) { v[0] = label; monthly.push(v); }
+        else if (!label && typeof v[2] === 'number' && !ytd) { ytd = v; }
+      });
+      if (!ytd) throw new Error('YTD row not found');
+
+      // Cash in Hand: "Positive" row → D = Chayan, G = Anik
+      let chayan = '', anik = '';
+      (ct.rows||[]).forEach(r => {
+        const c = r.c||[];
+        const lbl = (c[0] && c[0].v!==null && c[0].v!==undefined) ? String(c[0].v).toLowerCase().trim() : '';
+        if (lbl === 'positive') {
+          chayan = (c[3] && c[3].v!==null && c[3].v!==undefined) ? c[3].v : '';
+          anik   = (c[6] && c[6].v!==null && c[6].v!==undefined) ? c[6].v : '';
+        }
+      });
+
+      window._financeLoaded = true;
+      buildDash({ ok:true, ytd:ytd, monthly:monthly, cash:{ chayan:chayan, anik:anik } });
+    } catch(e) {
+      console.error(e);
+      const w = document.getElementById('pl-wait');
+      if (w) { w.innerHTML = '⚠️ Could not load P&L and cash data.'; }
+      else if (!window._financeLoaded) {
         document.getElementById('dash-body').innerHTML =
-          '<div class="state">⚠️ '+(data&&data.error?data.error:'Failed to load data')+'<br><small>Make sure the Apps Script is deployed.</small></div>';
-        return;
+          '<div class="state">⚠️ Could not load finance data.<br><small>Central Finance sheet must be shared: Anyone with link · Viewer.</small></div>';
       }
-      buildDash(data);
-    };
-    const s = document.createElement('script');
-    s.onerror = function() {
-      document.getElementById('dash-body').innerHTML =
-        '<div class="state">⚠️ Network error. Check your connection.</div>';
-    };
-    s.src = WORKER+'?type=finance&callback='+cb;
-    document.head.appendChild(s);
-  })();
+    }
+  }
+  loadFinance();
+
+  // ── provisional YTD from the sales sheet while the worker is slow ──
+  function provisionalDash() {
+    if (window._financeLoaded || !AN_ROWS.length) return;
+    const y = new Date().getFullYear();
+    let s = 0, p = 0;
+    AN_ROWS.forEach(r => { if (r.d.getFullYear() === y) { s += r.sales; p += r.paid; } });
+    const row = [];
+    row[C.sales] = s; row[C.paid] = p; row[C.clrPct] = s ? p/s : ''; row[C.due] = s - p;
+    document.getElementById('dash-body').innerHTML =
+      '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div>'+cards(row)+'</div>'+
+      '<div class="state" id="pl-wait" style="padding:10px 20px 14px"><div class="spin"></div>Loading P&L and cash...</div>';
+  }
 
   /* ═══════════════════════════════════════════════════════════
      SALES ANALYTICS — reads "Sale Entry" tab directly via gviz
@@ -307,25 +383,29 @@
   function cellStr(c)  { return (c && c.v!==null && c.v!==undefined) ? String(c.v).trim() : ''; }
 
   async function loadAnalytics() {
+    // live fetch — only the 5 columns we need (A,B,J,M,P)
     try {
       const url = 'https://docs.google.com/spreadsheets/d/'+SALES_SHEET_ID+
-                  '/gviz/tq?tqx=out:json&sheet='+encodeURIComponent('Sale Entry')+'&t='+Date.now();
+                  '/gviz/tq?tqx=out:json&headers=1&sheet='+encodeURIComponent('Sale Entry')+
+                  '&tq='+encodeURIComponent('select A,B,J,M,P')+'&t='+Date.now();
       const txt = await fetch(url).then(r => r.text());
       const m = txt.match(/setResponse\(([\s\S]*)\)\s*;?\s*$/);
       if (!m) throw new Error('parse');
       const data = JSON.parse(m[1]);
-      AN_ROWS = (data.table.rows||[]).map(r => {
+      const rows = (data.table.rows||[]).map(r => {
         const c = r.c||[];
         const d = gvDate(c[0] ? c[0].v : null);
         if (!d) return null;
         return {
           d:      new Date(d.getFullYear(), d.getMonth(), d.getDate()),
           client: cellStr(c[1]),
-          sales:  cellNum(c[9]),
-          paid:   cellNum(c[12]),
-          seller: cellStr(c[15]) || '(No seller)'
+          sales:  cellNum(c[2]),
+          paid:   cellNum(c[3]),
+          seller: cellStr(c[4]) || '(No seller)'
         };
       }).filter(Boolean);
+      AN_ROWS = rows;
+      provisionalDash();
       renderAnalytics();
     } catch(e) {
       document.getElementById('an-state').innerHTML = '⚠️ Could not load sales data.';
@@ -371,6 +451,7 @@
     const kd = document.getElementById('k-due');
     kd.textContent = fmt(due);
     kd.className = 'kcard-v ' + (due>0 ? 'neg' : 'pos');
+    document.getElementById('k-rate').textContent = tSales ? Math.round(tPaid/tSales*100)+'%' : '—';
 
     // ── chart ──
     document.getElementById('an-state').style.display = 'none';
