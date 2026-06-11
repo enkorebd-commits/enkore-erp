@@ -208,17 +208,60 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes sp{to{transform:rotate(360deg)}}
 .hidden{display:none!important}
+
+/* ── ORDER NOTES TAB ── */
+.hdr.notes{background:var(--blue)}
+.tab.on.notes-tab{color:#fff;border-bottom-color:#74c0fc}
+.stats-bar{display:flex;gap:8px;margin-bottom:12px}
+.sbar{flex:1;background:var(--card);border-radius:10px;padding:10px 8px;text-align:center;box-shadow:var(--sh)}
+.sbar-v{font-size:22px;font-weight:900;line-height:1}
+.sbar-v.tot{color:var(--blue)}.sbar-v.pend{color:var(--orange)}.sbar-v.fwd{color:var(--green)}
+.sbar-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.nfilter{display:flex;gap:6px;margin-bottom:12px}
+.nfbtn{padding:7px 14px;border:1.5px solid var(--border);background:var(--card);border-radius:100px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;transition:.2s;user-select:none}
+.nfbtn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.nfbtn:active{transform:scale(.97)}
+.note-card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh);border-left:4px solid var(--orange)}
+.note-card.fwd{border-left-color:var(--green);opacity:.85}
+.nc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.nc-cname{font-size:15px;font-weight:800}
+.nc-csub{font-size:11px;color:var(--muted);margin-top:1px}
+.nc-badge{padding:3px 9px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;flex-shrink:0;margin-left:8px;margin-top:2px}
+.nc-badge.pending{background:#fff3e0;color:var(--orange)}
+.nc-badge.forwarded{background:var(--gbg);color:var(--green)}
+.nc-prods{font-size:12px;background:#f8f9fa;border-radius:8px;padding:8px 10px;margin-bottom:8px;line-height:1.8}
+.nc-notetext{font-size:13px;color:#555;font-style:italic;margin-bottom:8px;padding-left:10px;border-left:3px solid #f5cba7;line-height:1.5}
+.nc-deadline{font-size:11px;color:var(--blue);font-weight:700;margin-bottom:8px}
+.nc-foot{display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)}
+.nc-meta{font-size:10px;color:var(--muted);line-height:1.7}
+.nc-acts{display:flex;gap:6px}
+.nc-del-btn{width:32px;height:32px;border:1.5px solid #ffc9c9;background:#fff5f5;border-radius:8px;color:var(--red);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:.15s}
+.nc-del-btn:active{transform:scale(.9)}
+.nc-fwd-btn{padding:6px 11px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;transition:.2s}
+.nc-fwd-btn:active{transform:scale(.97)}
+.n-add-btn{width:100%;padding:13px;background:#e7f5ff;border:2px dashed var(--blue);border-radius:var(--r);color:var(--blue);font-size:14px;font-weight:800;cursor:pointer;text-align:center;margin-bottom:12px;transition:.15s}
+.n-add-btn:active{background:#d0ebff}
+.n-empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.n-empty-icon{font-size:38px;margin-bottom:10px}
+.n-empty-txt{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.n-loading{text-align:center;padding:30px;color:var(--muted);font-size:13px}
+.note-calc{background:#1a1a2e;color:#fff;border-radius:var(--r);padding:12px 14px;margin-bottom:12px}
+.ncr{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.ncr.ntot{font-size:15px;font-weight:900;border-top:1px solid rgba(255,255,255,.15);margin-top:4px;padding-top:8px}
+.ncl{opacity:.65}.ncv{font-weight:700}
+.ncv.nwarn{color:#ffd43b}
 </style>
 </head>
 <body>
 
-<div class="hdr sale" id="mainHdr">
+<div class="hdr notes" id="mainHdr">
   <div class="hdr-top">
-    <div class="hdr-title" id="hdrTitle">🛒 Sale Entry</div>
+    <div class="hdr-title" id="hdrTitle">📋 Order Notes</div>
     <div class="hdr-date" id="hdrDate"></div>
   </div>
   <div class="tabs">
-    <div class="tab on sale-tab" id="tabSale" onclick="setMode('sale')">🛒 Sale Entry</div>
+    <div class="tab on notes-tab" id="tabNotes" onclick="setMode('notes')">📋 Notes</div>
+    <div class="tab sale-tab" id="tabSale" onclick="setMode('sale')">🛒 Sale Entry</div>
     <div class="tab pay-tab" id="tabPay" onclick="setMode('payment')">💳 Collect Payment</div>
   </div>
 </div>
@@ -251,7 +294,7 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   </div>
 
   <!-- ===== SALE ENTRY ===== -->
-  <div id="saleSection">
+  <div id="saleSection" class="hidden">
 
     <div class="card">
       <div class="card-lbl">Products</div>
@@ -322,6 +365,22 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 
     <button class="sub-btn pay-btn" id="payBtn" onclick="submitEntry()">Submit Payment</button>
 
+  </div>
+
+  <!-- ===== ORDER NOTES ===== -->
+  <div id="notesSection">
+    <button class="n-add-btn" onclick="openNoteDrawer()">＋ New Order Note</button>
+    <div class="stats-bar">
+      <div class="sbar"><div class="sbar-v tot" id="nst-total">—</div><div class="sbar-l">Total</div></div>
+      <div class="sbar"><div class="sbar-v pend" id="nst-pending">—</div><div class="sbar-l">Pending</div></div>
+      <div class="sbar"><div class="sbar-v fwd" id="nst-fwd">—</div><div class="sbar-l">Forwarded</div></div>
+    </div>
+    <div class="nfilter">
+      <button class="nfbtn on" id="nf-all"       onclick="setNFilter('all')">All</button>
+      <button class="nfbtn"    id="nf-pending"   onclick="setNFilter('pending')">⏳ Pending</button>
+      <button class="nfbtn"    id="nf-forwarded" onclick="setNFilter('forwarded')">📤 Forwarded</button>
+    </div>
+    <div id="noteCards"></div>
   </div>
 
 </div>
@@ -403,6 +462,62 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   </div>
 </div>
 
+<!-- Order Note Drawer -->
+<div class="overlay" id="noteOverlay">
+  <div class="drawer nc-drawer">
+    <div class="handle"></div>
+    <div class="d-hdr">
+      <div class="d-hdr-left">
+        <div class="d-title">📋 New Order Note</div>
+        <div class="d-sub">Log a deal — forward to Sale Entry when ready</div>
+      </div>
+      <button class="d-close" onclick="closeNoteDrawer()">×</button>
+    </div>
+    <div class="nc-d-body">
+      <!-- Client -->
+      <div class="nc-fg">
+        <div class="nc-lbl">Client <span class="req">*</span></div>
+        <div class="cs-wrap" style="margin-top:5px">
+          <input type="text" class="cs-input" id="ndCsInput" placeholder="Search name, shop, zone…"
+            autocomplete="off" oninput="ndFilterClients(this.value)" onfocus="ndOpenDd()">
+          <div class="cs-dd" id="ndCsDd"></div>
+        </div>
+        <div class="cs-status" id="ndCsStatus" style="margin-bottom:0">
+          <div class="cs-status-name" id="ndCsName"></div>
+          <div class="cs-status-sub" id="ndCsSub" style="margin-bottom:6px"></div>
+          <button class="hist-btn" style="margin-top:0" onclick="ndClearClient()">✕ Change Client</button>
+        </div>
+      </div>
+      <!-- Products -->
+      <div class="nc-fg">
+        <div class="nc-lbl">Products <span class="req">*</span></div>
+        <div id="ndProdRows" style="margin-top:6px"></div>
+        <button class="add-prod-btn" style="margin-top:0" onclick="addNoteProdRow()">＋ Add Another Product</button>
+      </div>
+      <!-- Calc -->
+      <div class="note-calc">
+        <div class="ncr"><span class="ncl">Total Bill</span><span class="ncv" id="ndcBill">৳ 0</span></div>
+        <div class="ncr"><span class="ncl">Total Discount</span><span class="ncv">− <span id="ndcDisc">৳ 0</span></span></div>
+        <div class="ncr ntot"><span class="ncl">Expected Total</span><span class="ncv nwarn" id="ndcFinal">৳ 0</span></div>
+      </div>
+      <!-- Details -->
+      <div class="nc-fg">
+        <div class="nc-lbl">Expected Delivery Date</div>
+        <input type="date" class="nc-fi" id="ndDeadline" style="margin-top:5px">
+      </div>
+      <div class="nc-fg">
+        <div class="nc-lbl">Note / Comment</div>
+        <textarea class="nc-fi" rows="3" id="ndComment" placeholder="Deal details, special instructions, conditions…" style="margin-top:5px;resize:vertical;font-family:inherit"></textarea>
+      </div>
+      <div class="nc-fg">
+        <div class="nc-lbl">Salesman <span class="req">*</span></div>
+        <select class="nc-fi" id="ndSeller" style="margin-top:5px"></select>
+      </div>
+      <button class="nc-save-btn" id="ndSaveBtn" onclick="saveNote()" style="background:var(--blue);box-shadow:0 4px 16px rgba(25,113,194,.3)">💾 Save Order Note</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -410,7 +525,7 @@ const SHEET_ID  = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
 const AS_URL    = 'https://script.google.com/macros/s/AKfycbzNbCaVCEC0X1NewgiyqYnkaTD-BYl5_SaejXj5bBDo6UvtJKq7AC_zF3aMMv067E16ZQ/exec';
 const CACHE_KEY = 'enkore_sales_data';
 
-let clients = [], mode = 'sale', selClient = null;
+let clients = [], mode = 'notes', selClient = null;
 let CURRENT_PRODUCTS = [], prodRowCount = 0;
 let histAllRows = [], histShowingAll = false;
 
@@ -420,7 +535,9 @@ window.addEventListener('DOMContentLoaded', () => {
   loadAllData();
   addProdRow();
   checkPendingPhotoUpload();
-  document.addEventListener('click', e => { if (!e.target.closest('.cs-wrap')) closeDd(); });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.cs-wrap')) { closeDd(); ndCloseDd(); }
+  });
 
   const histOverlay = document.getElementById('histOverlay');
   const dBody       = document.getElementById('dBody');
@@ -428,6 +545,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
   const ncOverlay = document.getElementById('ncOverlay');
   ncOverlay.addEventListener('click', e => { if (e.target === ncOverlay) closeNewClient(); });
+
+  const noteOverlay = document.getElementById('noteOverlay');
+  noteOverlay.addEventListener('click', e => { if (e.target === noteOverlay) closeNoteDrawer(); });
 
   // ── BODY SCROLL LOCK (position:fixed method — safe for Android drawers) ──
   let _lockY = 0;
@@ -631,14 +751,14 @@ function addProdRow() {
 }
 
 function removeProdRow(idx) {
-  const rows = document.querySelectorAll('.prod-row');
+  const rows = document.querySelectorAll('#prodRows .prod-row');
   if (rows.length <= 1) return;
   document.getElementById(`pr-${idx}`).remove();
   updateDelBtns(); calcAll();
 }
 
 function updateDelBtns() {
-  const rows = document.querySelectorAll('.prod-row');
+  const rows = document.querySelectorAll('#prodRows .prod-row');
   rows.forEach(row => { row.querySelector('.prod-del').style.visibility = rows.length > 1 ? 'visible' : 'hidden'; });
 }
 
@@ -669,7 +789,7 @@ function togGift(idx) {
 // ── CALCULATIONS ─────────────────────────────────────────────
 function calcAll() {
   let totalBill=0, totalDisc=0, totalFinal=0;
-  document.querySelectorAll('.prod-row').forEach(row => {
+  document.querySelectorAll('#prodRows .prod-row').forEach(row => {
     const isGift = row.dataset.gift === 'true';
     const rate   = +row.querySelector('.prod-rate').value||0;
     const qty    = +row.querySelector('.prod-qty').value ||0;
@@ -989,14 +1109,23 @@ async function submitNewClient() {
 // ── MODE ─────────────────────────────────────────────────────
 function setMode(m) {
   mode = m;
-  const isSale = m === 'sale';
-  document.getElementById('tabSale').className  = 'tab sale-tab' + (isSale ? ' on' : '');
-  document.getElementById('tabPay').className   = 'tab pay-tab'  + (!isSale ? ' on' : '');
-  document.getElementById('saleSection').className = isSale ? '' : 'hidden';
-  document.getElementById('paySection').className  = !isSale ? '' : 'hidden';
-  document.getElementById('mainHdr').className  = 'hdr ' + (isSale ? 'sale' : 'pay');
-  document.getElementById('hdrTitle').textContent = isSale ? '🛒 Sale Entry' : '💳 Collect Payment';
-  if (!isSale && selClient) updatePayDue(selClient);
+  const isSale  = m === 'sale';
+  const isPay   = m === 'payment';
+  const isNotes = m === 'notes';
+
+  document.getElementById('tabSale').className  = 'tab sale-tab'  + (isSale  ? ' on' : '');
+  document.getElementById('tabPay').className   = 'tab pay-tab'   + (isPay   ? ' on' : '');
+  document.getElementById('tabNotes').className = 'tab notes-tab' + (isNotes ? ' on' : '');
+
+  document.getElementById('saleSection').className  = isSale  ? '' : 'hidden';
+  document.getElementById('paySection').className   = isPay   ? '' : 'hidden';
+  document.getElementById('notesSection').className = isNotes ? '' : 'hidden';
+
+  document.getElementById('mainHdr').className = 'hdr ' + (isSale ? 'sale' : isPay ? 'pay' : 'notes');
+  document.getElementById('hdrTitle').textContent = isSale ? '🛒 Sale Entry' : isPay ? '💳 Collect Payment' : '📋 Order Notes';
+
+  if (isPay   && selClient) updatePayDue(selClient);
+  if (isNotes) loadNotes();
 }
 
 function updatePayDue(c) {
@@ -1156,7 +1285,7 @@ async function submitEntry() {
     let params, newDueVal;
 
     if (mode === 'sale') {
-      const rows  = document.querySelectorAll('.prod-row');
+      const rows  = document.querySelectorAll('#prodRows .prod-row');
       const prods = [];
       let valid   = true;
       rows.forEach(row => {
@@ -1240,6 +1369,389 @@ function toast(msg, type = '') {
 function parseGviz(txt) {
   try { const m = txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/); return m ? JSON.parse(m[1]) : null; }
   catch(_) { return null; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ORDER NOTES
+// ══════════════════════════════════════════════════════════════
+const NOTES_AS_URL  = 'https://script.google.com/macros/s/AKfycbxYl0JUK_C63JW9h7nmDPpt-O2JDKSfmx1QQ1vqb1WefJwS7uW49lv28PT_BTTxdPeA/exec';
+const NOTES_USER_ID = new URLSearchParams(location.search).get('userId') || '';
+
+let allNotes = [], noteFilter = 'all', noteProdCount = 0, noteSelClient = null, notesLoaded = false;
+
+// ── FILTER ────────────────────────────────────────────────────
+function setNFilter(f) {
+  noteFilter = f;
+  ['all','pending','forwarded'].forEach(x =>
+    document.getElementById('nf-' + x).classList.toggle('on', x === f)
+  );
+  renderNoteCards();
+}
+
+// ── RENDER CARDS ──────────────────────────────────────────────
+function renderNoteCards() {
+  const list = allNotes.filter(n =>
+    noteFilter === 'all' ||
+    (noteFilter === 'pending'   && (n.status||'').toLowerCase() === 'pending') ||
+    (noteFilter === 'forwarded' && (n.status||'').toLowerCase() === 'forwarded')
+  );
+
+  const total   = allNotes.length;
+  const pending = allNotes.filter(n => (n.status||'').toLowerCase() === 'pending').length;
+  const fwd     = allNotes.filter(n => (n.status||'').toLowerCase() === 'forwarded').length;
+  document.getElementById('nst-total').textContent   = total;
+  document.getElementById('nst-pending').textContent = pending;
+  document.getElementById('nst-fwd').textContent     = fwd;
+
+  const el = document.getElementById('noteCards');
+  if (!list.length) {
+    const msgs = {
+      all:       ['📭','No notes yet','Tap + to log your first deal'],
+      pending:   ['⏳','No pending notes','All deals are forwarded!'],
+      forwarded: ['📤','No forwarded notes','Forward pending notes to Sale Entry'],
+    };
+    const [icon,txt,sub] = msgs[noteFilter] || msgs.all;
+    el.innerHTML = `<div class="n-empty"><div class="n-empty-icon">${icon}</div><div class="n-empty-txt">${txt}</div><div style="font-size:12px;color:var(--muted)">${sub}</div></div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(n => {
+    const isPending = (n.status||'').toLowerCase() !== 'forwarded';
+    const dispName  = String(n.client||'').split(',')[0].trim() || n.client;
+    const dispSub   = String(n.client||'').split(',').slice(1).join(',').trim();
+
+    const prodLines = (n.products||[]).map(p => {
+      const gift   = p.gift === 'YES' ? ' 🎁' : '';
+      const lineTx = +p.price > 0 ? `৳${Number(p.price).toLocaleString('en-IN')} × ${p.qty}` : `${p.qty} pcs`;
+      const tot    = +p.price > 0 ? `→ ৳${(p.price*p.qty-(+p.discount||0)).toLocaleString('en-IN')}` : '';
+      return `<div><b>${p.qty}×</b> ${p.product}${gift} <span style="color:var(--muted);font-size:11px">${lineTx} ${tot}</span></div>`;
+    }).join('');
+
+    const deadline = n.deadline ? `<div class="nc-deadline">📅 Delivery: ${n.deadline}</div>` : '';
+    const noteText = n.comment  ? `<div class="nc-notetext">${n.comment}</div>`               : '';
+    const fwdBtn   = isPending
+      ? `<button class="nc-fwd-btn" onclick="forwardToSale('${n.noteId}')">📤 Forward</button>`
+      : `<span style="font-size:11px;color:var(--green);font-weight:700">✅ Forwarded</span>`;
+
+    return `
+    <div class="note-card${isPending?'':' fwd'}" id="ncard-${n.noteId}">
+      <div class="nc-head">
+        <div><div class="nc-cname">${dispName}</div><div class="nc-csub">${dispSub}</div></div>
+        <span class="nc-badge ${isPending?'pending':'forwarded'}">${isPending?'⏳ Pending':'📤 Done'}</span>
+      </div>
+      <div class="nc-prods">${prodLines||'—'}</div>
+      ${noteText}${deadline}
+      <div class="nc-foot">
+        <div class="nc-meta"><div>🗓 ${(n.ts||'').split(' ')[0]||''}</div><div>👤 ${n.sellerName||''}</div></div>
+        <div class="nc-acts">
+          <button class="nc-del-btn" onclick="deleteNote('${n.noteId}')" title="Delete">🗑</button>
+          ${fwdBtn}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── LOAD FROM SHEET ───────────────────────────────────────────
+async function loadNotes() {
+  if (!NOTES_USER_ID) {
+    document.getElementById('noteCards').innerHTML = '<div class="n-empty"><div class="n-empty-icon">⚠️</div><div class="n-empty-txt">Not logged in via ERP</div></div>';
+    return;
+  }
+  if (notesLoaded) { renderNoteCards(); return; }
+  document.getElementById('noteCards').innerHTML = '<div class="n-loading"><span class="spin"></span> Loading notes…</div>';
+  try {
+    const url = `${NOTES_AS_URL}?action=getOrderNotes&seller=${encodeURIComponent(NOTES_USER_ID)}`;
+    const res = await fetch(url).then(r => r.json());
+    if (!res.success) throw new Error(res.error || 'Failed');
+    allNotes = res.notes || [];
+    notesLoaded = true;
+    renderNoteCards();
+  } catch(e) {
+    document.getElementById('noteCards').innerHTML = '<div class="n-empty"><div class="n-empty-icon">❌</div><div class="n-empty-txt">Failed to load</div><div style="font-size:12px;color:var(--muted)">Check internet connection</div></div>';
+    console.error('Load notes:', e);
+  }
+}
+
+// ── NOTE DRAWER ───────────────────────────────────────────────
+function openNoteDrawer() {
+  noteSelClient = null;
+  document.getElementById('ndCsInput').value = '';
+  document.getElementById('ndCsStatus').classList.remove('show');
+  ndCloseDd();
+  document.getElementById('ndProdRows').innerHTML = '';
+  noteProdCount = 0;
+  addNoteProdRow();
+  document.getElementById('ndDeadline').value = '';
+  document.getElementById('ndComment').value  = '';
+  ndSyncSeller();
+  calcNote();
+  window._lockBodyScroll();
+  document.getElementById('noteOverlay').classList.add('open');
+}
+
+function closeNoteDrawer() {
+  const ov = document.getElementById('noteOverlay');
+  ov.classList.remove('open');
+  ov.style.height = ''; ov.style.top = '';
+  const dr = ov.querySelector('.drawer'); if (dr) dr.style.maxHeight = '';
+  window._unlockBodyScroll();
+}
+
+function ndSyncSeller() {
+  const src = document.getElementById('seller');
+  const dst = document.getElementById('ndSeller');
+  dst.innerHTML = src ? src.innerHTML : '<option value="">— Select —</option>';
+  try {
+    const u = JSON.parse(window.parent?.sessionStorage?.getItem('erp_user') || 'null');
+    if (u?.name) for (let i = 0; i < dst.options.length; i++) {
+      if (dst.options[i].value === u.name) { dst.selectedIndex = i; break; }
+    }
+  } catch(_) {}
+}
+
+// ── NOTE PRODUCT ROWS ─────────────────────────────────────────
+function addNoteProdRow() {
+  const idx = noteProdCount++;
+  const div = document.createElement('div');
+  div.className = 'prod-row'; div.id = `npe-${idx}`; div.dataset.gift = 'false';
+  div.innerHTML = `
+    <div class="prod-row-head">
+      <div style="flex:1;min-width:0">
+        <select class="prod-sel" style="width:100%" onchange="calcNote();showNoteProdName(this)">
+          <option value="">— Select Product —</option>
+          ${CURRENT_PRODUCTS.map(p=>`<option value="${p}">${p}</option>`).join('')}
+        </select>
+        <div class="prod-sel-name"></div>
+      </div>
+      <button class="prod-del" onclick="removeNoteProdRow(${idx})" title="Remove">×</button>
+    </div>
+    <div class="prod-fields">
+      <div><div class="prod-fl">Rate (tk)</div>
+        <input type="number" class="prod-fi prod-rate" placeholder="0" min="0" oninput="calcNote()"></div>
+      <div><div class="prod-fl">Qty</div>
+        <div class="qty-row-sm">
+          <button class="qty-btn-sm" onclick="dNoteQty(${idx},-1)">−</button>
+          <input type="number" class="prod-fi prod-qty qty-inp-sm" value="1" min="1" oninput="calcNote()">
+          <button class="qty-btn-sm" onclick="dNoteQty(${idx},1)">+</button>
+        </div></div>
+      <div><div class="prod-fl">Discount (tk)</div>
+        <input type="number" class="prod-fi prod-disc" placeholder="0" min="0" oninput="calcNote()"></div>
+      <div><div class="prod-fl">Gift?</div>
+        <button class="gift-btn" onclick="togNoteGift(${idx})">🎁 Gift/Sample</button></div>
+    </div>
+    <div class="prod-line-total" id="nplt-${idx}">→ ৳ 0</div>`;
+  document.getElementById('ndProdRows').appendChild(div);
+  syncNoteProdDelBtns(); calcNote();
+}
+
+function removeNoteProdRow(idx) {
+  const rows = document.querySelectorAll('#ndProdRows .prod-row');
+  if (rows.length <= 1) return;
+  document.getElementById(`npe-${idx}`)?.remove();
+  syncNoteProdDelBtns(); calcNote();
+}
+
+function syncNoteProdDelBtns() {
+  const rows = document.querySelectorAll('#ndProdRows .prod-row');
+  rows.forEach(r => { r.querySelector('.prod-del').style.visibility = rows.length > 1 ? 'visible' : 'hidden'; });
+}
+
+function dNoteQty(idx, delta) {
+  const row = document.getElementById(`npe-${idx}`);
+  if (!row) return;
+  const inp = row.querySelector('.prod-qty');
+  inp.value = Math.max(1, (parseInt(inp.value)||0) + delta);
+  calcNote();
+}
+
+function togNoteGift(idx) {
+  const row = document.getElementById(`npe-${idx}`); if (!row) return;
+  const btn = row.querySelector('.gift-btn');
+  const was = row.dataset.gift === 'true';
+  row.dataset.gift = String(!was);
+  btn.textContent  = !was ? '✅ Gift/Sample' : '🎁 Gift/Sample';
+  btn.className    = 'gift-btn' + (!was ? ' on' : '');
+  calcNote();
+}
+
+function showNoteProdName(sel) {
+  const el = sel.parentElement.querySelector('.prod-sel-name'); if (!el) return;
+  el.textContent = sel.value;
+  el.classList.toggle('show', !!sel.value);
+}
+
+function calcNote() {
+  let bill = 0, disc = 0, final_ = 0;
+  document.querySelectorAll('#ndProdRows .prod-row').forEach(row => {
+    const gift = row.dataset.gift === 'true';
+    const rate = +row.querySelector('.prod-rate').value || 0;
+    const qty  = +row.querySelector('.prod-qty').value  || 0;
+    const d    = +row.querySelector('.prod-disc').value || 0;
+    const b    = gift ? 0 : rate * qty;
+    const f    = gift ? 0 : Math.max(0, b - d);
+    bill += b; disc += gift ? 0 : d; final_ += f;
+    const lt = document.getElementById(`nplt-${[...document.querySelectorAll('#ndProdRows .prod-row')].indexOf(row)}`);
+    row.querySelector('[id^="nplt-"]')?.textContent && (row.querySelector('[id^="nplt-"]').textContent = gift ? '🎁 Gift — ৳ 0' : `→ ${tk(f)}`);
+  });
+  document.getElementById('ndcBill').textContent  = tk(bill);
+  document.getElementById('ndcDisc').textContent  = tk(disc);
+  document.getElementById('ndcFinal').textContent = tk(final_);
+}
+
+// ── NOTE CLIENT SEARCH ────────────────────────────────────────
+function ndOpenDd()  { ndRenderOpts(clients); document.getElementById('ndCsDd').classList.add('open'); }
+function ndCloseDd() { document.getElementById('ndCsDd')?.classList.remove('open'); }
+
+function ndFilterClients(q) {
+  const lq = q.toLowerCase().trim();
+  const res = lq ? clients.filter(c =>
+    c.name.toLowerCase().includes(lq) || c.shop.toLowerCase().includes(lq) ||
+    c.loc.toLowerCase().includes(lq)  || c.zone.toLowerCase().includes(lq) || c.phone.includes(lq)
+  ) : clients;
+  ndRenderOpts(res);
+  document.getElementById('ndCsDd').classList.add('open');
+}
+
+function ndRenderOpts(list) {
+  const dd   = document.getElementById('ndCsDd');
+  const icon = t => t==='Retail Shop'?'🏪':t==='Dealer'?'🏢':t==='Brand'?'🏷️':'👤';
+  if (!list.length) { dd.innerHTML = `<div class="cs-empty">No clients found</div>`; return; }
+  dd.innerHTML = list.slice(0,80).map(c => `
+    <div class="cs-opt" onclick="ndPickClient(${JSON.stringify(c.det).replace(/"/g,'&quot;')})">
+      <div class="cs-opt-name">${icon(c.type)} ${c.name||c.shop}</div>
+      <div class="cs-opt-sub">${[c.shop,c.loc,c.zone,c.phone].filter(Boolean).join(' · ')}</div>
+    </div>`).join('');
+}
+
+function ndPickClient(det) {
+  const c = clients.find(x => x.det === det); if (!c) return;
+  noteSelClient = c;
+  document.getElementById('ndCsInput').value = '';
+  ndCloseDd();
+  document.getElementById('ndCsName').textContent = c.name || c.shop;
+  document.getElementById('ndCsSub').textContent  = [c.shop,c.loc,c.zone,c.phone].filter(Boolean).join(' · ');
+  document.getElementById('ndCsStatus').classList.add('show');
+}
+
+function ndClearClient() {
+  noteSelClient = null;
+  document.getElementById('ndCsStatus').classList.remove('show');
+  document.getElementById('ndCsInput').value = '';
+  document.getElementById('ndCsInput').focus();
+}
+
+// ── SAVE NOTE ─────────────────────────────────────────────────
+let _ndSubmitting = false;
+
+async function saveNote() {
+  if (_ndSubmitting) return;
+  if (!noteSelClient) { toast('Select a client', 'err'); return; }
+
+  const products = [];
+  document.querySelectorAll('#ndProdRows .prod-row').forEach(row => {
+    const product  = row.querySelector('.prod-sel').value;
+    const price    = +row.querySelector('.prod-rate').value || 0;
+    const qty      = +row.querySelector('.prod-qty').value  || 1;
+    const discount = +row.querySelector('.prod-disc').value || 0;
+    const gift     = row.dataset.gift === 'true';
+    if (product) products.push({ product, price, qty, discount, gift: gift ? 'YES' : 'NO' });
+  });
+  if (!products.length) { toast('Select at least one product', 'err'); return; }
+
+  const deadline = document.getElementById('ndDeadline').value;
+  const comment  = document.getElementById('ndComment').value.trim();
+  const seller   = document.getElementById('ndSeller').value;
+  if (!seller) { toast('Select a salesman', 'err'); return; }
+
+  _ndSubmitting = true;
+  const btn = document.getElementById('ndSaveBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Saving…';
+
+  try {
+    const qs = new URLSearchParams({
+      action:     'addOrderNote',
+      client:     noteSelClient.det,
+      seller:     NOTES_USER_ID,
+      sellerName: seller,
+      products:   JSON.stringify(products),
+      deadline,
+      comment
+    }).toString();
+    const res = await fetch(`${NOTES_AS_URL}?${qs}`).then(r => r.json());
+    if (!res.success) throw new Error(res.error || 'Save failed');
+    toast('📋 Note saved!', 'ok');
+    notesLoaded = false;
+    closeNoteDrawer();
+    await loadNotes();
+  } catch(e) {
+    console.error('Save note:', e);
+    toast('❌ Save failed — check connection', 'err');
+  } finally {
+    _ndSubmitting = false;
+    btn.disabled = false; btn.innerHTML = '💾 Save Order Note';
+  }
+}
+
+// ── FORWARD TO SALE ENTRY ─────────────────────────────────────
+function forwardToSale(noteId) {
+  const note = allNotes.find(n => n.noteId === noteId);
+  if (!note) return;
+
+  setMode('sale');
+
+  // Pick client
+  const c = clients.find(x => x.det === note.client);
+  if (c) { selClient = c; showStatus(c); calcAll(); }
+
+  // Reset and pre-fill product rows
+  document.getElementById('prodRows').innerHTML = '';
+  prodRowCount = 0;
+  (note.products || []).forEach(p => {
+    const idx = prodRowCount;
+    addProdRow();
+    const row = document.getElementById(`pr-${idx}`);
+    if (!row) return;
+    const sel = row.querySelector('.prod-sel');
+    sel.value = p.product; showProdName(sel);
+    row.querySelector('.prod-rate').value = p.price    || '';
+    row.querySelector('.prod-qty').value  = p.qty      || 1;
+    row.querySelector('.prod-disc').value = p.discount || '';
+    if (p.gift === 'YES') {
+      row.dataset.gift = 'true';
+      const gb = row.querySelector('.gift-btn');
+      gb.textContent = '✅ Gift/Sample'; gb.className = 'gift-btn on';
+    }
+  });
+  calcAll();
+  document.getElementById('comment').value = note.comment || '';
+  autoFillSeller();
+
+  updateNoteRemoteStatus(noteId, 'Forwarded');
+  toast('📋 Loaded from note — add payment and submit', 'ok');
+  window.scrollTo(0, 0);
+}
+
+// ── DELETE NOTE ───────────────────────────────────────────────
+async function deleteNote(noteId) {
+  if (!confirm('Delete this note? This cannot be undone.')) return;
+  try {
+    const url = `${NOTES_AS_URL}?action=deleteOrderNote&noteId=${encodeURIComponent(noteId)}`;
+    const res = await fetch(url).then(r => r.json());
+    if (!res.success) throw new Error(res.error);
+    allNotes = allNotes.filter(n => n.noteId !== noteId);
+    renderNoteCards();
+    toast('Note deleted', '');
+  } catch(e) { toast('❌ Delete failed', 'err'); console.error(e); }
+}
+
+// ── UPDATE STATUS ─────────────────────────────────────────────
+async function updateNoteRemoteStatus(noteId, status) {
+  const note = allNotes.find(n => n.noteId === noteId);
+  if (note) { note.status = status; renderNoteCards(); }
+  try {
+    await fetch(`${NOTES_AS_URL}?action=updateNoteStatus&noteId=${encodeURIComponent(noteId)}&status=${encodeURIComponent(status)}`);
+  } catch(e) { console.error('Status update:', e); }
 }
 </script>
 </body>
