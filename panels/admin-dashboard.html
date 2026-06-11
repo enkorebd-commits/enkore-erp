@@ -94,11 +94,14 @@
     .range-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
     .dwrap {
       position:relative; flex:1; min-width:0;
-      background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16);
+      background:linear-gradient(135deg,rgba(22,176,124,.85),rgba(16,140,98,.85));
+      border:1px solid rgba(63,224,168,.45);
       border-radius:12px; padding:10px 6px;
       font-size:13px; font-weight:700; color:#fff; text-align:center;
       white-space:nowrap; overflow:hidden;
+      box-shadow:0 2px 8px rgba(22,176,124,.25);
     }
+    .dwrap:active { filter:brightness(1.08); }
     .dwrap input {
       position:absolute; inset:0; width:100%; height:100%;
       opacity:0; border:0; cursor:pointer; -webkit-appearance:none;
