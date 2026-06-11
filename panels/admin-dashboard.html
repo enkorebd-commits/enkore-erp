@@ -106,6 +106,10 @@
       position:absolute; inset:0; width:100%; height:100%;
       opacity:0; border:0; cursor:pointer; -webkit-appearance:none;
     }
+    .dwrap input::-webkit-calendar-picker-indicator {
+      position:absolute; inset:0; width:100%; height:100%;
+      cursor:pointer; opacity:0;
+    }
     .range-arrow { font-size:12px; color:rgba(255,255,255,.5); flex-shrink:0; font-weight:700; }
 
     .sc-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:10px; }
@@ -183,9 +187,9 @@
   <div class="sc-wrap">
     <div class="sc-title">Sales vs Collection</div>
     <div class="range-row">
-      <div class="dwrap"><span id="ds-show">—</span><input type="date" id="d-start" onchange="renderAnalytics()"></div>
+      <div class="dwrap" onclick="openPicker('d-start')"><span id="ds-show">—</span><input type="date" id="d-start" onchange="renderAnalytics()"></div>
       <span class="range-arrow">→</span>
-      <div class="dwrap"><span id="de-show">—</span><input type="date" id="d-end" onchange="renderAnalytics()"></div>
+      <div class="dwrap" onclick="openPicker('d-end')"><span id="de-show">—</span><input type="date" id="d-end" onchange="renderAnalytics()"></div>
     </div>
     <div class="sc-grid" id="sc-grid" style="display:none">
       <div class="gtile"><div class="gtile-l">Sales</div><div class="gtile-v" id="k-sales">—</div></div>
@@ -230,6 +234,13 @@
     "Your team is your greatest asset.",
     "Done is better than perfect."
   ];
+
+  // open native date picker (desktop + mobile)
+  window.openPicker = function(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    try { el.showPicker(); } catch(e) { el.focus(); }
+  };
 
   // ── format helpers ──
   const MMM = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -316,6 +327,8 @@
 
   // ── finance data — read live from the Central Finance sheet via gviz ──
   window._financeLoaded = false;
+  window._expLoaded = false;
+  let EXP_ROWS = [];
 
   async function gvTable(sheetId, sheetName) {
     const url = 'https://docs.google.com/spreadsheets/d/'+sheetId+
@@ -336,10 +349,21 @@
 
   async function loadFinance() {
     try {
-      const [mt, ct] = await Promise.all([
+      const [mt, ct, et] = await Promise.all([
         gvTable(FIN_SHEET_ID, 'Monthly Dashboard'),
-        gvTable(FIN_SHEET_ID, 'Cash in Hand')
+        gvTable(FIN_SHEET_ID, 'Cash in Hand'),
+        gvTable(FIN_SHEET_ID, 'Expense- Helper')
       ]);
+
+      // expense register: D(3) Date · H(7) Expense amount
+      EXP_ROWS = (et.rows||[]).map(r => {
+        const c = r.c||[];
+        const d = gvDate(c[3] ? (c[3].v!==null && c[3].v!==undefined ? c[3].v : null) : null);
+        if (!d) return null;
+        const amt = (c[7] && c[7].v!==null && c[7].v!==undefined && c[7].v!=='') ? (Number(c[7].v)||0) : 0;
+        return { d: new Date(d.getFullYear(), d.getMonth(), d.getDate()), amt: amt };
+      }).filter(Boolean);
+      window._expLoaded = true;
 
       let ytd = null; const monthly = [];
       (mt.rows||[]).forEach(r => {
@@ -404,10 +428,16 @@
     const s = String(v);
     let m = s.match(/Date\((\d+),(\d+),(\d+)/);
     if (m) return new Date(+m[1], +m[2], +m[3]);
-    m = s.match(/^(\d{1,2})\s+([A-Za-z]+),?\s+(\d{2,4})$/);
+    m = s.match(/^(\d{1,2})\s+([A-Za-z]+),?\s+(\d{2,4})$/);          // "1 Jan, 26"
     if (m) {
       const y = m[3].length===2 ? 2000+ +m[3] : +m[3];
       const d = new Date(m[1]+' '+m[2]+' '+y);
+      return isNaN(d) ? null : d;
+    }
+    m = s.match(/^([A-Za-z]{3,})\s+(\d{1,2}),?\s+(\d{2,4})$/);       // "Oct 19, 25"
+    if (m) {
+      const y = m[3].length===2 ? 2000+ +m[3] : +m[3];
+      const d = new Date(m[2]+' '+m[1]+' '+y);
       return isNaN(d) ? null : d;
     }
     const d = new Date(s);
@@ -421,7 +451,7 @@
     try {
       const url = 'https://docs.google.com/spreadsheets/d/'+SALES_SHEET_ID+
                   '/gviz/tq?tqx=out:json&headers=1&sheet='+encodeURIComponent('Sale Entry')+
-                  '&tq='+encodeURIComponent('select A,B,J,M,P')+'&t='+Date.now();
+                  '&tq='+encodeURIComponent('select A,B,J,M,P,R')+'&t='+Date.now();
       const txt = await fetch(url).then(r => r.text());
       const m = txt.match(/setResponse\(([\s\S]*)\)\s*;?\s*$/);
       if (!m) throw new Error('parse');
@@ -435,7 +465,8 @@
           client: cellStr(c[1]),
           sales:  cellNum(c[2]),
           paid:   cellNum(c[3]),
-          seller: cellStr(c[4]) || '(No seller)'
+          seller: cellStr(c[4]) || '(No seller)',
+          pmc:    cellNum(c[5])
         };
       }).filter(Boolean);
       AN_ROWS = rows;
@@ -447,27 +478,9 @@
     }
   }
 
-  // P&L for the months overlapping [start, end], from the finance monthly rows
-  function pnlForRange(start, end) {
-    const monthly = window._mdata || [];
-    if (!monthly.length) return null;
-    const keys = new Set();
-    const cur = new Date(start.getFullYear(), start.getMonth(), 1);
-    while (cur <= end) {
-      keys.add(MMM[cur.getMonth()]+', '+String(cur.getFullYear()).slice(2));
-      cur.setMonth(cur.getMonth()+1);
-    }
-    let sales=0, gp=0, exp=0, np=0, hit=false;
-    monthly.forEach(r => {
-      if (!keys.has(String(r[C.month]).trim())) return;
-      hit = true;
-      sales += Number(r[C.sales])||0;
-      gp    += Number(r[C.gp])||0;
-      exp   += Number(r[C.exp])||0;
-      np    += Number(r[C.np])||0;
-    });
-    if (!hit) return null;
-    return { gp:gp, exp:exp, np:np, gpp: sales? gp/sales : '', npp: sales? np/sales : '' };
+  function pctOf(part, base) {
+    if (!base) return '—';
+    return Math.round(part/base*100)+'%';
   }
 
   window.renderAnalytics = function() {
@@ -496,12 +509,12 @@
       fullDates.push(fmtDate(d));
       salesArr.push(0); paidArr.push(0);
     }
-    let tSales = 0, tPaid = 0;
+    let tSales = 0, tPaid = 0, tPmc = 0;
     rows.forEach(r => {
       const i = idx[isoLocal(r.d)];
       if (i===undefined) return;
       salesArr[i] += r.sales; paidArr[i] += r.paid;
-      tSales += r.sales; tPaid += r.paid;
+      tSales += r.sales; tPaid += r.paid; tPmc += r.pmc;
     });
 
     // tiles
@@ -514,20 +527,24 @@
     kd.className = 'gtile-v ' + (due>0 ? 'neg' : 'pos');
     document.getElementById('k-crate').textContent = tSales ? Math.round(tPaid/tSales*100)+'%' : '—';
 
-    const pnl = pnlForRange(start, end);
+    // day-exact P&L: GP = Sales − PMC (COGS) · Expense = dated register · NP = GP − Expense
     function setTile(id, html, cls) {
       const el = document.getElementById(id);
       el.innerHTML = html;
       el.className = 'gtile-v' + (cls ? ' '+cls : '');
     }
-    if (pnl) {
-      setTile('k-gp',  tk(pnl.gp),       numClass(pnl.gp));
-      setTile('k-gpp', fmtPct(pnl.gpp),  numClass(pnl.gpp));
-      setTile('k-exp', tk(pnl.exp),      '');
-      setTile('k-np',  tk(pnl.np),       numClass(pnl.np));
-      setTile('k-npp', fmtPct(pnl.npp),  numClass(pnl.npp));
+    const gp = tSales - tPmc;
+    setTile('k-gp',  tk(gp),             numClass(gp));
+    setTile('k-gpp', pctOf(gp, tSales),  numClass(gp));
+    if (window._expLoaded) {
+      let exp = 0;
+      EXP_ROWS.forEach(e => { if (e.d >= start && e.d <= end) exp += e.amt; });
+      const np = gp - exp;
+      setTile('k-exp', tk(exp),            '');
+      setTile('k-np',  tk(np),             numClass(np));
+      setTile('k-npp', pctOf(np, tSales),  numClass(np));
     } else {
-      ['k-gp','k-gpp','k-exp','k-np','k-npp'].forEach(id => setTile(id,'—',''));
+      ['k-exp','k-np','k-npp'].forEach(id => setTile(id,'—',''));
     }
 
     // chart — dark panel styling
