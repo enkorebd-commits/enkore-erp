@@ -527,22 +527,23 @@
     kd.className = 'gtile-v ' + (due>0 ? 'neg' : 'pos');
     document.getElementById('k-crate').textContent = tSales ? Math.round(tPaid/tSales*100)+'%' : '—';
 
-    // day-exact P&L: GP = Sales − PMC (COGS) · Expense = dated register · NP = GP − Expense
+    // day-exact P&L, cash basis (matches sheet "Actual" columns):
+    // GP = Paid − PMC (COGS) · Expense = dated register · NP = GP − Expense · % against Paid
     function setTile(id, html, cls) {
       const el = document.getElementById(id);
       el.innerHTML = html;
       el.className = 'gtile-v' + (cls ? ' '+cls : '');
     }
-    const gp = tSales - tPmc;
-    setTile('k-gp',  tk(gp),             numClass(gp));
-    setTile('k-gpp', pctOf(gp, tSales),  numClass(gp));
+    const gp = tPaid - tPmc;
+    setTile('k-gp',  tk(gp),            numClass(gp));
+    setTile('k-gpp', pctOf(gp, tPaid),  numClass(gp));
     if (window._expLoaded) {
       let exp = 0;
       EXP_ROWS.forEach(e => { if (e.d >= start && e.d <= end) exp += e.amt; });
       const np = gp - exp;
-      setTile('k-exp', tk(exp),            '');
-      setTile('k-np',  tk(np),             numClass(np));
-      setTile('k-npp', pctOf(np, tSales),  numClass(np));
+      setTile('k-exp', tk(exp),           '');
+      setTile('k-np',  tk(np),            numClass(np));
+      setTile('k-npp', pctOf(np, tPaid),  numClass(np));
     } else {
       ['k-exp','k-np','k-npp'].forEach(id => setTile(id,'—',''));
     }
