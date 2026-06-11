@@ -381,15 +381,7 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   <!-- ===== ORDER NOTES ===== -->
   <div id="notesSection">
     <button class="n-add-btn" onclick="openNoteDrawer()">＋ New Order Note</button>
-    <div class="stats-bar">
-      <div class="sbar"><div class="sbar-v tot" id="nst-total">—</div><div class="sbar-l">Total</div></div>
-      <div class="sbar"><div class="sbar-v pend" id="nst-pending">—</div><div class="sbar-l">Pending</div></div>
-      <div class="sbar"><div class="sbar-v fwd" id="nst-fwd">—</div><div class="sbar-l">Forwarded</div></div>
-    </div>
-    <div class="nfilter">
-      <button class="nfbtn on" id="nf-all"     onclick="setNFilter('all')">All</button>
-      <button class="nfbtn"    id="nf-pending" onclick="setNFilter('pending')">⏳ Pending</button>
-    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--muted);margin:6px 0 10px">⏳ <span id="nst-pending">—</span> Pending</div>
     <div id="noteCards"></div>
   </div>
 
@@ -1397,9 +1389,8 @@ const NOTES_USER_ID = new URLSearchParams(location.search).get('userId') || '';
 
 let allNotes = [], noteFilter = 'all', noteProdCount = 0, noteSelClient = null, notesLoaded = false;
 
-// ── FILTER ────────────────────────────────────────────────────
+// ── FILTER (removed — always shows pending only) ───────────────
 function setNFilter(f) {
-  noteFilter = f;
   ['all','pending'].forEach(x => {
     const el = document.getElementById('nf-' + x);
     if (el) el.classList.toggle('on', x === f);
@@ -1409,28 +1400,13 @@ function setNFilter(f) {
 
 // ── RENDER CARDS ──────────────────────────────────────────────
 function renderNoteCards() {
-  const list = allNotes.filter(n =>
-    noteFilter === 'all' ||
-    (noteFilter === 'pending'   && (n.status||'').toLowerCase() === 'pending') ||
-    (noteFilter === 'forwarded' && (n.status||'').toLowerCase() === 'forwarded')
-  );
+  const list = allNotes; // already filtered to pending-only in loadNotes
 
-  const total   = allNotes.length;
-  const pending = allNotes.filter(n => (n.status||'').toLowerCase() === 'pending').length;
-  const fwd     = allNotes.filter(n => (n.status||'').toLowerCase() === 'forwarded').length;
-  document.getElementById('nst-total').textContent   = total;
-  document.getElementById('nst-pending').textContent = pending;
-  document.getElementById('nst-fwd').textContent     = fwd;
+  document.getElementById('nst-pending').textContent = list.length;
 
   const el = document.getElementById('noteCards');
   if (!list.length) {
-    const msgs = {
-      all:       ['📭','No notes yet','Tap + to log your first deal'],
-      pending:   ['⏳','No pending notes','All deals are forwarded!'],
-      forwarded: ['📤','No forwarded notes','Forward pending notes to Sale Entry'],
-    };
-    const [icon,txt,sub] = msgs[noteFilter] || msgs.all;
-    el.innerHTML = `<div class="n-empty"><div class="n-empty-icon">${icon}</div><div class="n-empty-txt">${txt}</div><div style="font-size:12px;color:var(--muted)">${sub}</div></div>`;
+    el.innerHTML = `<div class="n-empty"><div class="n-empty-icon">⏳</div><div class="n-empty-txt">No pending notes</div><div style="font-size:12px;color:var(--muted)">Tap + to log a deal</div></div>`;
     return;
   }
 
@@ -1472,6 +1448,13 @@ function renderNoteCards() {
   }).join('');
 }
 
+// ── GIFT HELPER ───────────────────────────────────────────────
+function _isGift(v) {
+  if (v === true || v === 1) return true;
+  if (!v) return false;
+  return ['YES','TRUE','Y','1'].includes(String(v).trim().toUpperCase());
+}
+
 // ── LOAD FROM SHEET ───────────────────────────────────────────
 async function loadNotes() {
   if (!NOTES_USER_ID) {
@@ -1505,16 +1488,26 @@ async function loadNotes() {
         };
         order.push(id);
       }
-      // If already grouped (products array), use it; else build from per-row fields
+      // Build product list — normalize gift via _isGift() regardless of source format
       if (Array.isArray(row.products) && row.products.length) {
-        map[id].products = row.products;
+        // Pre-grouped response: PUSH each product (not overwrite)
+        row.products.forEach(p => {
+          map[id].products.push({
+            product:  String(p.product  || ''),
+            price:    Number(p.price    || 0),
+            qty:      Number(p.qty || p.quantity || 1),
+            discount: Number(p.discount || 0),
+            gift:     _isGift(p.gift) ? 'YES' : 'NO'
+          });
+        });
       } else if (row.product) {
+        // Per-row response: one product per sheet row
         map[id].products.push({
-          product:  row.product  || '',
-          price:    row.price    || 0,
-          qty:      row.quantity || row.qty || 1,
-          discount: row.discount || 0,
-          gift:     row.gift     || 'NO'
+          product:  String(row.product  || ''),
+          price:    Number(row.price    || 0),
+          qty:      Number(row.quantity || row.qty || 1),
+          discount: Number(row.discount || 0),
+          gift:     _isGift(row.gift) ? 'YES' : 'NO'
         });
       }
     });
@@ -1697,8 +1690,10 @@ async function saveNote() {
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Saving…';
 
   try {
+    const submitId = 'nc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
     const qs = new URLSearchParams({
       action:     'addOrderNote',
+      submitId,
       client:     selClient.det,
       seller:     NOTES_USER_ID,
       sellerName: seller,
