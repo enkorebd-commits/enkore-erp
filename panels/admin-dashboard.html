@@ -317,15 +317,55 @@
     window._mdata = monthly;
 
     let h = '';
-    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div>'+ytdGrid(data.ytd)+'</div>';
+    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div><div id="ytd-container">'+ytdGrid(data.ytd)+'</div></div>';
     h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Cash in Hand</span></div><div class="cash-grid">'+
       '<div class="ccard"><div class="c-ava">MC</div><div><div class="ccard-name">Mahedi Islam Chayan</div><div class="ccard-val">'+tk(data.cash.chayan)+'</div></div></div>'+
       '<div class="ccard"><div class="c-ava">AR</div><div><div class="ccard-name">Anik Rahman</div><div class="ccard-val">'+tk(data.cash.anik)+'</div></div></div>'+
       '</div></div>';
     document.getElementById('dash-body').innerHTML = h;
 
-    // refresh P&L tiles in Sales vs Collection now that finance data is here
+    // refresh YTD and P&L tiles now that finance/expense data is here
+    if (AN_ROWS.length) renderYTD();
     if (document.getElementById('d-start').value) renderAnalytics();
+  }
+
+  // ── YTD computed live from Sale Entry rows ──
+  function renderYTD() {
+    if (!AN_ROWS.length) return;
+    const now  = new Date();
+    const ytdS = new Date(now.getFullYear(), 0, 1);   // Jan 1 of current year
+    const ytdRows = AN_ROWS.filter(r => r.d >= ytdS && r.d <= now);
+
+    let tSales = 0, tPaid = 0, tPmc = 0;
+    ytdRows.forEach(r => { tSales += r.sales; tPaid += r.paid; tPmc += r.pmc; });
+
+    const due    = tSales - tPaid;
+    const clrPct = tSales ? tPaid / tSales : 0;
+    const gp     = tPaid - tPmc;
+
+    let exp = 0;
+    const expReady = window._expLoaded;
+    if (expReady) EXP_ROWS.forEach(e => { if (e.d >= ytdS && e.d <= now) exp += e.amt; });
+    const np = gp - exp;
+
+    const stats = [
+      { lbl:'Sales',           val:tk(tSales),           cls:'blu' },
+      { lbl:'Paid',            val:tk(tPaid),             cls:'pos' },
+      { lbl:'Collection Rate', val:fmtPct(clrPct),       cls: clrPct>=0.8?'pos':'blu' },
+      { lbl:'Due',             val:tk(due),               cls: due>0?'neg':'pos' },
+      { lbl:'Gross Pft',       val:tk(gp),                cls:numClass(gp) },
+      { lbl:'Expense',         val:expReady?tk(exp):'—',  cls:'' },
+      { lbl:'Net Pft',         val:expReady?tk(np):'—',   cls:numClass(np) },
+    ];
+
+    const el = document.getElementById('ytd-container');
+    if (!el) return;
+    el.innerHTML = '<div class="ytd-grid">'+
+      stats.map(s =>
+        '<div class="ystat"><div class="ystat-l">'+s.lbl+'</div>'+
+        '<div class="ystat-v '+s.cls+'">'+s.val+'</div></div>'
+      ).join('')+
+    '</div>';
   }
 
   // ── finance data — read live from the Central Finance sheet via gviz ──
@@ -463,6 +503,7 @@
         };
       }).filter(Boolean);
       AN_ROWS = rows;
+      renderYTD();
       renderAnalytics();
     } catch(e) {
       document.getElementById('an-state').innerHTML = '⚠️ Could not load sales data.';
