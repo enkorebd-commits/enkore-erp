@@ -530,9 +530,10 @@
         const style = doc.createElement('style');
         style.id = '__ro_style';
         style.textContent = `
-          input, textarea, select, button,
-          [type="submit"], [type="button"], [type="reset"],
-          [contenteditable="true"], label { pointer-events:none !important; opacity:.55 !important; cursor:not-allowed !important; }
+          input, textarea, select,
+          [contenteditable="true"] { pointer-events:none !important; cursor:not-allowed !important; }
+          button, [type="submit"], [type="button"],
+          [type="reset"] { pointer-events:none !important; opacity:.5 !important; cursor:not-allowed !important; }
           a { pointer-events:none !important; cursor:default !important; }
           form { pointer-events:none !important; }
         `;
