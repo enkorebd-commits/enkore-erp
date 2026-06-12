@@ -220,8 +220,7 @@
 </div>
 
 <script>
-  const FIN_SHEET_ID   = '1XE05NQJYc2QPM1qUivoGYUynu-lI1iaTH5Y785dPwJk';
-  const SALES_SHEET_ID = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
+  const FIN_SHEET_ID = '1XE05NQJYc2QPM1qUivoGYUynu-lI1iaTH5Y785dPwJk';
 
   const qp    = new URLSearchParams(window.location.search);
   const userId = qp.get('userId') || '';
@@ -284,47 +283,20 @@
     document.getElementById('g-quote').textContent = '" ' + QUOTES[now.getDay()] + ' "';
   })();
 
-  // column map of Monthly Dashboard tab
-  const C = { month:0, sales:2, paid:3, clrPct:4, due:5, gp:9, exp:20, np:22 };
-
-  // ── compact YTD stats ──
-  function ytdGrid(row) {
-    const stats = [
-      { lbl:'Sales',           val:tk(row[C.sales]),      cls:'blu' },
-      { lbl:'Paid',            val:tk(row[C.paid]),       cls:'pos' },
-      { lbl:'Collection Rate', val:fmtPct(row[C.clrPct]), cls: Number(row[C.clrPct])>=0.8?'pos':'blu' },
-      { lbl:'Due',             val:tk(row[C.due]),        cls: Number(row[C.due])>0?'neg':'pos' },
-      { lbl:'Gross Pft',       val:tk(row[C.gp]),         cls:numClass(row[C.gp]) },
-      { lbl:'Expense',         val:tk(row[C.exp]),        cls:'' },
-      { lbl:'Net Pft',         val:tk(row[C.np]),         cls:numClass(row[C.np]) },
-    ];
-    return '<div class="ytd-grid">'+
-      stats.map(s=>
-        '<div class="ystat">'+
-        '<div class="ystat-l">'+s.lbl+'</div>'+
-        '<div class="ystat-v '+s.cls+'">'+s.val+'</div>'+
-        '</div>'
-      ).join('')+
-    '</div>';
-  }
-
   function initials(name) {
     return String(name).split(' ').filter(Boolean).map(n=>n[0]).slice(0,2).join('').toUpperCase() || '?';
   }
 
   function buildDash(data) {
-    const monthly = (data.monthly||[]).filter(r=>r[C.month]);
-    window._mdata = monthly;
-
     let h = '';
-    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div><div id="ytd-container">'+ytdGrid(data.ytd)+'</div></div>';
+    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div><div id="ytd-container"><div class="state"><div class="spin"></div>Computing YTD...</div></div></div>';
     h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Cash in Hand</span></div><div class="cash-grid">'+
       '<div class="ccard"><div class="c-ava">MC</div><div><div class="ccard-name">Mahedi Islam Chayan</div><div class="ccard-val">'+tk(data.cash.chayan)+'</div></div></div>'+
       '<div class="ccard"><div class="c-ava">AR</div><div><div class="ccard-name">Anik Rahman</div><div class="ccard-val">'+tk(data.cash.anik)+'</div></div></div>'+
       '</div></div>';
     document.getElementById('dash-body').innerHTML = h;
 
-    // refresh YTD and P&L tiles now that finance/expense data is here
+    // refresh YTD and P&L tiles now that expense data is here
     if (AN_ROWS.length) renderYTD();
     if (document.getElementById('d-start').value) renderAnalytics();
   }
@@ -388,17 +360,14 @@
     return out;
   }
 
-  const MONTH_RE = /^[A-Z][a-z]{2},?\s*\d{2}$/;
-
   async function loadFinance() {
     try {
-      const [mt, ct, et] = await Promise.all([
-        gvTable(FIN_SHEET_ID, 'Monthly Dashboard'),
+      const [ct, et] = await Promise.all([
         gvTable(FIN_SHEET_ID, 'Cash in Hand'),
         gvTable(FIN_SHEET_ID, 'Expense- Helper')
       ]);
 
-      // expense register: D(3) Date · H(7) Expense amount
+      // Expense- Helper: D(3) = Date · H(7) = Amount
       EXP_ROWS = (et.rows||[]).map(r => {
         const c = r.c||[];
         const d = gvDate(c[3] ? (c[3].v!==null && c[3].v!==undefined ? c[3].v : null) : null);
@@ -408,16 +377,7 @@
       }).filter(Boolean);
       window._expLoaded = true;
 
-      let ytd = null; const monthly = [];
-      (mt.rows||[]).forEach(r => {
-        const c = r.c||[];
-        const v = rowVals(r);
-        const label = (c[0] && (c[0].f || (c[0].v!==null && c[0].v!==undefined ? String(c[0].v) : '')) || '').trim();
-        if (MONTH_RE.test(label)) { v[0] = label; monthly.push(v); }
-        else if (!label && typeof v[2] === 'number' && !ytd) { ytd = v; }
-      });
-      if (!ytd) throw new Error('YTD row not found');
-
+      // Cash in Hand: row where col A = "positive" · D(3) = Chayan · G(6) = Anik
       let chayan = '', anik = '';
       (ct.rows||[]).forEach(r => {
         const c = r.c||[];
@@ -429,7 +389,7 @@
       });
 
       window._financeLoaded = true;
-      buildDash({ ok:true, ytd:ytd, monthly:monthly, cash:{ chayan:chayan, anik:anik } });
+      buildDash({ cash:{ chayan, anik } });
     } catch(e) {
       console.error(e);
       if (!window._financeLoaded) {
@@ -441,9 +401,9 @@
   loadFinance();
 
   /* ═══════════════════════════════════════════════════════════
-     SALES ANALYTICS — reads "Sale Entry" tab live via gviz
-     select A,B,J,M,P → 0 Date · 1 Client · 2 Final Bill ·
-                        3 Paid · 4 Seller
+     SALES ANALYTICS — reads "Sale Entry - Helper" tab from
+     Central Finance Sheet (FIN_SHEET_ID) via gviz
+     A=Date · B=Client · J=Final Bill · M=Paid · P=Seller · R=PMC
      ═══════════════════════════════════════════════════════════ */
   let AN_ROWS = [], trendChart = null;
 
@@ -481,13 +441,13 @@
   function cellNum(c)  { return (c && c.v!==null && c.v!==undefined && c.v!=='') ? (Number(c.v)||0) : 0; }
   function cellStr(c)  { return (c && c.v!==null && c.v!==undefined) ? String(c.v).trim() : ''; }
 
-  // Column indices (0-based) in Sale Entry sheet:
+  // Column indices (0-based) in Sale Entry - Helper tab:
   // A=0 Date · B=1 Client · J=9 Final Bill · M=12 Paid · P=15 Seller · R=17 PMC
   const SC = { date:0, client:1, sales:9, paid:12, seller:15, pmc:17 };
 
   async function loadAnalytics() {
     try {
-      const tbl  = await gvTable(SALES_SHEET_ID, 'Sale Entry');
+      const tbl  = await gvTable(FIN_SHEET_ID, 'Sale Entry - Helper');
       const rows = (tbl.rows||[]).map(r => {
         const c = r.c||[];
         const v = rowVals(r);
