@@ -447,7 +447,7 @@
 
   async function loadAnalytics() {
     try {
-      const tbl  = await gvTable(FIN_SHEET_ID, 'Sale Entry - Helper');
+      const tbl  = await gvTable(FIN_SHEET_ID, 'Sale Entry- Helper');
       const rows = (tbl.rows||[]).map(r => {
         const c = r.c||[];
         const v = rowVals(r);
