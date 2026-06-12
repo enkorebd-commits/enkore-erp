@@ -290,10 +290,18 @@
     const str = (panelsStr || '').trim();
     if (!str) return [];
 
+    // "All" — full access to every panel
     if (str.toLowerCase() === 'all') {
       return allPanels.map(p => ({ ...p, readonly: false }));
     }
 
+    // "All (Readonly)" — every panel in view-only mode
+    if (/^all\s*\(readonly\)$/i.test(str)) {
+      return allPanels.map(p => ({ ...p, readonly: true }));
+    }
+
+    // Comma-separated list, each item optionally suffixed with "(Readonly)"
+    // e.g. "Admin Dashboard, Sales Entry (Readonly), Drive"
     return str.split(',').map(item => {
       item = item.trim();
       const readonly = /\(readonly\)/i.test(item);
@@ -534,6 +542,52 @@
             e.preventDefault(); e.stopImmediatePropagation();
           }
         }, true);
+
+        // 3. Block all network writes — override fetch and XHR in the iframe.
+        // This is the hard stop: even if a click somehow slips through the UI
+        // layer, the actual HTTP request to Apps Script is cancelled here.
+        const win = frame.contentWindow;
+        const _origFetch = win.fetch.bind(win);
+        win.fetch = function(...args) {
+          const url = String(typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '');
+          // Block any write to Google Apps Script endpoints
+          if (/script\.google\.com|AKfyc[A-Za-z0-9_-]+/i.test(url)) {
+            showToast('👁 View only — submit is disabled', 'err');
+            return Promise.resolve(new Response(JSON.stringify({ success: false, error: 'View-only mode' }), {
+              status: 200, headers: { 'Content-Type': 'application/json' }
+            }));
+          }
+          return _origFetch.apply(win, args);
+        };
+        const _origXHROpen = win.XMLHttpRequest.prototype.open;
+        win.XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+          if (/script\.google\.com|AKfyc[A-Za-z0-9_-]+/i.test(String(url))) {
+            this._blocked = true;
+          }
+          return _origXHROpen.apply(this, [method, url, ...rest]);
+        };
+        const _origXHRSend = win.XMLHttpRequest.prototype.send;
+        win.XMLHttpRequest.prototype.send = function(...args) {
+          if (this._blocked) {
+            showToast('👁 View only — submit is disabled', 'err');
+            // Fire a synthetic error so callers don't hang
+            setTimeout(() => {
+              Object.defineProperty(this, 'status', { value: 200, writable: true });
+              Object.defineProperty(this, 'responseText', { value: JSON.stringify({ success: false, error: 'View-only mode' }), writable: true });
+              this.dispatchEvent(new Event('load'));
+            }, 0);
+            return;
+          }
+          return _origXHRSend.apply(this, args);
+        };
+
+        function showToast(msg, type) {
+          const t = doc.getElementById('toast');
+          if (!t) return;
+          t.textContent = msg;
+          t.className = 'toast ' + (type || '') + ' show';
+          setTimeout(() => { t.className = 'toast'; }, 3000);
+        }
 
         // 3. View-only banner
         const banner = doc.createElement('div');
