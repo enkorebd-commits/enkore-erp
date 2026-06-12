@@ -493,9 +493,70 @@
       role:     currentUser.role,
       readonly: readonly ? '1' : '0'
     });
-    document.getElementById('panel-frame').src = 'panels/' + file + '.html?' + p.toString();
+    const frame = document.getElementById('panel-frame');
+    frame._readonly = !!readonly;
+    frame.src = 'panels/' + file + '.html?' + p.toString();
     closeMenu();
   }
+
+  // ── UNIVERSAL READONLY ENFORCEMENT ──
+  // Runs on every panel load. If readonly=true, injects a CSS+JS lock
+  // into the iframe so no panel needs its own readonly logic — ever.
+  (function() {
+    const frame = document.getElementById('panel-frame');
+    frame.addEventListener('load', function() {
+      if (!frame._readonly) return;
+      try {
+        const doc = frame.contentDocument;
+        if (!doc || !doc.body) return;
+
+        // 1. Disable all interactive elements via CSS
+        const style = doc.createElement('style');
+        style.id = '__ro_style';
+        style.textContent = `
+          input, textarea, select, button,
+          [type="submit"], [type="button"], [type="reset"],
+          [contenteditable="true"], label { pointer-events:none !important; opacity:.55 !important; cursor:not-allowed !important; }
+          a { pointer-events:none !important; cursor:default !important; }
+          form { pointer-events:none !important; }
+        `;
+        doc.head.appendChild(style);
+
+        // 2. Hard-block all form submissions and clicks (belt + suspenders)
+        doc.addEventListener('submit',  e => { e.preventDefault(); e.stopImmediatePropagation(); }, true);
+        doc.addEventListener('click',   e => {
+          if (e.target.closest('button, input, textarea, select, a, [type="submit"]')) {
+            e.preventDefault(); e.stopImmediatePropagation();
+          }
+        }, true);
+        doc.addEventListener('keydown', e => {
+          if (e.target.matches('input, textarea, select, [contenteditable]')) {
+            e.preventDefault(); e.stopImmediatePropagation();
+          }
+        }, true);
+
+        // 3. View-only banner
+        const banner = doc.createElement('div');
+        banner.id = '__ro_banner';
+        banner.style.cssText = [
+          'position:fixed','top:0','left:0','right:0','z-index:999999',
+          'background:#f59e0b','color:#1a1a1a','font-family:Inter,sans-serif',
+          'font-size:11px','font-weight:700','letter-spacing:.4px',
+          'text-align:center','padding:6px 12px',
+          'box-shadow:0 2px 6px rgba(0,0,0,.18)'
+        ].join(';');
+        banner.textContent = '👁  VIEW ONLY — You do not have permission to edit or submit data.';
+        doc.body.insertBefore(banner, doc.body.firstChild);
+
+        // Push body down so banner doesn't overlap content
+        const curr = parseInt(getComputedStyle(doc.body).paddingTop) || 0;
+        doc.body.style.paddingTop = (curr + 34) + 'px';
+
+      } catch(err) {
+        console.warn('[ERP] Readonly injection error:', err);
+      }
+    });
+  })();
 
   // ── USER MENU ──
   function toggleMenu() { menuOpen = !menuOpen; document.getElementById('user-menu').classList.toggle('open', menuOpen); }
