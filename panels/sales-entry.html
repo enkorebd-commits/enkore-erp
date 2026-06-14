@@ -324,19 +324,19 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
       <div class="card-lbl">Payment</div>
       <div class="fg">
         <div class="fl">Amount Paid (tk)</div>
-        <input type="number" class="fi" id="paid" placeholder="0" min="0" oninput="calcAll(); checkCashBy()">
+        <input type="number" class="fi" id="paid" placeholder="0" min="0" oninput="calcAll()">
       </div>
       <div class="fg">
         <div class="fl">New Due After Entry</div>
         <input type="text" class="fi big-calc" id="newDue" readonly value="৳ 0">
       </div>
-      <div class="fg hidden" id="cashByGroup">
-        <div class="fl">Cash Received by <span class="req">*</span></div>
-        <select class="fi" id="cashBy"></select>
-      </div>
-      <div class="fg">
-        <div class="fl">Seller <span class="req">*</span></div>
-        <select class="fi" id="seller"></select>
+      <div class="fg" style="background:var(--gbg);border:1.5px solid var(--g);border-radius:8px;padding:10px 13px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">👤</span>
+        <div>
+          <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:1px">Entry By</div>
+          <div style="font-size:14px;font-weight:800;color:var(--g)" id="saleUserName">—</div>
+          <div style="font-size:11px;color:var(--muted)" id="saleUserId"></div>
+        </div>
       </div>
       <div class="fg">
         <div class="fl">Comment</div>
@@ -357,13 +357,13 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
         <div class="fl">Amount Collected (tk) <span class="req">*</span></div>
         <input type="number" class="fi" id="pPaid" placeholder="0" min="0" oninput="calcPay()">
       </div>
-      <div class="fg">
-        <div class="fl">Cash Received by <span class="req">*</span></div>
-        <select class="fi" id="pCashBy"></select>
-      </div>
-      <div class="fg">
-        <div class="fl">Seller <span class="req">*</span></div>
-        <select class="fi" id="pSeller"></select>
+      <div class="fg" style="background:var(--gbg);border:1.5px solid var(--g);border-radius:8px;padding:10px 13px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">👤</span>
+        <div>
+          <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:1px">Collection By</div>
+          <div style="font-size:14px;font-weight:800;color:var(--g)" id="payUserName">—</div>
+          <div style="font-size:11px;color:var(--muted)" id="payUserId"></div>
+        </div>
       </div>
       <div class="fg">
         <div class="fl">Comment</div>
@@ -496,9 +496,13 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
         <div class="nc-lbl">Note / Comment</div>
         <textarea class="nc-fi" rows="3" id="ndComment" placeholder="Deal details, special instructions, conditions…" style="margin-top:5px;resize:vertical;font-family:inherit"></textarea>
       </div>
-      <div class="nc-fg">
-        <div class="nc-lbl">Salesman <span class="req">*</span></div>
-        <select class="nc-fi" id="ndSeller" style="margin-top:5px"></select>
+      <div class="nc-fg" style="background:var(--gbg);border:1.5px solid var(--g);border-radius:8px;padding:10px 13px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">👤</span>
+        <div>
+          <div class="nc-lbl" style="margin-bottom:1px">Salesman</div>
+          <div style="font-size:14px;font-weight:800;color:var(--g)" id="noteUserName">—</div>
+          <div style="font-size:11px;color:var(--muted)" id="noteUserId"></div>
+        </div>
       </div>
       <button class="nc-save-btn" id="ndSaveBtn" onclick="saveNote()" style="background:var(--blue);box-shadow:0 4px 16px rgba(25,113,194,.3)">💾 Save Order Note</button>
     </div>
@@ -533,6 +537,7 @@ let histAllRows = [], histShowingAll = false;
 window.addEventListener('DOMContentLoaded', () => {
   setHeaderDate();
   loadAllData();
+  fillUserBadges();
   addProdRow();
   loadNotes();
   checkPendingPhotoUpload();
@@ -639,22 +644,20 @@ async function loadAllData() {
   try {
     const cached = sessionStorage.getItem(CACHE_KEY);
     if (cached) {
-      const { products, staff, clientList, zoneList } = JSON.parse(cached);
-      fillProductSelects(products); fillStaffSelects(staff); clients = clientList;
+      const { products, clientList, zoneList } = JSON.parse(cached);
+      fillProductSelects(products); clients = clientList;
       if (zoneList) window._zones = zoneList;
       return;
     }
   } catch(_) {}
   try {
     const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-    const [prodTxt, staffTxt, clientTxt, zoneTxt] = await Promise.all([
+    const [prodTxt, clientTxt, zoneTxt] = await Promise.all([
       fetch(`${base}&sheet=Control&range=F3:F`).then(r=>r.text()),
-      fetch(`${base}&sheet=Control&range=K3:K`).then(r=>r.text()),
       fetch(`${base}&sheet=Clients%20Info`).then(r=>r.text()),
       fetch(`${base}&sheet=Zone%2FArea&range=A2:A`).then(r=>r.text()),
     ]);
     const products   = (parseGviz(prodTxt)?.table.rows||[]).map(r=>String(r.c?.[0]?.v||'').trim()).filter(v=>v);
-    const staff      = (parseGviz(staffTxt)?.table.rows||[]).map(r=>String(r.c?.[0]?.v||'').trim()).filter(v=>v);
     const clientList = (parseGviz(clientTxt)?.table.rows||[]).filter(r=>r.c?.[7]?.v).map(r=>({
       name:  r.c[2]?.v||'',
       shop:  r.c[3]?.v||'',
@@ -669,8 +672,8 @@ async function loadAllData() {
     }));
     const zoneList   = (parseGviz(zoneTxt)?.table.rows||[]).map(r=>String(r.c?.[0]?.v||'').trim()).filter(v=>v);
     window._zones    = zoneList;
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ products, staff, clientList, zoneList }));
-    fillProductSelects(products); fillStaffSelects(staff); clients = clientList;
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ products, clientList, zoneList }));
+    fillProductSelects(products); clients = clientList;
   } catch(e) { console.error('data load:', e); }
 }
 
@@ -684,26 +687,21 @@ function fillProductSelects(products) {
   });
 }
 
-function fillStaffSelects(staff) {
-  [['seller','cashBy'],['pSeller','pCashBy']].forEach(([s,c]) => {
-    const ss=document.getElementById(s), cs=document.getElementById(c);
-    ss.innerHTML='<option value="">— Select —</option>';
-    cs.innerHTML='<option value="">— Select —</option>';
-    staff.forEach(e=>{ ss.add(new Option(e,e)); cs.add(new Option(e,e)); });
-  });
-  autoFillSeller();
+function getERP_User() {
+  try { return JSON.parse(window.parent?.sessionStorage?.getItem('erp_user') || 'null') || {}; }
+  catch(_) { return {}; }
 }
 
-function autoFillSeller() {
-  try {
-    const u = JSON.parse(window.parent?.sessionStorage?.getItem('erp_user')||'null');
-    const n = u?.name;
-    if (!n) return;
-    ['seller','pSeller','cashBy','pCashBy'].forEach(id => {
-      const s=document.getElementById(id);
-      for (let i=0;i<s.options.length;i++) if(s.options[i].value===n){s.selectedIndex=i;break;}
-    });
-  } catch(_) {}
+function fillUserBadges() {
+  const u    = getERP_User();
+  const name = u.name || '—';
+  const idTxt = u.id ? `ID: ${u.id}` : '';
+  ['saleUserName','payUserName','noteUserName'].forEach(id_ => {
+    const el = document.getElementById(id_); if (el) el.textContent = name;
+  });
+  ['saleUserId','payUserId','noteUserId'].forEach(id_ => {
+    const el = document.getElementById(id_); if (el) el.textContent = idTxt;
+  });
 }
 
 // ── PRODUCT ROWS ─────────────────────────────────────────────
@@ -820,11 +818,6 @@ function calcPay() {
   const paid = +document.getElementById('pPaid').value||0;
   const el   = document.getElementById('pRemain');
   if (el) el.value = tk(due-paid);
-}
-
-function checkCashBy() {
-  const paid = +document.getElementById('paid').value||0;
-  document.getElementById('cashByGroup').className = 'fg'+(paid>0?'':' hidden');
 }
 
 // ── CLIENT SEARCH ────────────────────────────────────────────
@@ -1300,37 +1293,43 @@ async function submitEntry() {
         if (!product || !rate || !qty) valid = false;
         prods.push({ product, rate, qty, discount: disc, gift });
       });
-      const paid    = +document.getElementById('paid').value || 0;
-      const seller  = document.getElementById('seller').value;
-      const cashBy  = paid > 0 ? document.getElementById('cashBy').value : '';
-      const comment = document.getElementById('comment').value;
-      const prev    = selClient.due || 0;
+      const paid     = +document.getElementById('paid').value || 0;
+      const u        = getERP_User();
+      const seller   = u.name || '';
+      const cashBy   = u.name || '';
+      const sellerId = u.id   || '';
+      const cashById = u.id   || '';
+      const comment  = document.getElementById('comment').value;
+      const prev     = selClient.due || 0;
       const totalFinal = prods.reduce((s,p) => s + Math.max(0, p.rate * p.qty - p.discount), 0);
       newDueVal = totalFinal + prev - paid;
 
       if (!valid)  { toast('Fill all product details', 'err'); resetBtn(btn, 'Submit Sale Entry'); return; }
-      if (!seller) { toast('Select a seller', 'err'); resetBtn(btn, 'Submit Sale Entry'); return; }
-      if (paid > 0 && !cashBy) { toast('Select who received cash', 'err'); resetBtn(btn, 'Submit Sale Entry'); return; }
+      if (!seller) { toast('Not logged in — refresh ERP', 'err'); resetBtn(btn, 'Submit Sale Entry'); return; }
 
       params = {
         action: 'addSaleEntry', date: dateStr, clientInfo: selClient.det,
-        products: JSON.stringify(prods), paid, seller, cashReceivedBy: cashBy, comment
+        products: JSON.stringify(prods), paid, seller, cashReceivedBy: cashBy,
+        sellerId, cashById, comment
       };
     } else {
-      const paid    = +document.getElementById('pPaid').value || 0;
-      const seller  = document.getElementById('pSeller').value;
-      const cashBy  = document.getElementById('pCashBy').value;
-      const comment = document.getElementById('pComment').value;
-      const prev    = selClient.due || 0;
-      newDueVal     = prev - paid;
+      const paid     = +document.getElementById('pPaid').value || 0;
+      const u        = getERP_User();
+      const seller   = u.name || '';
+      const cashBy   = u.name || '';
+      const sellerId = u.id   || '';
+      const cashById = u.id   || '';
+      const comment  = document.getElementById('pComment').value;
+      const prev     = selClient.due || 0;
+      newDueVal      = prev - paid;
 
       if (!paid)   { toast('Enter amount collected', 'err'); resetBtn(btn, 'Submit Payment'); return; }
-      if (!seller) { toast('Select a seller', 'err'); resetBtn(btn, 'Submit Payment'); return; }
-      if (!cashBy) { toast('Select who received cash', 'err'); resetBtn(btn, 'Submit Payment'); return; }
+      if (!seller) { toast('Not logged in — refresh ERP', 'err'); resetBtn(btn, 'Submit Payment'); return; }
 
       params = {
         action: 'addSaleEntry', date: dateStr, clientInfo: selClient.det,
-        products: JSON.stringify([]), paid, seller, cashReceivedBy: cashBy, comment
+        products: JSON.stringify([]), paid, seller, cashReceivedBy: cashBy,
+        sellerId, cashById, comment
       };
     }
 
@@ -1361,9 +1360,8 @@ function resetForm() {
   document.getElementById('prodRows').innerHTML = '';
   prodRowCount = 0; addProdRow();
   ['paid','comment','pPaid','pComment'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('cashByGroup').className = 'fg hidden';
   window._pendingNoteId = null;
-  calcAll(); calcPay(); autoFillSeller();
+  calcAll(); calcPay();
 }
 
 // ── TOAST ─────────────────────────────────────────────────────
@@ -1607,17 +1605,7 @@ function closeNoteDrawer() {
   window._unlockBodyScroll();
 }
 
-function ndSyncSeller() {
-  const src = document.getElementById('seller');
-  const dst = document.getElementById('ndSeller');
-  dst.innerHTML = src ? src.innerHTML : '<option value="">— Select —</option>';
-  try {
-    const u = JSON.parse(window.parent?.sessionStorage?.getItem('erp_user') || 'null');
-    if (u?.name) for (let i = 0; i < dst.options.length; i++) {
-      if (dst.options[i].value === u.name) { dst.selectedIndex = i; break; }
-    }
-  } catch(_) {}
-}
+function ndSyncSeller() { fillUserBadges(); }
 
 // ── NOTE PRODUCT ROWS ─────────────────────────────────────────
 function addNoteProdRow() {
@@ -1742,8 +1730,8 @@ async function saveNote() {
 
   const deadline = document.getElementById('ndDeadline').value;
   const comment  = document.getElementById('ndComment').value.trim();
-  const seller   = document.getElementById('ndSeller').value;
-  if (!seller) { toast('Select a salesman', 'err'); return; }
+  const seller   = getERP_User().name || '';
+  if (!seller) { toast('Not logged in — refresh ERP', 'err'); return; }
 
   _ndSubmitting = true;
   const btn = document.getElementById('ndSaveBtn');
