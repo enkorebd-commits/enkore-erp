@@ -273,6 +273,10 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   </div>
 </div>
 
+<div id="offlineBanner" style="display:none;background:#e67e22;color:#fff;text-align:center;font-size:12px;font-weight:700;padding:6px 16px;letter-spacing:.3px;cursor:pointer" onclick="flushQueue()">
+  📴 <span id="offlineCount">0</span> entries pending sync — tap to retry
+</div>
+
 <div class="body">
 
   <!-- Client -->
@@ -539,6 +543,9 @@ window.addEventListener('DOMContentLoaded', () => {
   loadAllData();
   fillUserBadges();
   addProdRow();
+  flushQueue();
+  updateOfflineBanner();
+  window.addEventListener('online', () => { toast('🌐 Back online — syncing…', 'ok'); flushQueue(); });
   loadNotes();
   checkPendingPhotoUpload();
   document.addEventListener('click', e => {
@@ -1271,13 +1278,65 @@ function closeHistory() {
   window._unlockBodyScroll();
 }
 
+// ── OFFLINE QUEUE ─────────────────────────────────────────────
+const QUEUE_KEY = 'enkore_pending_sales';
+
+function queueEntry(qs) {
+  try {
+    const q = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+    q.push({ qs, savedAt: Date.now() });
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+    updateOfflineBanner();
+  } catch(_) {}
+}
+
+function dequeueEntry(qs) {
+  try {
+    const q = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(q.filter(e => e.qs !== qs)));
+    updateOfflineBanner();
+  } catch(_) {}
+}
+
+function updateOfflineBanner() {
+  try {
+    const q = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+    const banner = document.getElementById('offlineBanner');
+    const count  = document.getElementById('offlineCount');
+    if (!banner) return;
+    if (q.length > 0) {
+      count.textContent  = q.length;
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch(_) {}
+}
+
+async function flushQueue() {
+  try {
+    const q = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+    if (!q.length) return;
+    let synced = 0;
+    for (const entry of [...q]) {
+      try {
+        const js = await fetch(`${AS_URL}?${entry.qs}`).then(r => r.json());
+        if (js.success) { dequeueEntry(entry.qs); synced++; }
+        else break; // server error — stop, don't retry yet
+      } catch(_) { break; } // still offline — stop
+    }
+    if (synced > 0) toast(`✅ ${synced} entry/entries synced to sheet`, 'ok');
+  } catch(_) {}
+}
+
 // ── SUBMIT ───────────────────────────────────────────────────
 async function submitEntry() {
   if (!selClient) { toast('Select a client first', 'err'); return; }
   const btn = document.getElementById(mode === 'sale' ? 'subBtn' : 'payBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Submitting…';
   try {
-    const dateStr = fmtDate(new Date());
+    const dateStr  = fmtDate(new Date());
+    const submitId = 'se_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
     let params, newDueVal;
 
     if (mode === 'sale') {
@@ -1308,7 +1367,7 @@ async function submitEntry() {
       if (!seller) { toast('Not logged in — refresh ERP', 'err'); resetBtn(btn, 'Submit Sale Entry'); return; }
 
       params = {
-        action: 'addSaleEntry', date: dateStr, clientInfo: selClient.det,
+        action: 'addSaleEntry', submitId, date: dateStr, clientInfo: selClient.det,
         products: JSON.stringify(prods), paid, seller, cashReceivedBy: cashBy,
         sellerId, cashById, comment
       };
@@ -1327,31 +1386,40 @@ async function submitEntry() {
       if (!seller) { toast('Not logged in — refresh ERP', 'err'); resetBtn(btn, 'Submit Payment'); return; }
 
       params = {
-        action: 'addSaleEntry', date: dateStr, clientInfo: selClient.det,
+        action: 'addSaleEntry', submitId, date: dateStr, clientInfo: selClient.det,
         products: JSON.stringify([]), paid, seller, cashReceivedBy: cashBy,
         sellerId, cashById, comment
       };
     }
 
     const qs = Object.entries(params).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
-    const js = await fetch(`${AS_URL}?${qs}`).then(r => r.json());
 
-    if (js.success) {
-      toast('✅ Entry saved!', 'ok');
-      selClient.due = newDueVal;
-      const ci = clients.findIndex(x => x.det === selClient.det);
-      if (ci >= 0) clients[ci].due = newDueVal;
-      showStatus(selClient);
-      if (mode === 'payment') updatePayDue(selClient);
-      // If sale came from a forwarded note, mark it done and remove from cards
-      if (window._pendingNoteId) {
-        updateNoteRemoteStatus(window._pendingNoteId, 'Forwarded');
-        window._pendingNoteId = null;
-      }
-      resetForm();
-    } else throw new Error(js.error || 'Failed');
-  } catch(e) { console.error(e); toast('❌ Save failed — check connection', 'err'); }
-  resetBtn(btn, mode === 'sale' ? 'Submit Sale Entry' : 'Submit Payment');
+    // ── OPTIMISTIC UI — instant feedback, no waiting ──
+    selClient.due = newDueVal;
+    const ci = clients.findIndex(x => x.det === selClient.det);
+    if (ci >= 0) clients[ci].due = newDueVal;
+    showStatus(selClient);
+    if (mode === 'payment') updatePayDue(selClient);
+    if (window._pendingNoteId) {
+      updateNoteRemoteStatus(window._pendingNoteId, 'Forwarded');
+      window._pendingNoteId = null;
+    }
+    resetForm();
+    toast('✅ Entry saved!', 'ok');
+    resetBtn(btn, mode === 'sale' ? 'Submit Sale Entry' : 'Submit Payment');
+
+    // ── QUEUE LOCALLY FIRST, then sync ──
+    queueEntry(qs);
+    fetch(`${AS_URL}?${qs}`)
+      .then(r => r.json())
+      .then(js => { if (js.success) dequeueEntry(qs); })
+      .catch(() => {}); // stays in queue — will retry when online
+
+  } catch(e) {
+    console.error(e);
+    toast('❌ Error — try again', 'err');
+    resetBtn(btn, mode === 'sale' ? 'Submit Sale Entry' : 'Submit Payment');
+  }
 }
 
 function resetBtn(btn, label) { btn.disabled = false; btn.innerHTML = label; }
