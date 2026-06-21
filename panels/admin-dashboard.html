@@ -367,9 +367,12 @@
         gvTable(FIN_SHEET_ID, 'Expense- Helper')
       ]);
 
-      // Expense- Helper: D(3) = Date · H(7) = Amount
+      // Expense- Helper: B(1) = Category · D(3) = Date · H(7) = Amount
+      // Exclude "Raw Materials / Inventory" — already covered by COGS (PMC)
       EXP_ROWS = (et.rows||[]).map(r => {
         const c = r.c||[];
+        const cat = (c[1] && c[1].v!==null && c[1].v!==undefined) ? String(c[1].v).trim() : '';
+        if (cat.toLowerCase() === 'raw materials / inventory') return null;
         const d = gvDate(c[3] ? (c[3].v!==null && c[3].v!==undefined ? c[3].v : null) : null);
         if (!d) return null;
         const amt = (c[7] && c[7].v!==null && c[7].v!==undefined && c[7].v!=='') ? (Number(c[7].v)||0) : 0;
