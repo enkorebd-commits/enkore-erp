@@ -279,39 +279,50 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .inv-toolbar-btns button:disabled{opacity:.55;cursor:not-allowed}
 /* Only this area scrolls/pans — drag to move, pinch to zoom in on the page */
 .inv-scroll{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;background:#525659}
+/* Brand palette, sampled straight from the actual logo file */
+:root{--ink:#12181f;--ib:#1e9dd6;--ib-dk:#0f6d9c;--ig:#f4f7fa;--ig2:#e8eef3}
+
 /* A4 page, screen preview and print use the identical mm-based box so what
    you see before printing is exactly what comes out — true WYSIWYG.
    JS sets style.zoom on this element to fit the whole page on screen first. */
-.inv-page{background:#fff;width:210mm;min-height:297mm;box-sizing:border-box;margin:16px auto;padding:14mm 14mm;font-family:Arial,Helvetica,sans-serif;color:#111;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
-.inv-hr{border:none;border-top:2px solid #111;margin:10px 0 14px}
+.inv-page{background:#fff;width:210mm;min-height:297mm;box-sizing:border-box;margin:16px auto;padding:0 0 14mm;font-family:Arial,Helvetica,sans-serif;color:var(--ink);font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);position:relative;overflow:hidden}
+.inv-topbar{height:7px;background:linear-gradient(90deg,var(--ib),var(--ib-dk));margin-bottom:14mm}
+.inv-body{padding:0 14mm}
+.inv-hr{border:none;border-top:2px solid var(--ink);margin:10px 0 14px}
 .inv-hr-thin{border:none;border-top:1px solid #ccc;margin:14px 0}
 .inv-header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
-.inv-logo{display:block;height:40px;width:auto;flex-shrink:0}
-.inv-title{font-size:22px;font-weight:900;letter-spacing:1px;margin-bottom:6px}
+.inv-logo{display:block;height:22px;width:auto;flex-shrink:0;border-radius:4px}
+.inv-title{font-size:24px;font-weight:900;letter-spacing:1.5px;margin-bottom:4px;color:var(--ink)}
+.inv-title-accent{width:44px;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--ib),var(--ib-dk));margin-bottom:9px}
 .inv-co-name{font-size:14px;font-weight:800}
-.inv-co-line{font-size:11px;color:#444;line-height:1.5}
-.inv-2col{display:flex;justify-content:space-between;gap:24px;margin-top:16px}
-.inv-block-lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;color:#333}
+.inv-co-line{font-size:11px;color:#555;line-height:1.5}
+.inv-2col{display:flex;justify-content:space-between;gap:16px;margin-top:16px}
+.inv-info-card{background:var(--ig);border-left:3px solid var(--ib);border-radius:0 8px 8px 0;padding:10px 14px;flex:1}
+.inv-block-lbl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;color:var(--ib-dk)}
 .inv-row{font-size:12px;line-height:1.7}
 .inv-row b{display:inline-block;min-width:70px;color:#333}
-.inv-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:12px}
+.inv-table{width:100%;border-collapse:collapse;margin-top:18px;font-size:12px;border-radius:8px;overflow:hidden}
 /* --tsize / --tpad are shrunk by JS (autoFitInvoicePage) only when a long
    product list would otherwise push the invoice past one A4 page. */
-.inv-table th{background:#1b6b3a;color:#fff;padding:var(--tpad,7px) 8px;text-align:left;font-size:var(--tsize,11px);text-transform:uppercase;letter-spacing:.3px}
-.inv-table td{padding:var(--tpad,7px) 8px;border-bottom:1px solid #e9ecef;font-size:var(--tsize,12px)}
+.inv-table th{background:var(--ib);color:#fff;padding:var(--tpad,8px) 10px;text-align:left;font-size:var(--tsize,11px);text-transform:uppercase;letter-spacing:.3px}
+.inv-table td{padding:var(--tpad,8px) 10px;border-bottom:1px solid #e9ecef;font-size:var(--tsize,12px)}
+.inv-table tbody tr:nth-child(even){background:var(--ig)}
 .inv-table tr{page-break-inside:avoid}
 .inv-table th:last-child,.inv-table td:last-child{text-align:right}
 .inv-table th:nth-child(3),.inv-table td:nth-child(3),
 .inv-table th:nth-child(4),.inv-table td:nth-child(4),
 .inv-table th:nth-child(5),.inv-table td:nth-child(5){text-align:right}
-.inv-amounts{width:230px;margin-left:auto}
+.inv-amounts{width:240px;margin-left:auto;background:var(--ig);border-radius:8px;padding:12px 14px;border:1px solid var(--ig2)}
 .inv-amt-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0}
-.inv-amt-row.tot{font-weight:900;font-size:13px;border-top:1.5px solid #111;border-bottom:1.5px solid #111;padding:6px 0;margin:4px 0}
+.inv-amt-row.tot{font-weight:900;font-size:14px;color:#fff;background:var(--ib);border-radius:6px;padding:7px 10px;margin:6px -14px}
 .inv-amt-row.due{color:#e03131;font-weight:800}
 .inv-words{font-size:11px;font-style:italic;color:#333;margin-top:4px}
-.inv-sign{margin-top:36px;text-align:right;font-size:12px;page-break-inside:avoid}
-.inv-signature-img{display:block;margin-left:auto;margin-top:6px;height:44px;width:auto;max-width:180px;object-fit:contain}
-.inv-sign-line{border-top:1px solid #111;width:180px;margin-left:auto;margin-top:6px;padding-top:4px;font-size:11px;color:#444}
+.inv-sign{margin-top:36px;display:flex;justify-content:flex-end;page-break-inside:avoid}
+.inv-sign-box{width:220px;text-align:center}
+.inv-sign-for{text-align:right;font-size:12px;color:#333;margin-bottom:2px}
+.inv-signature-img{display:block;margin:2px auto 0;height:68px;width:auto;max-width:210px;object-fit:contain}
+.inv-sign-line{border-top:1.5px solid var(--ink);margin-top:2px;padding-top:5px;font-size:11px;color:#444}
+.inv-footer-tag{text-align:center;font-size:10.5px;color:var(--ib-dk);font-weight:700;letter-spacing:.3px;margin-top:30px;padding-top:10px;border-top:1px solid var(--ig2)}
 @page{size:A4;margin:0}
 @media print{
   body *{visibility:hidden}
@@ -1446,24 +1457,26 @@ function openInvoice(idx) {
     </table>` : '';
 
   const html = `
+    <div class="inv-topbar"></div>
+    <div class="inv-body">
     <div class="inv-header-top">
       <div>
         <div class="inv-title">INVOICE</div>
+        <div class="inv-title-accent"></div>
         <div class="inv-co-name">${escapeHtml(COMPANY.name)}</div>
         <div class="inv-co-line">${escapeHtml(COMPANY.addr)}</div>
         <div class="inv-co-line">Phone: ${escapeHtml(COMPANY.phone)} &nbsp;·&nbsp; Email: ${escapeHtml(COMPANY.email)} &nbsp;·&nbsp; Web: ${escapeHtml(COMPANY.web)}</div>
       </div>
       <img src="${COMPANY.logo}" alt="ENKORE" class="inv-logo">
     </div>
-    <hr class="inv-hr">
     <div class="inv-2col">
-      <div>
+      <div class="inv-info-card">
         <div class="inv-block-lbl">Bill To</div>
         <div class="inv-row"><b>Name:</b> ${escapeHtml(c.name || '')}</div>
         <div class="inv-row"><b>Address:</b> ${escapeHtml([c.shop, c.loc, c.zone].filter(Boolean).join(', '))}</div>
         <div class="inv-row"><b>Contact:</b> ${escapeHtml(c.phone || '')}</div>
       </div>
-      <div>
+      <div class="inv-info-card">
         <div class="inv-block-lbl">Invoice Details</div>
         <div class="inv-row"><b>Invoice No:</b> ${g.invoiceNo}</div>
         <div class="inv-row"><b>Date:</b> ${escapeHtml(g.dateDisplay)}</div>
@@ -1492,9 +1505,14 @@ function openInvoice(idx) {
     </div>
 
     <div class="inv-sign">
-      <div>For: ${escapeHtml(COMPANY.name)}</div>
-      <img src="${COMPANY.signature}" alt="Signature" class="inv-signature-img">
-      <div class="inv-sign-line">Authorized Signatory</div>
+      <div class="inv-sign-box">
+        <div class="inv-sign-for">For: ${escapeHtml(COMPANY.name)}</div>
+        <img src="${COMPANY.signature}" alt="Signature" class="inv-signature-img">
+        <div class="inv-sign-line">Authorized Signatory</div>
+      </div>
+    </div>
+
+    <div class="inv-footer-tag">Care that keeps you moving. — ${escapeHtml(COMPANY.web)}</div>
     </div>
   `;
 
