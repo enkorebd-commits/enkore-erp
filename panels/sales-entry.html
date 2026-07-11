@@ -261,6 +261,52 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .ncr.ntot{font-size:15px;font-weight:900;border-top:1px solid rgba(255,255,255,.15);margin-top:4px;padding-top:8px}
 .ncl{opacity:.65}.ncv{font-weight:700}
 .ncv.nwarn{color:#ffd43b}
+
+/* INVOICE BUTTON on history item */
+.h-inv-btn{margin-top:8px;width:100%;padding:8px;background:#fff;border:1.5px solid var(--g);color:var(--g);border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.2px}
+.h-inv-btn:active{background:var(--gbg)}
+
+/* INVOICE OVERLAY */
+.inv-overlay{display:none;position:fixed;inset:0;background:#525659;z-index:900;overflow-y:auto}
+.inv-overlay.open{display:block}
+.inv-toolbar{position:sticky;top:0;z-index:2;background:#323639;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.inv-toolbar-title{color:#fff;font-size:13px;font-weight:700}
+.inv-toolbar-btns{display:flex;gap:8px}
+.inv-print-btn{background:var(--g);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:800;cursor:pointer}
+.inv-close-btn{background:#4a4e51;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
+.inv-page{background:#fff;max-width:760px;margin:16px auto;padding:28px 32px;font-family:Arial,Helvetica,sans-serif;color:#111;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.inv-hr{border:none;border-top:2px solid #111;margin:10px 0 14px}
+.inv-hr-thin{border:none;border-top:1px solid #ccc;margin:14px 0}
+.inv-title{font-size:22px;font-weight:900;letter-spacing:1px;margin-bottom:6px}
+.inv-co-name{font-size:14px;font-weight:800}
+.inv-co-line{font-size:11px;color:#444;line-height:1.5}
+.inv-2col{display:flex;justify-content:space-between;gap:24px;margin-top:16px}
+.inv-block-lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;color:#333}
+.inv-row{font-size:12px;line-height:1.7}
+.inv-row b{display:inline-block;min-width:70px;color:#333}
+.inv-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:12px}
+.inv-table th{background:#1b6b3a;color:#fff;padding:7px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+.inv-table td{padding:7px 8px;border-bottom:1px solid #e9ecef}
+.inv-table th:last-child,.inv-table td:last-child{text-align:right}
+.inv-table th:nth-child(3),.inv-table td:nth-child(3),
+.inv-table th:nth-child(4),.inv-table td:nth-child(4),
+.inv-table th:nth-child(5),.inv-table td:nth-child(5){text-align:right}
+.inv-amounts{width:230px;margin-left:auto}
+.inv-amt-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0}
+.inv-amt-row.tot{font-weight:900;font-size:13px;border-top:1.5px solid #111;border-bottom:1.5px solid #111;padding:6px 0;margin:4px 0}
+.inv-amt-row.due{color:#e03131;font-weight:800}
+.inv-words{font-size:11px;font-style:italic;color:#333;margin-top:4px}
+.inv-sign{margin-top:36px;text-align:right;font-size:12px}
+.inv-sign-line{border-top:1px solid #111;width:180px;margin-left:auto;margin-top:36px;padding-top:4px;font-size:11px;color:#444}
+.inv-ack{margin-top:26px;padding-top:14px;border-top:2px dashed #999}
+.inv-ack-title{font-size:11px;font-weight:800;text-transform:uppercase;color:#666;margin-bottom:8px}
+@media print{
+  body *{visibility:hidden}
+  .inv-overlay,.inv-overlay *{visibility:visible}
+  .inv-overlay{position:absolute;inset:0;background:#fff}
+  .inv-toolbar{display:none}
+  .inv-page{box-shadow:none;margin:0;max-width:100%}
+}
 </style>
 </head>
 <body>
@@ -401,6 +447,18 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
     </div>
     <div class="d-body" id="dBody"><div class="d-loading">⏳ Loading…</div></div>
   </div>
+</div>
+
+<!-- Invoice Overlay -->
+<div class="inv-overlay" id="invOverlay">
+  <div class="inv-toolbar">
+    <div class="inv-toolbar-title" id="invToolbarTitle">Invoice</div>
+    <div class="inv-toolbar-btns">
+      <button class="inv-print-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+      <button class="inv-close-btn" onclick="closeInvoice()">Close</button>
+    </div>
+  </div>
+  <div class="inv-page" id="invPage"></div>
 </div>
 
 <!-- New Client Drawer -->
@@ -1170,10 +1228,12 @@ async function openHistory() {
           bill:    r.c[7]?.v  || 0,   // H — rate×qty
           disc:    r.c[8]?.v  || 0,   // I — discount
           final:   r.c[9]?.v  || 0,   // J — final bill
+          prevDue: r.c[10]?.v,        // K — previous due (keep 0 as valid)
           paid:    r.c[12]?.v || 0,   // M — paid
           due:     r.c[13]?.v,        // N — running due (keep 0 as valid)
           comment: r.c[14]?.v || '',
-          seller:  r.c[15]?.v || ''
+          seller:  r.c[15]?.v || '',
+          invoiceNo: r.c[23]?.v || '' // X — Invoice No
         };
       });
 
@@ -1185,12 +1245,14 @@ async function openHistory() {
 
 function groupByDay(rows) {
   // rows must be in chronological (sheet insertion) order
+  // Grouping key: Invoice No when the row has one (accurate, one invoice = one number).
+  // Falls back to Date when no Invoice No yet (payment-only rows, or pre-backfill legacy rows).
   const groups = [];
   const seen   = new Map();
   rows.forEach(r => {
-    const key = r.dateDisplay || String(r.dateTs);
+    const key = r.invoiceNo ? ('inv_' + r.invoiceNo) : (r.dateDisplay || String(r.dateTs));
     if (!seen.has(key)) {
-      const g = { dateDisplay: r.dateDisplay, dateTs: r.dateTs, seller: '', products: [], totalBill: 0, totalPaid: 0, due: undefined, comment: '' };
+      const g = { dateDisplay: r.dateDisplay, dateTs: r.dateTs, invoiceNo: r.invoiceNo || '', seller: '', products: [], totalBill: 0, totalPaid: 0, due: undefined, prevDue: undefined, comment: '' };
       seen.set(key, g);
       groups.push(g);
     }
@@ -1198,8 +1260,9 @@ function groupByDay(rows) {
     if (r.seller)  g.seller  = r.seller;
     if (r.comment) g.comment = r.comment;
     if (r.prod) {
-      g.products.push({ name: r.prod, rate: r.rate, qty: r.qty, final: r.final || r.bill });
+      g.products.push({ name: r.prod, rate: r.rate, qty: r.qty, discount: r.disc || 0, final: r.final || r.bill });
       g.totalBill += (r.final || r.bill || 0);
+      if (g.prevDue === undefined && r.prevDue !== undefined) g.prevDue = r.prevDue; // first row of the invoice
     }
     if (r.paid)            g.totalPaid += r.paid;
     if (r.due !== undefined) g.due = r.due; // last row's due = final state
@@ -1233,10 +1296,11 @@ function renderHistory(showAll) {
   }
 
   const groups = groupByDay(filtered);
+  window._histGroups = groups; // keep for invoice button lookup
   const hasMore     = !showAll && histAllRows.length > filtered.length;
   const remainCount = histAllRows.length - filtered.length;
 
-  const itemsHtml = groups.map(g => {
+  const itemsHtml = groups.map((g, idx) => {
     const isPayOnly = g.products.length === 0;
     const prodLines = g.products.map(p =>
       `<div class="h-prod-line">
@@ -1247,6 +1311,9 @@ function renderHistory(showAll) {
     const payLine = g.totalPaid && isPayOnly
       ? `<div class="h-payment-line">💳 Payment Collection</div>`
       : (g.totalPaid && !isPayOnly ? `<div class="h-payment-line">💳 + Payment: ${tk(g.totalPaid)}</div>` : '');
+    const invBtn = (!isPayOnly && g.invoiceNo)
+      ? `<button class="h-inv-btn" onclick="openInvoice(${idx})">🧾 View Invoice #${g.invoiceNo}</button>`
+      : '';
 
     return `
     <div class="h-item ${isPayOnly ? 'pay' : ''}">
@@ -1259,6 +1326,7 @@ function renderHistory(showAll) {
         <div class="chip chip-d"><div class="chip-lbl">Due</div><div class="chip-val">${tk(g.due)}</div></div>
       </div>
       ${g.comment ? `<div class="h-note">💬 ${g.comment}</div>` : ''}
+      ${invBtn}
     </div>`;
   }).join('');
 
@@ -1276,6 +1344,146 @@ function closeHistory() {
   ov.style.height = ''; ov.style.top = '';
   const dr = ov.querySelector('.drawer'); if (dr) dr.style.maxHeight = '';
   window._unlockBodyScroll();
+}
+
+// ── INVOICE ──────────────────────────────────────────────────
+const COMPANY = {
+  name:  'Enkore Private Ltd.',
+  addr:  'Dholpur, Bishmile, Savar, Dhaka',
+  phone: '+880 1844-287840',
+  email: 'enkorebd@gmail.com',
+  web:   'enkorebd.com'
+};
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function numToWordsTaka(num) {
+  num = Math.round(Number(num) || 0);
+  if (num === 0) return 'Zero Taka Only';
+  const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten',
+    'Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  function twoDigit(n) {
+    if (n < 20) return ones[n];
+    return tens[Math.floor(n/10)] + (n%10 ? ' ' + ones[n%10] : '');
+  }
+  function threeDigit(n) {
+    if (n < 100) return twoDigit(n);
+    return ones[Math.floor(n/100)] + ' Hundred' + (n%100 ? ' ' + twoDigit(n%100) : '');
+  }
+  // Indian/Bangladeshi grouping: Crore, Lakh, Thousand, Hundred
+  let crore = Math.floor(num / 10000000); num %= 10000000;
+  let lakh  = Math.floor(num / 100000);    num %= 100000;
+  let thou  = Math.floor(num / 1000);      num %= 1000;
+  let rest  = num;
+  let parts = [];
+  if (crore) parts.push(threeDigit(crore) + ' Crore');
+  if (lakh)  parts.push(threeDigit(lakh)  + ' Lakh');
+  if (thou)  parts.push(threeDigit(thou)  + ' Thousand');
+  if (rest)  parts.push(threeDigit(rest));
+  return parts.join(' ') + ' Taka Only';
+}
+
+function openInvoice(idx) {
+  const g = (window._histGroups || [])[idx];
+  if (!g) { toast('Invoice data not found', 'err'); return; }
+  if (!g.invoiceNo) { toast('This transaction has no Invoice No yet', 'err'); return; }
+
+  const c = selClient || {};
+  const subTotal   = g.totalBill;
+  const discPct    = 0;   // invoice-level discount not tracked separately in ERP
+  const discAmt    = 0;
+  const total      = subTotal - discAmt;
+  const received   = g.totalPaid;
+  const dueNow     = Math.max(0, total - received);
+  const currentDue = g.due !== undefined ? g.due : dueNow;
+  const prevDue    = g.prevDue !== undefined ? g.prevDue : Math.max(0, currentDue - dueNow);
+
+  const itemRows = g.products.map((p, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${escapeHtml(p.name)}</td>
+      <td>${p.qty}</td>
+      <td>৳${Number(p.rate).toLocaleString('en-IN')}</td>
+      <td>৳${Number(p.discount||0).toLocaleString('en-IN')}</td>
+      <td>৳${Number(p.final).toLocaleString('en-IN')}</td>
+    </tr>`).join('');
+
+  const html = `
+    <div class="inv-title">INVOICE</div>
+    <div class="inv-co-name">${escapeHtml(COMPANY.name)}</div>
+    <div class="inv-co-line">${escapeHtml(COMPANY.addr)}</div>
+    <div class="inv-co-line">Phone: ${escapeHtml(COMPANY.phone)} &nbsp;·&nbsp; Email: ${escapeHtml(COMPANY.email)} &nbsp;·&nbsp; Web: ${escapeHtml(COMPANY.web)}</div>
+    <hr class="inv-hr">
+    <div class="inv-2col">
+      <div>
+        <div class="inv-block-lbl">Bill To</div>
+        <div class="inv-row"><b>Name:</b> ${escapeHtml(c.name || '')}</div>
+        <div class="inv-row"><b>Address:</b> ${escapeHtml([c.shop, c.loc, c.zone].filter(Boolean).join(', '))}</div>
+        <div class="inv-row"><b>Contact:</b> ${escapeHtml(c.phone || '')}</div>
+      </div>
+      <div>
+        <div class="inv-block-lbl">Invoice Details</div>
+        <div class="inv-row"><b>Invoice No:</b> ${g.invoiceNo}</div>
+        <div class="inv-row"><b>Date:</b> ${escapeHtml(g.dateDisplay)}</div>
+      </div>
+    </div>
+
+    <table class="inv-table">
+      <thead><tr><th>#</th><th>Item Name</th><th>Qty</th><th>Price/Unit</th><th>Discount</th><th>Amount</th></tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>
+
+    <div class="inv-2col" style="margin-top:14px">
+      <div style="flex:1">
+        <div class="inv-block-lbl">Invoice Amount in Words</div>
+        <div class="inv-words">${numToWordsTaka(total)}</div>
+        <div class="inv-block-lbl" style="margin-top:14px">Payment Mode</div>
+        <div class="inv-row">Cash</div>
+      </div>
+      <div class="inv-amounts">
+        <div class="inv-amt-row"><span>Sub Total:</span><span>৳${subTotal.toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row"><span>Discount%:</span><span>${discPct}%</span></div>
+        <div class="inv-amt-row"><span>Discount:</span><span>৳${discAmt.toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row tot"><span>Total:</span><span>৳${total.toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row"><span>Received:</span><span>৳${received.toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row due"><span>Due:</span><span>৳${dueNow.toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row"><span>Previous Due:</span><span>৳${Number(prevDue).toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row due"><span>Current Due:</span><span>৳${Number(currentDue).toLocaleString('en-IN')}</span></div>
+      </div>
+    </div>
+
+    <div class="inv-sign">
+      <div>For: ${escapeHtml(COMPANY.name)}</div>
+      <div class="inv-sign-line">Authorized Signatory</div>
+    </div>
+
+    <div class="inv-ack">
+      <div class="inv-ack-title">Acknowledgement</div>
+      <div class="inv-2col">
+        <div>
+          <div class="inv-row"><b>Name:</b> ${escapeHtml(c.name || '')}</div>
+          <div class="inv-row"><b>Address:</b> ${escapeHtml([c.shop, c.loc, c.zone].filter(Boolean).join(', '))}</div>
+        </div>
+        <div>
+          <div class="inv-row"><b>Invoice No:</b> ${g.invoiceNo}</div>
+          <div class="inv-row"><b>Invoice Date:</b> ${escapeHtml(g.dateDisplay)}</div>
+          <div class="inv-row"><b>Invoice Amount:</b> ৳${total.toLocaleString('en-IN')}</div>
+        </div>
+      </div>
+      <div class="inv-sign-line" style="margin-top:24px">Receiver's Seal &amp; Sign</div>
+    </div>
+  `;
+
+  document.getElementById('invPage').innerHTML = html;
+  document.getElementById('invToolbarTitle').textContent = `Invoice #${g.invoiceNo} — ${c.name || ''}`;
+  document.getElementById('invOverlay').classList.add('open');
+}
+
+function closeInvoice() {
+  document.getElementById('invOverlay').classList.remove('open');
 }
 
 // ── OFFLINE QUEUE ─────────────────────────────────────────────
