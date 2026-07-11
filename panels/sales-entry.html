@@ -1518,7 +1518,11 @@ function openInvoice(idx) {
 
   document.getElementById('invPage').innerHTML = html;
   document.getElementById('invToolbarTitle').textContent = `Invoice #${g.invoiceNo} — ${c.name || ''}`;
-  window._invFileBase = `ENKORE Invoice #${g.invoiceNo}`;
+  // No "#" (or other reserved URI chars) here — Android's share pipeline
+  // builds a content:// URI from this name, and "#" is a fragment
+  // delimiter that breaks it, silently falling back to "Untitled" in
+  // WhatsApp/Messenger. Keep it filesystem/URI-safe.
+  window._invFileBase = `ENKORE Invoice ${g.invoiceNo}`;
   document.getElementById('invOverlay').classList.add('open');
   enableInvoiceZoom();
   requestAnimationFrame(() => { autoFitInvoicePage(); fitInvoiceToScreen(); });
@@ -1615,12 +1619,26 @@ function printInvoice() {
 // window.print() only opens the OS print dialog, it can't hand us back an
 // actual file. To share a real PDF we render #invPage to a canvas and pack
 // it into a PDF ourselves (html2canvas + jsPDF), sized to true A4.
+function waitForInvoiceImages(page) {
+  const imgs = Array.from(page.querySelectorAll('img'));
+  return Promise.all(imgs.map(img => {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    return new Promise(res => {
+      img.addEventListener('load', res, { once: true });
+      img.addEventListener('error', res, { once: true });
+      setTimeout(res, 3000); // don't hang forever on a slow/broken image
+    });
+  }));
+}
+
 async function buildInvoicePDF() {
   const page = document.getElementById('invPage');
   const fitZoom = window._invFitZoom || 1;
   page.style.zoom = 1; // capture at true A4 scale, not the on-screen fit
+  await waitForInvoiceImages(page); // logo/signature must be fully decoded first —
+                                     // capturing mid-fetch is the main cause of the long "Preparing…" stall
   await new Promise(r => requestAnimationFrame(r)); // let the reflow settle
-  const canvas = await html2canvas(page, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+  const canvas = await html2canvas(page, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
   page.style.zoom = fitZoom;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('p', 'mm', 'a4');
