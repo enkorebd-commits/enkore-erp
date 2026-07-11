@@ -274,7 +274,9 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .inv-toolbar-btns{display:flex;gap:8px}
 .inv-print-btn{background:var(--g);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:800;cursor:pointer}
 .inv-close-btn{background:#4a4e51;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
-.inv-page{background:#fff;max-width:760px;margin:16px auto;padding:28px 32px;font-family:Arial,Helvetica,sans-serif;color:#111;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+/* A4 page, screen preview and print use the identical mm-based box so what
+   you see before printing is exactly what comes out — true WYSIWYG. */
+.inv-page{background:#fff;width:210mm;min-height:297mm;box-sizing:border-box;margin:16px auto;padding:14mm 14mm;font-family:Arial,Helvetica,sans-serif;color:#111;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
 .inv-hr{border:none;border-top:2px solid #111;margin:10px 0 14px}
 .inv-hr-thin{border:none;border-top:1px solid #ccc;margin:14px 0}
 .inv-title{font-size:22px;font-weight:900;letter-spacing:1px;margin-bottom:6px}
@@ -285,8 +287,11 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .inv-row{font-size:12px;line-height:1.7}
 .inv-row b{display:inline-block;min-width:70px;color:#333}
 .inv-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:12px}
-.inv-table th{background:#1b6b3a;color:#fff;padding:7px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
-.inv-table td{padding:7px 8px;border-bottom:1px solid #e9ecef}
+/* --tsize / --tpad are shrunk by JS (autoFitInvoicePage) only when a long
+   product list would otherwise push the invoice past one A4 page. */
+.inv-table th{background:#1b6b3a;color:#fff;padding:var(--tpad,7px) 8px;text-align:left;font-size:var(--tsize,11px);text-transform:uppercase;letter-spacing:.3px}
+.inv-table td{padding:var(--tpad,7px) 8px;border-bottom:1px solid #e9ecef;font-size:var(--tsize,12px)}
+.inv-table tr{page-break-inside:avoid}
 .inv-table th:last-child,.inv-table td:last-child{text-align:right}
 .inv-table th:nth-child(3),.inv-table td:nth-child(3),
 .inv-table th:nth-child(4),.inv-table td:nth-child(4),
@@ -296,16 +301,17 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .inv-amt-row.tot{font-weight:900;font-size:13px;border-top:1.5px solid #111;border-bottom:1.5px solid #111;padding:6px 0;margin:4px 0}
 .inv-amt-row.due{color:#e03131;font-weight:800}
 .inv-words{font-size:11px;font-style:italic;color:#333;margin-top:4px}
-.inv-sign{margin-top:36px;text-align:right;font-size:12px}
+.inv-sign{margin-top:36px;text-align:right;font-size:12px;page-break-inside:avoid}
 .inv-sign-line{border-top:1px solid #111;width:180px;margin-left:auto;margin-top:36px;padding-top:4px;font-size:11px;color:#444}
-.inv-ack{margin-top:26px;padding-top:14px;border-top:2px dashed #999}
+.inv-ack{margin-top:26px;padding-top:14px;border-top:2px dashed #999;page-break-inside:avoid}
 .inv-ack-title{font-size:11px;font-weight:800;text-transform:uppercase;color:#666;margin-bottom:8px}
+@page{size:A4;margin:0}
 @media print{
   body *{visibility:hidden}
   .inv-overlay,.inv-overlay *{visibility:visible}
-  .inv-overlay{position:absolute;inset:0;background:#fff}
+  .inv-overlay{position:absolute;inset:0;background:#fff;overflow:visible}
   .inv-toolbar{display:none}
-  .inv-page{box-shadow:none;margin:0;max-width:100%}
+  .inv-page{box-shadow:none;margin:0;width:210mm;min-height:297mm}
 }
 </style>
 </head>
@@ -454,7 +460,7 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   <div class="inv-toolbar">
     <div class="inv-toolbar-title" id="invToolbarTitle">Invoice</div>
     <div class="inv-toolbar-btns">
-      <button class="inv-print-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+      <button class="inv-print-btn" onclick="printInvoice()">🖨️ Print / Save PDF</button>
       <button class="inv-close-btn" onclick="closeInvoice()">Close</button>
     </div>
   </div>
@@ -694,10 +700,10 @@ function fmtGvizDate(cell) {
       const dt=new Date(+m[1],+m[2],+m[3]);
       ts=dt.getTime();
       const mos=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      display=`${ordinal(dt.getDate())} ${mos[dt.getMonth()]}, '${String(dt.getFullYear()).slice(-2)}`;
+      display=`${ordinal(dt.getDate())} ${mos[dt.getMonth()]}, ${String(dt.getFullYear()).slice(-2)}`;
     } else {
       const sm=display.match(/(\d+)\s+(\w+),?\s*'?(\d+)/);
-      if (sm) { ts=new Date(`${sm[2]} ${sm[1]}, 20${sm[3]}`).getTime()||0; display=`${ordinal(+sm[1])} ${sm[2]}, '${sm[3]}`; }
+      if (sm) { ts=new Date(`${sm[2]} ${sm[1]}, 20${sm[3]}`).getTime()||0; display=`${ordinal(+sm[1])} ${sm[2]}, ${sm[3]}`; }
     }
   }
   return { display, ts };
@@ -1480,10 +1486,46 @@ function openInvoice(idx) {
   document.getElementById('invPage').innerHTML = html;
   document.getElementById('invToolbarTitle').textContent = `Invoice #${g.invoiceNo} — ${c.name || ''}`;
   document.getElementById('invOverlay').classList.add('open');
+  requestAnimationFrame(autoFitInvoicePage);
 }
 
 function closeInvoice() {
   document.getElementById('invOverlay').classList.remove('open');
+}
+
+// ── A4 ONE-PAGE AUTO-FIT ────────────────────────────────────────
+// Shrinks the item table's font size / row padding (via --tsize / --tpad)
+// only as far as needed to keep the invoice on one A4 page. Stops at a
+// readable floor — beyond that it is genuinely impossible to fit, so the
+// page is left to overflow onto a second sheet rather than becoming unreadable.
+function autoFitInvoicePage() {
+  const page = document.getElementById('invPage');
+  if (!page) return;
+
+  page.style.setProperty('--tsize', '12px');
+  page.style.setProperty('--tpad', '7px');
+
+  const rect = page.getBoundingClientRect();
+  if (!rect.width) return; // not visible yet
+  const pxPerMM = rect.width / 210;      // page is CSS width:210mm
+  const maxHeightPx = pxPerMM * 297;     // A4 height budget
+
+  let tsize = 12, tpad = 7;
+  const minSize = 8.5, minPad = 3;
+  let guard = 0; // safety cap on loop iterations
+
+  while (page.scrollHeight > maxHeightPx && (tsize > minSize || tpad > minPad) && guard < 40) {
+    if (tpad > minPad)  tpad -= 0.5;
+    else if (tsize > minSize) tsize -= 0.25;
+    page.style.setProperty('--tpad',  tpad  + 'px');
+    page.style.setProperty('--tsize', tsize + 'px');
+    guard++;
+  }
+}
+
+function printInvoice() {
+  autoFitInvoicePage();
+  setTimeout(() => window.print(), 30); // let the shrink reflow before the print snapshot
 }
 
 // ── PAYMENT RECEIPT (payment-only transactions) ────────────────
@@ -1555,6 +1597,7 @@ function openReceipt(idx) {
   document.getElementById('invPage').innerHTML = html;
   document.getElementById('invToolbarTitle').textContent = `Receipt #${g.invoiceNo} — ${c.name || ''}`;
   document.getElementById('invOverlay').classList.add('open');
+  requestAnimationFrame(autoFitInvoicePage);
 }
 
 // ── OFFLINE QUEUE ─────────────────────────────────────────────
