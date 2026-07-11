@@ -1534,9 +1534,21 @@ function openInvoice(idx) {
   // strictly alnum + underscore so the name survives the trip intact.
   window._invFileBase = `ENKORE_Invoice_${g.invoiceNo}`;
   window._invInvoiceNo = g.invoiceNo;
+  window._invPdfReady = null; // discard any previous invoice's pre-built PDF
   document.getElementById('invOverlay').classList.add('open');
   enableInvoiceZoom();
-  requestAnimationFrame(() => { autoFitInvoicePage(); fitInvoiceToScreen(); });
+  requestAnimationFrame(() => {
+    autoFitInvoicePage();
+    fitInvoiceToScreen();
+    // Build the PDF now, in the background, while sir is just looking at
+    // the invoice — not when Share is tapped. navigator.share() only keeps
+    // its full OS-level handoff (correct filename, no re-processing delay)
+    // if it's called immediately inside the tap's gesture window. Building
+    // the PDF first (a few seconds of canvas work) burns through that
+    // window, which is what was causing both the slow "Loading media…"
+    // stall and the "Untitled" name. Pre-building removes that gap.
+    window._invPdfReady = buildInvoicePDF().catch(e => { console.error('Pre-build PDF failed:', e); return null; });
+  });
   window.addEventListener('resize', fitInvoiceToScreen);
 }
 
@@ -1687,16 +1699,25 @@ async function buildInvoicePDF() {
 async function shareInvoicePDF() {
   const btn = document.getElementById('invShareBtn');
   const original = btn.innerHTML;
-  btn.disabled = true; btn.innerHTML = '⏳ Preparing…';
+
+  // The PDF should already be pre-built (kicked off silently when the
+  // invoice opened). If sir taps Share before it's ready — very fast tap —
+  // this waits for it, but normally window._invPdfReady is already
+  // resolved, so this "await" settles in the same tick with no delay,
+  // keeping the tap's gesture window intact for navigator.share().
+  let built = window._invPdfReady ? await window._invPdfReady : null;
+  if (!built) {
+    btn.disabled = true; btn.innerHTML = '⏳ Preparing…';
+    built = await buildInvoicePDF().catch(() => null);
+    btn.disabled = false; btn.innerHTML = original;
+  }
+  if (!built) { toast('❌ Could not prepare PDF', 'err'); return; }
 
   try {
-    const { blob, filename } = await buildInvoicePDF();
+    const { blob, filename } = built;
     const file = new File([blob], filename, { type: 'application/pdf' });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      // The earlier "Untitled" bug was the PDF's missing internal /Title
-      // metadata (now set in buildInvoicePDF), not the share mechanism —
-      // direct share is back as the primary path.
       await navigator.share({ files: [file], title: filename });
     } else {
       const url = URL.createObjectURL(blob);
