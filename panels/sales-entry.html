@@ -322,7 +322,9 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .inv-sign-for{text-align:right;font-size:12px;color:#333;margin-bottom:2px}
 .inv-signature-img{display:block;margin:2px auto 0;height:68px;width:auto;max-width:210px;object-fit:contain}
 .inv-sign-line{border-top:1.5px solid var(--ink);margin-top:2px;padding-top:5px;font-size:11px;color:#444}
-.inv-footer-tag{text-align:center;font-size:10.5px;color:var(--ib-dk);font-weight:700;letter-spacing:.3px;margin-top:30px;padding-top:10px;border-top:1px solid var(--ig2)}
+.inv-footer-tag{text-align:center;margin-top:30px;padding-top:10px;border-top:1px solid var(--ig2)}
+.inv-footer-slogan{font-family:'Brush Script MT','Segoe Script',cursive;font-size:16px;color:var(--ib-dk);letter-spacing:.3px}
+.inv-footer-web{font-size:10px;color:#8a97a3;font-weight:600;margin-top:2px}
 @page{size:A4;margin:0}
 @media print{
   body *{visibility:hidden}
@@ -1512,7 +1514,10 @@ function openInvoice(idx) {
       </div>
     </div>
 
-    <div class="inv-footer-tag">Care that keeps you moving. — ${escapeHtml(COMPANY.web)}</div>
+    <div class="inv-footer-tag">
+      <div class="inv-footer-slogan">Care that keeps you moving</div>
+      <div class="inv-footer-web">${escapeHtml(COMPANY.web)}</div>
+    </div>
     </div>
   `;
 
