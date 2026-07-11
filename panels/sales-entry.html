@@ -267,18 +267,21 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .h-inv-btn svg{width:14px;height:14px;flex-shrink:0}
 .h-inv-btn:active{background:var(--g2)}
 
-/* INVOICE OVERLAY */
-.inv-overlay{display:none;position:fixed;inset:0;background:#525659;z-index:900;overflow-y:auto}
-.inv-overlay.open{display:block}
-.inv-toolbar{position:sticky;top:0;z-index:2;background:#323639;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.inv-toolbar-title{color:#fff;font-size:13px;font-weight:700}
-.inv-toolbar-btns{display:flex;gap:8px}
+/* INVOICE OVERLAY — toolbar fixed at top, only .inv-scroll pans/zooms */
+.inv-overlay{display:none;position:fixed;inset:0;background:#525659;z-index:900;flex-direction:column}
+.inv-overlay.open{display:flex}
+.inv-toolbar{flex-shrink:0;z-index:2;background:#323639;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.inv-toolbar-title{color:#fff;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inv-toolbar-btns{display:flex;gap:8px;flex-shrink:0}
 .inv-print-btn{background:var(--g);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
 .inv-share-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
 .inv-close-btn{background:#4a4e51;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
 .inv-toolbar-btns button:disabled{opacity:.55;cursor:not-allowed}
+/* Only this area scrolls/pans — drag to move, pinch to zoom in on the page */
+.inv-scroll{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;background:#525659}
 /* A4 page, screen preview and print use the identical mm-based box so what
-   you see before printing is exactly what comes out — true WYSIWYG. */
+   you see before printing is exactly what comes out — true WYSIWYG.
+   JS sets style.zoom on this element to fit the whole page on screen first. */
 .inv-page{background:#fff;width:210mm;min-height:297mm;box-sizing:border-box;margin:16px auto;padding:14mm 14mm;font-family:Arial,Helvetica,sans-serif;color:#111;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
 .inv-hr{border:none;border-top:2px solid #111;margin:10px 0 14px}
 .inv-hr-thin{border:none;border-top:1px solid #ccc;margin:14px 0}
@@ -307,13 +310,15 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .inv-amt-row.due{color:#e03131;font-weight:800}
 .inv-words{font-size:11px;font-style:italic;color:#333;margin-top:4px}
 .inv-sign{margin-top:36px;text-align:right;font-size:12px;page-break-inside:avoid}
-.inv-sign-line{border-top:1px solid #111;width:180px;margin-left:auto;margin-top:36px;padding-top:4px;font-size:11px;color:#444}
+.inv-signature-img{display:block;margin-left:auto;margin-top:6px;height:44px;width:auto;max-width:180px;object-fit:contain}
+.inv-sign-line{border-top:1px solid #111;width:180px;margin-left:auto;margin-top:6px;padding-top:4px;font-size:11px;color:#444}
 @page{size:A4;margin:0}
 @media print{
   body *{visibility:hidden}
   .inv-overlay,.inv-overlay *{visibility:visible}
-  .inv-overlay{position:absolute;inset:0;background:#fff;overflow:visible}
+  .inv-overlay{position:absolute;inset:0;background:#fff;display:block}
   .inv-toolbar{display:none}
+  .inv-scroll{overflow:visible;height:auto}
   .inv-page{box-shadow:none;margin:0;width:210mm;min-height:297mm}
 }
 </style>
@@ -468,7 +473,9 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
       <button class="inv-close-btn" onclick="closeInvoice()">Close</button>
     </div>
   </div>
-  <div class="inv-page" id="invPage"></div>
+  <div class="inv-scroll" id="invScroll">
+    <div class="inv-page" id="invPage"></div>
+  </div>
 </div>
 
 <!-- New Client Drawer -->
@@ -1367,8 +1374,11 @@ const COMPANY = {
   phone: '+880 1844-287840',
   email: 'enkorebd@gmail.com',
   web:   'enkorebd.com',
-  // White/blue wordmark — needs a dark chip behind it to stay visible on white paper.
-  logo:  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAa4AAAA/CAMAAACPZtz6AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAFlUExURQAAAAtBWQcqOR6d1hyXzgAICkBAQHh4eP////39/cXFxf7+/vv7++jo6BRskxMTExYWFhuUyvr6+h2Z0QICAt3d3QELEAYGBgoKCgMUGx4eHjU1Ndvb2w5MZ1NTU09PT5CQkObm5gUFBRuQxcvLy7+/v/Ly8qysrBgYGM/PzwMDAxNqkQUdKPT09BoaGkVFRe3t7fDw8ByXzfb29snJydLS0gABAqGhoQEHCgxBWQIOE/j4+AkJCQkzRgACAx2c1ScnJ6ioqBZ0nwADBAs9VGlpaR2c1Bd/rdnZ2U5OTheArp2dnQEBAQIPFQMVHAEKDrW1tQAHCRyUynBwcBRslDIyMuzs7KCgoBBafOLi4h2b1A9Wd7q6uo2NjYiIiGZmZhRrkgAEBrCwsOvr6z4+PgQXIAEIC3t7e9fX1wgpODo6OkZGRhyWzEJCQgQEBAcHB/z8/HZ2dh2b0729vQYlMRRwmQAAADMdzjcAAAB3dFJOU/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8AqZ+kZQAAAAlwSFlzAAAh1QAAIdUBBJy0nQAABR5JREFUeF7tnL2O1EoQhY0mwBkRCRI3QiIEEa2QkJMrEZCyEYiNeIO974+q/9x96lR7PGO3Z7j9SexqTlV1uedMe+0ei2HodDqdTqfT6XQ6nc698uIZlc7tMk2odG6WT1O3636Yulv3g5h1OqF6szx+QOV/hbgFdr0cz0SS/U8bWqI1ppdDQ+hdHotADgNLzqnxYOEBOLOmU3kuXGlXfSJGCWpEzgfGgONjClfTFJfUqLID+O4W1ulqu2pTMUtKbRheoZxGJZFI1kjAsMUlNdirOeE8eJqmT4V+gV32ZMqKil2o1lZdRtZqKTXngpq8UXuCV86uMnKRXdZ08nxVMmtKrOgllWY11tfkjZoTl9Z2dvEJ5XFSEjUlmrLitdmsyuqauU1zZq/ErocyeLFdbEplnJRw7Xy3Llopwtqa1KU1n7OlJVcaEL7CrnF8BYNBmEiioWRkWhjNFlhZk6bUmEksmsFz4XV2jeNjMRgEicTtYokm8XyI+gLrarJJNeRtsbTELsy40q5x/CcbDEJEGrUyjrJ3gVoF3myJdTXZpNrhb4szt3awaxy/pcEgQKRx+IgKz6tBmy2yqiZNqR2y9760uLawa94kAplIoxJ4WpWfrNkiq2rS+9MMcOpcuzAhB3MzWJxIhPfWXob7EKDoYM3gwDFqHE1ZdByy56Tsmn5j2mZ2uUKtoEQwslJTYiU9mFTg+YBx2XVEDYuOgpnFFteGdukT3Rklxltf7uhikI+cV7A4+TzpomMw3Cq3Cx3KLgtJRm2Bs0rcUaAIbyNG6chliY5TuyxwsF2hZtHFdbhd7iDeUXXmNYszLQfjN20XWsVukYWD7fIHgap6t1icaRnqI3C7dslehoa59bfa9R6jvMakGGxHXvgtXLTKWlx/kV1LrKrBA9gFfw50tuj1Rd062i7/vqCo3i0WR22JVTV4ADvwJbjll1FulJcx33G0XW/cUaAqt84ZGD5rZIAPZFH234OHU7Jr+lqsr2H411pc2q4nA0mGVHyNkBKNOwoUy7cLg2eOXMJHwllGiv67MC8mIffLOSUOEpRdmJCjU0EpISUEnlX92tg9fohiHWOouUtjsq8go19fg2ScBx1X2qW0nIVwQLK+oSjQng4zYMInUJ/trnyWf8Ed55iIF9hlIclE0uoMCyqBp9WptyXE2aJuEgt2x9mV/MovPigb2KX0CAspwef9RK1GtSlj6UA1qWJ/4hWHeywjLC+yW+jZxC4V8bCAVnhehXAdgLLNwmEy5pIGPHu7Tt/D+qosr43sUrEY19oblHiijd3QonaQnFTRiPAXbF5fmBDYzC4VpSWioRS+LkHRwmxnkx5PwIBJLGhHuuDw6+sHxj0b2qV2zkkJ1bxKvoZkpGYYqLG6JnVpiFtgwzD8qCyvTe2CSwYR8tdR+4ViGApFxtwKI78ST0/qysWoMZnbtEQeAZDf8cSo2diu4hZKXub5UVNi3HVCVZF/yYyxLKSD4XlIlE2KwRryO96Aqed3PZvblQ0pL8qKWINq1NX3kCV5FzVGETSiqJqUgzVlkv+XQS4UMSDsYNcwPJolocZ42JDkZ5RPDKvMetSHUTQpB2uM3HWFv2PILnaF1Pib1KAc9gEFYqWQRo4sJNAwiiYw2AHwv1572SXJ/ievQb0YDUPxzrgAc86Jo2aCgx0A9Ws/uzxQUrELhwuqf2SXANVYruKSgJIJDnYEz8yvzu3S7bovul/3xX8odDqdTqfT6XQ6nU6nc/v8AQ6aaTz9MHDNAAAAAElFTkSuQmCC'
+  // Real image files in the assets folder — not base64. Inlining a giant
+  // base64 blob through a chat-edited string is fragile (it broke once
+  // already), a file path is simpler and easier to verify/replace.
+  logo:      '../assets/invoice-logo.png',
+  signature: '../assets/invoice-signature.png'
 };
 
 function escapeHtml(s) {
@@ -1483,6 +1493,7 @@ function openInvoice(idx) {
 
     <div class="inv-sign">
       <div>For: ${escapeHtml(COMPANY.name)}</div>
+      <img src="${COMPANY.signature}" alt="Signature" class="inv-signature-img">
       <div class="inv-sign-line">Authorized Signatory</div>
     </div>
   `;
@@ -1492,12 +1503,14 @@ function openInvoice(idx) {
   window._invFileBase = `ENKORE Invoice #${g.invoiceNo}`;
   document.getElementById('invOverlay').classList.add('open');
   enableInvoiceZoom();
-  requestAnimationFrame(autoFitInvoicePage);
+  requestAnimationFrame(() => { autoFitInvoicePage(); fitInvoiceToScreen(); });
+  window.addEventListener('resize', fitInvoiceToScreen);
 }
 
 function closeInvoice() {
   document.getElementById('invOverlay').classList.remove('open');
   disableInvoiceZoom();
+  window.removeEventListener('resize', fitInvoiceToScreen);
 }
 
 // ── PINCH-ZOOM: allowed only while reviewing the invoice/receipt ──
@@ -1539,14 +1552,44 @@ function autoFitInvoicePage() {
   }
 }
 
+// ── FIT WHOLE PAGE ON SCREEN ─────────────────────────────────────
+// The A4 page is physically wider than a phone screen. Instead of forcing
+// you to pinch-zoom out just to see the layout, this scales the page down
+// (CSS zoom, not transform, so scrolling/panning still works correctly) to
+// fit entirely inside the visible area below the toolbar. Native pinch-zoom
+// still works on top of this to look closer at any part of it.
+function fitInvoiceToScreen() {
+  const scroll = document.getElementById('invScroll');
+  const page   = document.getElementById('invPage');
+  if (!scroll || !page || !document.getElementById('invOverlay').classList.contains('open')) return;
+
+  page.style.zoom = 1; // measure true size first
+  const availW = scroll.clientWidth  - 16;
+  const availH = scroll.clientHeight - 16;
+  const trueW  = page.offsetWidth;
+  const trueH  = page.offsetHeight;
+  if (!trueW || !trueH) return;
+
+  const fit = Math.min(availW / trueW, availH / trueH, 1);
+  page.style.zoom = fit;
+  window._invFitZoom = fit;
+}
+
 function printInvoice() {
+  const page = document.getElementById('invPage');
+  const fitZoom = window._invFitZoom || 1;
+  page.style.zoom = 1; // print must use true A4 scale, not the on-screen fit
   autoFitInvoicePage();
   // Chrome's print/Save-as-PDF dialog suggests the page <title> as the
   // filename — swap it to the invoice name just for this print, then restore.
   const oldTitle = document.title;
   document.title = window._invFileBase || document.title;
-  const restoreTitle = () => { document.title = oldTitle; window.removeEventListener('afterprint', restoreTitle); };
-  window.addEventListener('afterprint', restoreTitle);
+  const restoreAfterPrint = () => {
+    document.title = oldTitle;
+    page.style.zoom = fitZoom;
+    window.removeEventListener('afterprint', restoreAfterPrint);
+  };
+  window.addEventListener('afterprint', restoreAfterPrint);
   setTimeout(() => window.print(), 30); // let the shrink reflow before the print snapshot
 }
 
@@ -1556,7 +1599,11 @@ function printInvoice() {
 // it into a PDF ourselves (html2canvas + jsPDF), sized to true A4.
 async function buildInvoicePDF() {
   const page = document.getElementById('invPage');
+  const fitZoom = window._invFitZoom || 1;
+  page.style.zoom = 1; // capture at true A4 scale, not the on-screen fit
+  await new Promise(r => requestAnimationFrame(r)); // let the reflow settle
   const canvas = await html2canvas(page, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+  page.style.zoom = fitZoom;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('p', 'mm', 'a4');
 
