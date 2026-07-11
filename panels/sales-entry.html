@@ -323,7 +323,7 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .inv-signature-img{display:block;margin:2px auto 0;height:68px;width:auto;max-width:210px;object-fit:contain}
 .inv-sign-line{border-top:1.5px solid var(--ink);margin-top:2px;padding-top:5px;font-size:11px;color:#444}
 .inv-footer-tag{text-align:center;margin-top:30px;padding-top:10px;border-top:1px solid var(--ig2)}
-.inv-footer-slogan{font-family:'Brush Script MT','Segoe Script',cursive;font-size:16px;color:var(--ib-dk);letter-spacing:.3px}
+.inv-footer-slogan{font-size:10.5px;color:var(--ib-dk);font-weight:700;letter-spacing:.3px}
 .inv-footer-web{font-size:10px;color:#8a97a3;font-weight:600;margin-top:2px}
 @page{size:A4;margin:0}
 @media print{
@@ -1523,11 +1523,11 @@ function openInvoice(idx) {
 
   document.getElementById('invPage').innerHTML = html;
   document.getElementById('invToolbarTitle').textContent = `Invoice #${g.invoiceNo} — ${c.name || ''}`;
-  // No "#" (or other reserved URI chars) here — Android's share pipeline
-  // builds a content:// URI from this name, and "#" is a fragment
-  // delimiter that breaks it, silently falling back to "Untitled" in
-  // WhatsApp/Messenger. Keep it filesystem/URI-safe.
-  window._invFileBase = `ENKORE Invoice ${g.invoiceNo}`;
+  // Android's share pipeline builds a content:// URI from this name.
+  // Spaces and symbols (#, etc.) get mangled there and some apps
+  // (WhatsApp included) fall back to showing "Untitled". Keep it
+  // strictly alnum + underscore so the name survives the trip intact.
+  window._invFileBase = `ENKORE_Invoice_${g.invoiceNo}`;
   document.getElementById('invOverlay').classList.add('open');
   enableInvoiceZoom();
   requestAnimationFrame(() => { autoFitInvoicePage(); fitInvoiceToScreen(); });
@@ -1643,14 +1643,16 @@ async function buildInvoicePDF() {
   await waitForInvoiceImages(page); // logo/signature must be fully decoded first —
                                      // capturing mid-fetch is the main cause of the long "Preparing…" stall
   await new Promise(r => requestAnimationFrame(r)); // let the reflow settle
-  const canvas = await html2canvas(page, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
+  // scale 1.25 is still print-sharp for an A4 invoice and rasterizes
+  // noticeably faster on mid-range Android CPUs than scale 2.
+  const canvas = await html2canvas(page, { scale: 1.25, useCORS: true, backgroundColor: '#ffffff' });
   page.style.zoom = fitZoom;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('p', 'mm', 'a4');
 
   const pageW = 210, pageH = 297;
   const imgH  = (canvas.height * pageW) / canvas.width;
-  const imgData = canvas.toDataURL('image/jpeg', 0.95);
+  const imgData = canvas.toDataURL('image/jpeg', 0.88);
 
   if (imgH <= pageH) {
     doc.addImage(imgData, 'JPEG', 0, 0, pageW, imgH);
