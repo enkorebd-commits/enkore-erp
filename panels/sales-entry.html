@@ -263,8 +263,9 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .ncv.nwarn{color:#ffd43b}
 
 /* INVOICE BUTTON on history item */
-.h-inv-btn{margin-top:8px;width:100%;padding:8px;background:#fff;border:1.5px solid var(--g);color:var(--g);border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.2px}
-.h-inv-btn:active{background:var(--gbg)}
+.h-inv-btn{margin-top:8px;width:100%;padding:9px;background:var(--g);border:1.5px solid var(--g);color:#fff;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.2px;display:flex;align-items:center;justify-content:center;gap:6px}
+.h-inv-btn svg{width:14px;height:14px;flex-shrink:0}
+.h-inv-btn:active{background:var(--g2)}
 
 /* INVOICE OVERLAY */
 .inv-overlay{display:none;position:fixed;inset:0;background:#525659;z-index:900;overflow-y:auto}
@@ -272,13 +273,17 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .inv-toolbar{position:sticky;top:0;z-index:2;background:#323639;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
 .inv-toolbar-title{color:#fff;font-size:13px;font-weight:700}
 .inv-toolbar-btns{display:flex;gap:8px}
-.inv-print-btn{background:var(--g);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:800;cursor:pointer}
+.inv-print-btn{background:var(--g);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
+.inv-share-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
 .inv-close-btn{background:#4a4e51;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
+.inv-toolbar-btns button:disabled{opacity:.55;cursor:not-allowed}
 /* A4 page, screen preview and print use the identical mm-based box so what
    you see before printing is exactly what comes out — true WYSIWYG. */
 .inv-page{background:#fff;width:210mm;min-height:297mm;box-sizing:border-box;margin:16px auto;padding:14mm 14mm;font-family:Arial,Helvetica,sans-serif;color:#111;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
 .inv-hr{border:none;border-top:2px solid #111;margin:10px 0 14px}
 .inv-hr-thin{border:none;border-top:1px solid #ccc;margin:14px 0}
+.inv-header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.inv-logo{display:block;height:40px;width:auto;flex-shrink:0}
 .inv-title{font-size:22px;font-weight:900;letter-spacing:1px;margin-bottom:6px}
 .inv-co-name{font-size:14px;font-weight:800}
 .inv-co-line{font-size:11px;color:#444;line-height:1.5}
@@ -303,8 +308,6 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .inv-words{font-size:11px;font-style:italic;color:#333;margin-top:4px}
 .inv-sign{margin-top:36px;text-align:right;font-size:12px;page-break-inside:avoid}
 .inv-sign-line{border-top:1px solid #111;width:180px;margin-left:auto;margin-top:36px;padding-top:4px;font-size:11px;color:#444}
-.inv-ack{margin-top:26px;padding-top:14px;border-top:2px dashed #999;page-break-inside:avoid}
-.inv-ack-title{font-size:11px;font-weight:800;text-transform:uppercase;color:#666;margin-bottom:8px}
 @page{size:A4;margin:0}
 @media print{
   body *{visibility:hidden}
@@ -460,7 +463,8 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   <div class="inv-toolbar">
     <div class="inv-toolbar-title" id="invToolbarTitle">Invoice</div>
     <div class="inv-toolbar-btns">
-      <button class="inv-print-btn" onclick="printInvoice()">🖨️ Print / Save PDF</button>
+      <button class="inv-share-btn" id="invShareBtn" onclick="shareInvoicePDF()">📤 Share</button>
+      <button class="inv-print-btn" onclick="printInvoice()">🖨️ Print / Save</button>
       <button class="inv-close-btn" onclick="closeInvoice()">Close</button>
     </div>
   </div>
@@ -591,6 +595,10 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Used only to turn the invoice/receipt into a real, shareable PDF file -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
 const SHEET_ID  = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
@@ -1317,9 +1325,9 @@ function renderHistory(showAll) {
     const payLine = g.totalPaid && isPayOnly
       ? `<div class="h-payment-line">💳 Payment Collection</div>`
       : (g.totalPaid && !isPayOnly ? `<div class="h-payment-line">💳 + Payment: ${tk(g.totalPaid)}</div>` : '');
-    const invBtn = !g.invoiceNo ? '' : (isPayOnly
-      ? `<button class="h-inv-btn" onclick="openReceipt(${idx})">🧾 View Receipt #${g.invoiceNo}</button>`
-      : `<button class="h-inv-btn" onclick="openInvoice(${idx})">🧾 View Invoice #${g.invoiceNo}</button>`);
+    const invIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/></svg>`;
+    const invBtn = !g.invoiceNo ? '' :
+      `<button class="h-inv-btn" onclick="openInvoice(${idx})">${invIcon} View Invoice #${g.invoiceNo}</button>`;
 
     return `
     <div class="h-item ${isPayOnly ? 'pay' : ''}">
@@ -1358,7 +1366,9 @@ const COMPANY = {
   addr:  'Dholpur, Bishmile, Savar, Dhaka',
   phone: '+880 1844-287840',
   email: 'enkorebd@gmail.com',
-  web:   'enkorebd.com'
+  web:   'enkorebd.com',
+  // White/blue wordmark — needs a dark chip behind it to stay visible on white paper.
+  logo:  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAa4AAAA/CAMAAACPZtz6AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAFlUExURQAAAAtBWQcqOR6d1hyXzgAICkBAQHh4eP////39/cXFxf7+/vv7++jo6BRskxMTExYWFhuUyvr6+h2Z0QICAt3d3QELEAYGBgoKCgMUGx4eHjU1Ndvb2w5MZ1NTU09PT5CQkObm5gUFBRuQxcvLy7+/v/Ly8qysrBgYGM/PzwMDAxNqkQUdKPT09BoaGkVFRe3t7fDw8ByXzfb29snJydLS0gABAqGhoQEHCgxBWQIOE/j4+AkJCQkzRgACAx2c1ScnJ6ioqBZ0nwADBAs9VGlpaR2c1Bd/rdnZ2U5OTheArp2dnQEBAQIPFQMVHAEKDrW1tQAHCRyUynBwcBRslDIyMuzs7KCgoBBafOLi4h2b1A9Wd7q6uo2NjYiIiGZmZhRrkgAEBrCwsOvr6z4+PgQXIAEIC3t7e9fX1wgpODo6OkZGRhyWzEJCQgQEBAcHB/z8/HZ2dh2b0729vQYlMRRwmQAAADMdzjcAAAB3dFJOU/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8AqZ+kZQAAAAlwSFlzAAAh1QAAIdUBBJy0nQAABR5JREFUeF7tnL2O1EoQhY0mwBkRCRI3QiIEEa2QkJMrEZCyEYiNeIO974+q/9x96lR7PGO3Z7j9SexqTlV1uedMe+0ei2HodDqdTqfT6XQ6nc698uIZlc7tMk2odG6WT1O3636Yulv3g5h1OqF6szx+QOV/hbgFdr0cz0SS/U8bWqI1ppdDQ+hdHotADgNLzqnxYOEBOLOmU3kuXGlXfSJGCWpEzgfGgONjClfTFJfUqLID+O4W1ulqu2pTMUtKbRheoZxGJZFI1kjAsMUlNdirOeE8eJqmT4V+gV32ZMqKil2o1lZdRtZqKTXngpq8UXuCV86uMnKRXdZ08nxVMmtKrOgllWY11tfkjZoTl9Z2dvEJ5XFSEjUlmrLitdmsyuqauU1zZq/ErocyeLFdbEplnJRw7Xy3Llopwtqa1KU1n7OlJVcaEL7CrnF8BYNBmEiioWRkWhjNFlhZk6bUmEksmsFz4XV2jeNjMRgEicTtYokm8XyI+gLrarJJNeRtsbTELsy40q5x/CcbDEJEGrUyjrJ3gVoF3myJdTXZpNrhb4szt3awaxy/pcEgQKRx+IgKz6tBmy2yqiZNqR2y9760uLawa94kAplIoxJ4WpWfrNkiq2rS+9MMcOpcuzAhB3MzWJxIhPfWXob7EKDoYM3gwDFqHE1ZdByy56Tsmn5j2mZ2uUKtoEQwslJTYiU9mFTg+YBx2XVEDYuOgpnFFteGdukT3Rklxltf7uhikI+cV7A4+TzpomMw3Cq3Cx3KLgtJRm2Bs0rcUaAIbyNG6chliY5TuyxwsF2hZtHFdbhd7iDeUXXmNYszLQfjN20XWsVukYWD7fIHgap6t1icaRnqI3C7dslehoa59bfa9R6jvMakGGxHXvgtXLTKWlx/kV1LrKrBA9gFfw50tuj1Rd062i7/vqCo3i0WR22JVTV4ADvwJbjll1FulJcx33G0XW/cUaAqt84ZGD5rZIAPZFH234OHU7Jr+lqsr2H411pc2q4nA0mGVHyNkBKNOwoUy7cLg2eOXMJHwllGiv67MC8mIffLOSUOEpRdmJCjU0EpISUEnlX92tg9fohiHWOouUtjsq8go19fg2ScBx1X2qW0nIVwQLK+oSjQng4zYMInUJ/trnyWf8Ed55iIF9hlIclE0uoMCyqBp9WptyXE2aJuEgt2x9mV/MovPigb2KX0CAspwef9RK1GtSlj6UA1qWJ/4hWHeywjLC+yW+jZxC4V8bCAVnhehXAdgLLNwmEy5pIGPHu7Tt/D+qosr43sUrEY19oblHiijd3QonaQnFTRiPAXbF5fmBDYzC4VpSWioRS+LkHRwmxnkx5PwIBJLGhHuuDw6+sHxj0b2qV2zkkJ1bxKvoZkpGYYqLG6JnVpiFtgwzD8qCyvTe2CSwYR8tdR+4ViGApFxtwKI78ST0/qysWoMZnbtEQeAZDf8cSo2diu4hZKXub5UVNi3HVCVZF/yYyxLKSD4XlIlE2KwRryO96Aqed3PZvblQ0pL8qKWINq1NX3kCV5FzVGETSiqJqUgzVlkv+XQS4UMSDsYNcwPJolocZ42JDkZ5RPDKvMetSHUTQpB2uM3HWFv2PILnaF1Pib1KAc9gEFYqWQRo4sJNAwiiYw2AHwv1572SXJ/ievQb0YDUPxzrgAc86Jo2aCgx0A9Ws/uzxQUrELhwuqf2SXANVYruKSgJIJDnYEz8yvzu3S7bovul/3xX8odDqdTqfT6XQ6nU6nc/v8AQ6aaTz9MHDNAAAAAElFTkSuQmCC'
 };
 
 function escapeHtml(s) {
@@ -1398,6 +1408,7 @@ function openInvoice(idx) {
   if (!g.invoiceNo) { toast('This transaction has no Invoice No yet', 'err'); return; }
 
   const c = selClient || {};
+  const hasProducts = g.products.length > 0;
   const subTotal   = g.totalBill;
   const discPct    = 0;   // invoice-level discount not tracked separately in ERP
   const discAmt    = 0;
@@ -1417,11 +1428,23 @@ function openInvoice(idx) {
       <td>৳${Number(p.final).toLocaleString('en-IN')}</td>
     </tr>`).join('');
 
+  // Payment-only transaction — no products, so no item table at all.
+  const itemTableHtml = hasProducts ? `
+    <table class="inv-table">
+      <thead><tr><th>#</th><th>Item Name</th><th>Qty</th><th>Price/Unit</th><th>Discount</th><th>Amount</th></tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>` : '';
+
   const html = `
-    <div class="inv-title">INVOICE</div>
-    <div class="inv-co-name">${escapeHtml(COMPANY.name)}</div>
-    <div class="inv-co-line">${escapeHtml(COMPANY.addr)}</div>
-    <div class="inv-co-line">Phone: ${escapeHtml(COMPANY.phone)} &nbsp;·&nbsp; Email: ${escapeHtml(COMPANY.email)} &nbsp;·&nbsp; Web: ${escapeHtml(COMPANY.web)}</div>
+    <div class="inv-header-top">
+      <div>
+        <div class="inv-title">INVOICE</div>
+        <div class="inv-co-name">${escapeHtml(COMPANY.name)}</div>
+        <div class="inv-co-line">${escapeHtml(COMPANY.addr)}</div>
+        <div class="inv-co-line">Phone: ${escapeHtml(COMPANY.phone)} &nbsp;·&nbsp; Email: ${escapeHtml(COMPANY.email)} &nbsp;·&nbsp; Web: ${escapeHtml(COMPANY.web)}</div>
+      </div>
+      <img src="${COMPANY.logo}" alt="ENKORE" class="inv-logo">
+    </div>
     <hr class="inv-hr">
     <div class="inv-2col">
       <div>
@@ -1437,15 +1460,12 @@ function openInvoice(idx) {
       </div>
     </div>
 
-    <table class="inv-table">
-      <thead><tr><th>#</th><th>Item Name</th><th>Qty</th><th>Price/Unit</th><th>Discount</th><th>Amount</th></tr></thead>
-      <tbody>${itemRows}</tbody>
-    </table>
+    ${itemTableHtml}
 
     <div class="inv-2col" style="margin-top:14px">
       <div style="flex:1">
         <div class="inv-block-lbl">Invoice Amount in Words</div>
-        <div class="inv-words">${numToWordsTaka(total)}</div>
+        <div class="inv-words">${numToWordsTaka(hasProducts ? total : received)}</div>
         <div class="inv-block-lbl" style="margin-top:14px">Payment Mode</div>
         <div class="inv-row">Cash</div>
       </div>
@@ -1465,33 +1485,29 @@ function openInvoice(idx) {
       <div>For: ${escapeHtml(COMPANY.name)}</div>
       <div class="inv-sign-line">Authorized Signatory</div>
     </div>
-
-    <div class="inv-ack">
-      <div class="inv-ack-title">Acknowledgement</div>
-      <div class="inv-2col">
-        <div>
-          <div class="inv-row"><b>Name:</b> ${escapeHtml(c.name || '')}</div>
-          <div class="inv-row"><b>Address:</b> ${escapeHtml([c.shop, c.loc, c.zone].filter(Boolean).join(', '))}</div>
-        </div>
-        <div>
-          <div class="inv-row"><b>Invoice No:</b> ${g.invoiceNo}</div>
-          <div class="inv-row"><b>Invoice Date:</b> ${escapeHtml(g.dateDisplay)}</div>
-          <div class="inv-row"><b>Invoice Amount:</b> ৳${total.toLocaleString('en-IN')}</div>
-        </div>
-      </div>
-      <div class="inv-sign-line" style="margin-top:24px">Receiver's Seal &amp; Sign</div>
-    </div>
   `;
 
   document.getElementById('invPage').innerHTML = html;
   document.getElementById('invToolbarTitle').textContent = `Invoice #${g.invoiceNo} — ${c.name || ''}`;
+  window._invFileBase = `ENKORE Invoice #${g.invoiceNo}`;
   document.getElementById('invOverlay').classList.add('open');
+  enableInvoiceZoom();
   requestAnimationFrame(autoFitInvoicePage);
 }
 
 function closeInvoice() {
   document.getElementById('invOverlay').classList.remove('open');
+  disableInvoiceZoom();
 }
+
+// ── PINCH-ZOOM: allowed only while reviewing the invoice/receipt ──
+// The rest of the ERP keeps zoom locked (app-like feel), but you need to
+// pinch in on the printed detail here, so the viewport is loosened while
+// this overlay is open and restored the moment it closes.
+const DEFAULT_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+const ZOOM_VIEWPORT     = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes';
+function enableInvoiceZoom()  { document.querySelector('meta[name=viewport]')?.setAttribute('content', ZOOM_VIEWPORT); }
+function disableInvoiceZoom() { document.querySelector('meta[name=viewport]')?.setAttribute('content', DEFAULT_VIEWPORT); }
 
 // ── A4 ONE-PAGE AUTO-FIT ────────────────────────────────────────
 // Shrinks the item table's font size / row padding (via --tsize / --tpad)
@@ -1525,81 +1541,78 @@ function autoFitInvoicePage() {
 
 function printInvoice() {
   autoFitInvoicePage();
+  // Chrome's print/Save-as-PDF dialog suggests the page <title> as the
+  // filename — swap it to the invoice name just for this print, then restore.
+  const oldTitle = document.title;
+  document.title = window._invFileBase || document.title;
+  const restoreTitle = () => { document.title = oldTitle; window.removeEventListener('afterprint', restoreTitle); };
+  window.addEventListener('afterprint', restoreTitle);
   setTimeout(() => window.print(), 30); // let the shrink reflow before the print snapshot
 }
 
-// ── PAYMENT RECEIPT (payment-only transactions) ────────────────
-function openReceipt(idx) {
-  const g = (window._histGroups || [])[idx];
-  if (!g) { toast('Receipt data not found', 'err'); return; }
-  if (!g.invoiceNo) { toast('This transaction has no Receipt No yet', 'err'); return; }
+// ── REAL PDF FILE — for direct WhatsApp / Messenger / any app share ──
+// window.print() only opens the OS print dialog, it can't hand us back an
+// actual file. To share a real PDF we render #invPage to a canvas and pack
+// it into a PDF ourselves (html2canvas + jsPDF), sized to true A4.
+async function buildInvoicePDF() {
+  const page = document.getElementById('invPage');
+  const canvas = await html2canvas(page, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
 
-  const c = selClient || {};
-  const received   = g.totalPaid;
-  const currentDue = g.due !== undefined ? g.due : 0;
-  const prevDue    = g.prevDue !== undefined ? g.prevDue : (currentDue + received);
+  const pageW = 210, pageH = 297;
+  const imgH  = (canvas.height * pageW) / canvas.width;
+  const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
-  const html = `
-    <div class="inv-title">PAYMENT RECEIPT</div>
-    <div class="inv-co-name">${escapeHtml(COMPANY.name)}</div>
-    <div class="inv-co-line">${escapeHtml(COMPANY.addr)}</div>
-    <div class="inv-co-line">Phone: ${escapeHtml(COMPANY.phone)} &nbsp;·&nbsp; Email: ${escapeHtml(COMPANY.email)} &nbsp;·&nbsp; Web: ${escapeHtml(COMPANY.web)}</div>
-    <hr class="inv-hr">
-    <div class="inv-2col">
-      <div>
-        <div class="inv-block-lbl">Received From</div>
-        <div class="inv-row"><b>Name:</b> ${escapeHtml(c.name || '')}</div>
-        <div class="inv-row"><b>Address:</b> ${escapeHtml([c.shop, c.loc, c.zone].filter(Boolean).join(', '))}</div>
-        <div class="inv-row"><b>Contact:</b> ${escapeHtml(c.phone || '')}</div>
-      </div>
-      <div>
-        <div class="inv-block-lbl">Receipt Details</div>
-        <div class="inv-row"><b>Receipt No:</b> ${g.invoiceNo}</div>
-        <div class="inv-row"><b>Date:</b> ${escapeHtml(g.dateDisplay)}</div>
-      </div>
-    </div>
+  if (imgH <= pageH) {
+    doc.addImage(imgData, 'JPEG', 0, 0, pageW, imgH);
+  } else {
+    // Rare "impossible to fit" overflow case — slice across multiple A4 pages.
+    let renderedMM = 0;
+    while (renderedMM < imgH) {
+      if (renderedMM > 0) doc.addPage();
+      doc.addImage(imgData, 'JPEG', 0, -renderedMM, pageW, imgH);
+      renderedMM += pageH;
+    }
+  }
 
-    <div class="inv-2col" style="margin-top:18px">
-      <div style="flex:1">
-        <div class="inv-block-lbl">Amount Received in Words</div>
-        <div class="inv-words">${numToWordsTaka(received)}</div>
-        <div class="inv-block-lbl" style="margin-top:14px">Payment Mode</div>
-        <div class="inv-row">Cash</div>
-        ${g.comment ? `<div class="inv-block-lbl" style="margin-top:14px">Note</div><div class="inv-row">${escapeHtml(g.comment)}</div>` : ''}
-      </div>
-      <div class="inv-amounts">
-        <div class="inv-amt-row"><span>Previous Due:</span><span>৳${Number(prevDue).toLocaleString('en-IN')}</span></div>
-        <div class="inv-amt-row tot"><span>Payment Received:</span><span>৳${received.toLocaleString('en-IN')}</span></div>
-        <div class="inv-amt-row due"><span>Running Due:</span><span>৳${Number(currentDue).toLocaleString('en-IN')}</span></div>
-      </div>
-    </div>
-
-    <div class="inv-sign">
-      <div>For: ${escapeHtml(COMPANY.name)}</div>
-      <div class="inv-sign-line">Authorized Signatory</div>
-    </div>
-
-    <div class="inv-ack">
-      <div class="inv-ack-title">Acknowledgement</div>
-      <div class="inv-2col">
-        <div>
-          <div class="inv-row"><b>Name:</b> ${escapeHtml(c.name || '')}</div>
-        </div>
-        <div>
-          <div class="inv-row"><b>Receipt No:</b> ${g.invoiceNo}</div>
-          <div class="inv-row"><b>Amount:</b> ৳${received.toLocaleString('en-IN')}</div>
-        </div>
-      </div>
-      <div class="inv-sign-line" style="margin-top:24px">Receiver's Seal &amp; Sign</div>
-    </div>
-  `;
-
-  document.getElementById('invPage').innerHTML = html;
-  document.getElementById('invToolbarTitle').textContent = `Receipt #${g.invoiceNo} — ${c.name || ''}`;
-  document.getElementById('invOverlay').classList.add('open');
-  requestAnimationFrame(autoFitInvoicePage);
+  const filename = (window._invFileBase || 'ENKORE Invoice') + '.pdf';
+  const blob = doc.output('blob');
+  return { blob, filename };
 }
 
+async function shareInvoicePDF() {
+  const btn = document.getElementById('invShareBtn');
+  const original = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '⏳ Preparing…';
+
+  try {
+    const { blob, filename } = await buildInvoicePDF();
+    const file = new File([blob], filename, { type: 'application/pdf' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: filename });
+    } else {
+      // Share API / file-sharing not available on this browser — fall back
+      // to a normal download so it can still be shared manually afterward.
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      toast('📥 Saved — share it from your Files/Downloads app', 'ok');
+    }
+  } catch (e) {
+    if (e?.name !== 'AbortError') { // user cancelling the share sheet is not an error
+      console.error('Share PDF failed:', e);
+      toast('❌ Could not prepare PDF', 'err');
+    }
+  } finally {
+    btn.disabled = false; btn.innerHTML = original;
+  }
+}
+
+// ── PAYMENT RECEIPT (payment-only transactions) ────────────────
 // ── OFFLINE QUEUE ─────────────────────────────────────────────
 const QUEUE_KEY = 'enkore_pending_sales';
 
