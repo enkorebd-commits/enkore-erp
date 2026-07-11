@@ -1259,10 +1259,10 @@ function groupByDay(rows) {
     const g = seen.get(key);
     if (r.seller)  g.seller  = r.seller;
     if (r.comment) g.comment = r.comment;
+    if (g.prevDue === undefined && r.prevDue !== undefined) g.prevDue = r.prevDue; // first row of the group
     if (r.prod) {
       g.products.push({ name: r.prod, rate: r.rate, qty: r.qty, discount: r.disc || 0, final: r.final || r.bill });
       g.totalBill += (r.final || r.bill || 0);
-      if (g.prevDue === undefined && r.prevDue !== undefined) g.prevDue = r.prevDue; // first row of the invoice
     }
     if (r.paid)            g.totalPaid += r.paid;
     if (r.due !== undefined) g.due = r.due; // last row's due = final state
@@ -1311,9 +1311,9 @@ function renderHistory(showAll) {
     const payLine = g.totalPaid && isPayOnly
       ? `<div class="h-payment-line">💳 Payment Collection</div>`
       : (g.totalPaid && !isPayOnly ? `<div class="h-payment-line">💳 + Payment: ${tk(g.totalPaid)}</div>` : '');
-    const invBtn = (!isPayOnly && g.invoiceNo)
-      ? `<button class="h-inv-btn" onclick="openInvoice(${idx})">🧾 View Invoice #${g.invoiceNo}</button>`
-      : '';
+    const invBtn = !g.invoiceNo ? '' : (isPayOnly
+      ? `<button class="h-inv-btn" onclick="openReceipt(${idx})">🧾 View Receipt #${g.invoiceNo}</button>`
+      : `<button class="h-inv-btn" onclick="openInvoice(${idx})">🧾 View Invoice #${g.invoiceNo}</button>`);
 
     return `
     <div class="h-item ${isPayOnly ? 'pay' : ''}">
@@ -1484,6 +1484,77 @@ function openInvoice(idx) {
 
 function closeInvoice() {
   document.getElementById('invOverlay').classList.remove('open');
+}
+
+// ── PAYMENT RECEIPT (payment-only transactions) ────────────────
+function openReceipt(idx) {
+  const g = (window._histGroups || [])[idx];
+  if (!g) { toast('Receipt data not found', 'err'); return; }
+  if (!g.invoiceNo) { toast('This transaction has no Receipt No yet', 'err'); return; }
+
+  const c = selClient || {};
+  const received   = g.totalPaid;
+  const currentDue = g.due !== undefined ? g.due : 0;
+  const prevDue    = g.prevDue !== undefined ? g.prevDue : (currentDue + received);
+
+  const html = `
+    <div class="inv-title">PAYMENT RECEIPT</div>
+    <div class="inv-co-name">${escapeHtml(COMPANY.name)}</div>
+    <div class="inv-co-line">${escapeHtml(COMPANY.addr)}</div>
+    <div class="inv-co-line">Phone: ${escapeHtml(COMPANY.phone)} &nbsp;·&nbsp; Email: ${escapeHtml(COMPANY.email)} &nbsp;·&nbsp; Web: ${escapeHtml(COMPANY.web)}</div>
+    <hr class="inv-hr">
+    <div class="inv-2col">
+      <div>
+        <div class="inv-block-lbl">Received From</div>
+        <div class="inv-row"><b>Name:</b> ${escapeHtml(c.name || '')}</div>
+        <div class="inv-row"><b>Address:</b> ${escapeHtml([c.shop, c.loc, c.zone].filter(Boolean).join(', '))}</div>
+        <div class="inv-row"><b>Contact:</b> ${escapeHtml(c.phone || '')}</div>
+      </div>
+      <div>
+        <div class="inv-block-lbl">Receipt Details</div>
+        <div class="inv-row"><b>Receipt No:</b> ${g.invoiceNo}</div>
+        <div class="inv-row"><b>Date:</b> ${escapeHtml(g.dateDisplay)}</div>
+      </div>
+    </div>
+
+    <div class="inv-2col" style="margin-top:18px">
+      <div style="flex:1">
+        <div class="inv-block-lbl">Amount Received in Words</div>
+        <div class="inv-words">${numToWordsTaka(received)}</div>
+        <div class="inv-block-lbl" style="margin-top:14px">Payment Mode</div>
+        <div class="inv-row">Cash</div>
+        ${g.comment ? `<div class="inv-block-lbl" style="margin-top:14px">Note</div><div class="inv-row">${escapeHtml(g.comment)}</div>` : ''}
+      </div>
+      <div class="inv-amounts">
+        <div class="inv-amt-row"><span>Previous Due:</span><span>৳${Number(prevDue).toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row tot"><span>Payment Received:</span><span>৳${received.toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row due"><span>Running Due:</span><span>৳${Number(currentDue).toLocaleString('en-IN')}</span></div>
+      </div>
+    </div>
+
+    <div class="inv-sign">
+      <div>For: ${escapeHtml(COMPANY.name)}</div>
+      <div class="inv-sign-line">Authorized Signatory</div>
+    </div>
+
+    <div class="inv-ack">
+      <div class="inv-ack-title">Acknowledgement</div>
+      <div class="inv-2col">
+        <div>
+          <div class="inv-row"><b>Name:</b> ${escapeHtml(c.name || '')}</div>
+        </div>
+        <div>
+          <div class="inv-row"><b>Receipt No:</b> ${g.invoiceNo}</div>
+          <div class="inv-row"><b>Amount:</b> ৳${received.toLocaleString('en-IN')}</div>
+        </div>
+      </div>
+      <div class="inv-sign-line" style="margin-top:24px">Receiver's Seal &amp; Sign</div>
+    </div>
+  `;
+
+  document.getElementById('invPage').innerHTML = html;
+  document.getElementById('invToolbarTitle').textContent = `Receipt #${g.invoiceNo} — ${c.name || ''}`;
+  document.getElementById('invOverlay').classList.add('open');
 }
 
 // ── OFFLINE QUEUE ─────────────────────────────────────────────
