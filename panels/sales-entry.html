@@ -481,7 +481,7 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   <div class="inv-toolbar">
     <div class="inv-toolbar-title" id="invToolbarTitle">Invoice</div>
     <div class="inv-toolbar-btns">
-      <button class="inv-share-btn" id="invShareBtn" onclick="shareInvoicePDF()">📤 Share</button>
+      <button class="inv-share-btn" id="invShareBtn" onclick="shareInvoicePDF()">📥 Save PDF</button>
       <button class="inv-print-btn" onclick="printInvoice()">🖨️ Print / Save</button>
       <button class="inv-close-btn" onclick="closeInvoice()">Close</button>
     </div>
@@ -1678,25 +1678,24 @@ async function shareInvoicePDF() {
 
   try {
     const { blob, filename } = await buildInvoicePDF();
-    const file = new File([blob], filename, { type: 'application/pdf' });
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: filename });
-    } else {
-      // Share API / file-sharing not available on this browser — fall back
-      // to a normal download so it can still be shared manually afterward.
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-      toast('📥 Saved — share it from your Files/Downloads app', 'ok');
-    }
+    // navigator.share() with a Blob-backed File was dropped here on purpose.
+    // On Android, handing WhatsApp a blob (not a real on-disk file) makes it
+    // re-process the stream itself — that's the long "Loading media…" stall —
+    // and it frequently loses the filename, showing "Untitled" regardless of
+    // what File.name was set to. A plain browser download writes a real file
+    // to Downloads instantly with the exact name given, every time. Trading
+    // one extra tap (open WhatsApp, attach from Downloads) for a fix that
+    // actually works beats a "direct share" that silently breaks.
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast(`📥 Saved as ${filename} — attach it from Downloads in WhatsApp`, 'ok');
   } catch (e) {
-    if (e?.name !== 'AbortError') { // user cancelling the share sheet is not an error
-      console.error('Share PDF failed:', e);
-      toast('❌ Could not prepare PDF', 'err');
-    }
+    console.error('Save PDF failed:', e);
+    toast('❌ Could not prepare PDF', 'err');
   } finally {
     btn.disabled = false; btn.innerHTML = original;
   }
