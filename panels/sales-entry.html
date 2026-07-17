@@ -1719,6 +1719,16 @@ async function shareInvoicePDF() {
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], title: filename });
+      // Cloned/dual-app WhatsApp instances run in a sandbox that often loses
+      // the file's proper name during the OS handoff (an Android limitation,
+      // not something this fix touches). So a correctly-named copy also
+      // quietly lands in Downloads every time — a ready fallback to attach
+      // manually if whichever app was picked shows "Untitled".
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
     } else {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1941,13 +1951,21 @@ function renderNoteCards() {
     const dispName  = String(n.client||'').split(',')[0].trim() || n.client;
     const dispSub   = String(n.client||'').split(',').slice(1).join(',').trim();
 
+    let billTotal = 0;
     const prodLines = (n.products||[]).map(p => {
       const isGift = String(p.gift||'').trim().toUpperCase() === 'YES';
       const giftTag= isGift ? ' 🎁' : '';
-      const lineTx = +p.price > 0 ? `৳${Number(p.price).toLocaleString('en-IN')} × ${p.qty}` : `${p.qty} pcs`;
-      const tot    = isGift ? '(Gift)' : (+p.price > 0 ? `→ ৳${(p.price*p.qty-(+p.discount||0)).toLocaleString('en-IN')}` : '');
-      return `<div><b>${p.qty}×</b> ${p.product}${giftTag} <span style="color:var(--muted);font-size:11px">${lineTx} ${tot}</span></div>`;
+      const qty    = Number(p.qty)||0;
+      const rate   = Number(p.price)||0;
+      const lineAmt= isGift ? 0 : Math.max(0, rate*qty - (+p.discount||0));
+      if (!isGift) billTotal += lineAmt;
+      const lineTx = rate > 0 ? `${qty} × ৳${rate.toLocaleString('en-IN')}` : `${qty} pcs`;
+      const tot    = isGift ? '(Gift)' : (rate > 0 ? `→ ৳${lineAmt.toLocaleString('en-IN')}` : '');
+      return `<div><b>${p.product}</b>${giftTag}<br><span style="color:var(--muted);font-size:11px">${lineTx} ${tot}</span></div>`;
     }).join('');
+    const totalLine = (n.products||[]).length
+      ? `<div style="text-align:right;font-weight:700;font-size:12px;margin-top:4px;padding-top:4px;border-top:1px dashed var(--border)">Total: ৳${billTotal.toLocaleString('en-IN')}</div>`
+      : '';
 
     const deadline = `<div class="nc-deadline">📅 Delivery: ${n.deadline ? fmtNoteDate(n.deadline) : 'N/A'}</div>`;
     const noteText = n.comment  ? `<div class="nc-notetext">${n.comment}</div>` : '';
@@ -1961,7 +1979,7 @@ function renderNoteCards() {
         <div><div class="nc-cname">${dispName}</div><div class="nc-csub">${dispSub}</div></div>
         <span class="nc-badge ${isPending?'pending':'forwarded'}">${isPending?'⏳ Pending':'📤 Done'}</span>
       </div>
-      <div class="nc-prods">${prodLines||'—'}</div>
+      <div class="nc-prods">${prodLines||'—'}${totalLine}</div>
       ${noteText}${deadline}
       <div class="nc-foot">
         <div class="nc-meta"><div>🗓 ${fmtNoteDate(n.ts)}</div></div>
