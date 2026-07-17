@@ -216,7 +216,7 @@
 <!-- SHELL -->
 <div id="shell">
   <div class="topbar">
-    <div class="tb-logo"><img src="https://enkorebd.com/wp-content/uploads/2026/03/Black.png" alt="Enkore" /></div>
+    <div class="tb-logo"><img src="assets/logo-white.png" alt="Enkore" /></div>
     <div class="tb-panel" id="tb-panel"></div>
     <div class="tb-spacer"></div>
     <div class="tb-uinfo"><div class="tbun" id="tb-name">-</div><div class="tbur" id="tb-role">-</div><div class="tbuid" id="tb-uid">-</div></div>
@@ -334,7 +334,7 @@
 
   // ── 24-HOUR CACHE ──
   const CACHE_KEY = 'enkore_erp_cache';
-  const CACHE_TTL = 24 * 60 * 60 * 1000;
+  const CACHE_TTL = 6 * 60 * 60 * 1000;
 
   async function getSheetData(forceRefresh) {
     if (!forceRefresh) {
