@@ -878,6 +878,17 @@ function showProdName(sel) {
   if (!nameEl) return;
   nameEl.textContent = sel.value;
   nameEl.classList.toggle('show', !!sel.value);
+
+  // Changing the product should not silently carry over a Gift/Sample flag
+  // left on from a previous product in this row (caused a real 0-taka bill
+  // bug — item was charged 0 because Gift stayed on after swapping products).
+  const row = sel.closest('.prod-row');
+  if (row && row.dataset.gift === 'true') {
+    row.dataset.gift = 'false';
+    const btn = row.querySelector('.gift-btn');
+    if (btn) { btn.textContent = '🎁 Gift/Sample'; btn.className = 'gift-btn'; }
+    calcAll();
+  }
 }
 
 function togGift(idx) {
@@ -2272,6 +2283,16 @@ function showNoteProdName(sel) {
   const el = sel.parentElement.querySelector('.prod-sel-name'); if (!el) return;
   el.textContent = sel.value;
   el.classList.toggle('show', !!sel.value);
+
+  // Same fix as showProdName() — don't let Gift/Sample silently carry over
+  // to a different product after the dropdown is changed.
+  const row = sel.closest('.prod-row');
+  if (row && row.dataset.gift === 'true') {
+    row.dataset.gift = 'false';
+    const btn = row.querySelector('.gift-btn');
+    if (btn) { btn.textContent = '🎁 Gift/Sample'; btn.className = 'gift-btn'; }
+    calcNote();
+  }
 }
 
 function calcNote() {
