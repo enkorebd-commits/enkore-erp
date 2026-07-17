@@ -639,8 +639,9 @@ window.addEventListener('DOMContentLoaded', () => {
   fillUserBadges();
   addProdRow();
   flushQueue();
+  flushNoteQueue();
   updateOfflineBanner();
-  window.addEventListener('online', () => { toast('🌐 Back online — syncing…', 'ok'); flushQueue(); });
+  window.addEventListener('online', () => { toast('🌐 Back online — syncing…', 'ok'); flushQueue(); flushNoteQueue(); });
   loadNotes();
   checkPendingPhotoUpload();
   document.addEventListener('click', e => {
@@ -970,6 +971,11 @@ function renderOpts(list) {
 function pickClient(det) {
   const c = clients.find(x => x.det === det);
   if (!c) return;
+  // Manually picking a client breaks any pending "forward this note" link —
+  // forwardToSale() sets selClient directly (not via pickClient), so if this
+  // ran, the user deliberately changed course. Without this, the originating
+  // note could get wrongly marked Forwarded on an unrelated later submit.
+  window._pendingNoteId = null;
   selClient = c;
   document.getElementById('csInput').value = c.name || c.shop;
   document.getElementById('csClear').style.display = 'flex';
@@ -1207,6 +1213,11 @@ async function submitNewClient() {
 
 // ── MODE ─────────────────────────────────────────────────────
 function setMode(m) {
+  // Leaving the Sale tab without submitting means the user abandoned the
+  // forward flow — clear the link so a later, unrelated submission (e.g.
+  // a Payment) can't wrongly mark the originating note as Forwarded.
+  if (m !== 'sale' && window._pendingNoteId) window._pendingNoteId = null;
+
   mode = m;
   const isSale  = m === 'sale';
   const isPay   = m === 'payment';
@@ -1796,6 +1807,45 @@ async function flushQueue() {
       } catch(_) { break; } // still offline — stop
     }
     if (synced > 0) toast(`✅ ${synced} entry/entries synced to sheet`, 'ok');
+  } catch(_) {}
+}
+
+// ── NOTE-STATUS RETRY QUEUE ────────────────────────────────────
+// updateNoteStatus (marking a note "Forwarded") used to be a single
+// fire-and-forget fetch — if it failed (weak signal, note offline),
+// nothing ever retried it and the note stayed "Pending" forever even
+// after the underlying sale synced fine. Same queue-and-retry pattern
+// as the sale entry queue above, so it self-heals when back online.
+const NOTE_QUEUE_KEY = 'enkore_pending_note_status';
+
+function queueNoteStatus(noteId, status) {
+  try {
+    const q = JSON.parse(localStorage.getItem(NOTE_QUEUE_KEY) || '[]');
+    if (!q.some(e => e.noteId === noteId && e.status === status)) {
+      q.push({ noteId, status, savedAt: Date.now() });
+      localStorage.setItem(NOTE_QUEUE_KEY, JSON.stringify(q));
+    }
+  } catch(_) {}
+}
+
+function dequeueNoteStatus(noteId) {
+  try {
+    const q = JSON.parse(localStorage.getItem(NOTE_QUEUE_KEY) || '[]');
+    localStorage.setItem(NOTE_QUEUE_KEY, JSON.stringify(q.filter(e => e.noteId !== noteId)));
+  } catch(_) {}
+}
+
+async function flushNoteQueue() {
+  try {
+    const q = JSON.parse(localStorage.getItem(NOTE_QUEUE_KEY) || '[]');
+    if (!q.length) return;
+    for (const entry of [...q]) {
+      try {
+        const js = await fetch(`${NOTES_AS_URL}?action=updateNoteStatus&noteId=${encodeURIComponent(entry.noteId)}&status=${encodeURIComponent(entry.status)}`).then(r => r.json());
+        if (js && js.success) dequeueNoteStatus(entry.noteId);
+        else break; // server error — stop, don't retry yet
+      } catch(_) { break; } // still offline — stop
+    }
   } catch(_) {}
 }
 
@@ -2400,8 +2450,12 @@ async function updateNoteRemoteStatus(noteId, status) {
     if (note) { note.status = status; renderNoteCards(); }
   }
   try {
-    await fetch(`${NOTES_AS_URL}?action=updateNoteStatus&noteId=${encodeURIComponent(noteId)}&status=${encodeURIComponent(status)}`);
-  } catch(e) { console.error('Status update:', e); }
+    const js = await fetch(`${NOTES_AS_URL}?action=updateNoteStatus&noteId=${encodeURIComponent(noteId)}&status=${encodeURIComponent(status)}`).then(r => r.json());
+    if (!js || !js.success) queueNoteStatus(noteId, status); // server responded but not success — retry later
+  } catch(e) {
+    console.error('Status update:', e);
+    queueNoteStatus(noteId, status); // network failure — retry when back online
+  }
 }
 
 // ── DATE FORMAT FOR NOTES ──────────────────────────────────────
