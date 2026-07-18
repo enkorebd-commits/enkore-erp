@@ -2432,7 +2432,6 @@ function forwardToSale(noteId) {
   });
   calcAll();
   document.getElementById('comment').value = note.comment || '';
-  autoFillSeller();
 
   window._pendingNoteId = noteId; // resolved only on actual sale submission
   toast('📋 Loaded from note — add payment and submit', 'ok');
