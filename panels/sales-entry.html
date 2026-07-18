@@ -1224,10 +1224,10 @@ async function submitNewClient() {
 
 // ── MODE ─────────────────────────────────────────────────────
 function setMode(m) {
-  // Leaving the Sale tab without submitting means the user abandoned the
-  // forward flow — clear the link so a later, unrelated submission (e.g.
-  // a Payment) can't wrongly mark the originating note as Forwarded.
-  if (m !== 'sale' && window._pendingNoteId) window._pendingNoteId = null;
+  // Note: previously cleared _pendingNoteId on any tab switch away from Sale.
+  // Removed — tapping Notes/Collection to glance around after Forward was
+  // silently breaking the link before Submit. Link now only clears on actual
+  // submit, manual client pick, or explicit form reset.
 
   mode = m;
   const isSale  = m === 'sale';
