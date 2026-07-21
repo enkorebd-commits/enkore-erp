@@ -534,35 +534,49 @@
     if (!home) return;
 
     if (file === home.file) {
-      // Going to the main panel: if we're deeper, pop back to the base entry.
+      // Going to the main panel: if we're deeper, pop back to it.
       if (!atHome) { history.back(); return; } // popstate paints home
       applyPanel(file, name, readonly);
       return;
     }
 
     // Going to a non-home panel: keep exactly ONE entry above home.
-    const state = { panel: file, name: name, readonly: !!readonly };
+    const state = { erp: 'panel', panel: file, name: name, readonly: !!readonly };
     if (atHome) history.pushState(state, '', '#' + file);
     else        history.replaceState(state, '', '#' + file);
     atHome = false;
     applyPanel(file, name, readonly);
   }
 
-  // Establishes the main panel as the base history entry (called after login).
+  // Sets up two history entries after login:
+  //   [ exit-guard ]  ← Back from the main panel lands here → app leaves/minimizes
+  //   [ main panel ]  ← the screen the user sees first
   function initHome() {
     const home = homePanel();
     if (!home) return;
-    history.replaceState({ panel: home.file, name: home.name, readonly: !!home.readonly }, '', '#' + home.file);
+    history.replaceState({ erp: 'exit' }, '', location.pathname + location.search);
+    history.pushState({ erp: 'panel', panel: home.file, name: home.name, readonly: !!home.readonly }, '', '#' + home.file);
     atHome = true;
     applyPanel(home.file, home.name, home.readonly);
   }
 
   // ── BACK / FORWARD ──
+  let _exiting = false;
   window.addEventListener('popstate', function(e) {
     if (!currentUser) return;
     const home = homePanel();
     const st = e.state;
-    if (st && st.panel && home && st.panel !== home.file) {
+
+    if (st && st.erp === 'exit') {
+      // Back was pressed while on the main panel → actually leave the app
+      // (minimize on an installed phone app) instead of re-rendering a panel.
+      if (_exiting) return;
+      _exiting = true;
+      history.back();
+      return;
+    }
+
+    if (st && st.erp === 'panel' && home && st.panel !== home.file) {
       atHome = false;                                   // forward onto the non-home entry
       applyPanel(st.panel, st.name, st.readonly);
     } else {
