@@ -17,8 +17,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .hdr{color:#fff;padding:12px 16px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2);transition:background .3s}
 .hdr.dues{background:#c0392b}
 .hdr.sales{background:var(--g)}
-.hdr-title{font-size:16px;font-weight:800;letter-spacing:.3px;margin-bottom:4px}
-.hdr-bar{padding:8px 0 12px;font-size:13px;font-weight:700;color:#fff;border-bottom:3px solid #ffa8a8;display:inline-block}
+.hdr-title{font-size:16px;font-weight:800;letter-spacing:.3px;padding-bottom:12px}
 
 .body{padding:14px;max-width:560px;margin:0 auto}
 
@@ -44,6 +43,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .row-main{flex:1;min-width:0}
 .row-name{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.row-contact{display:flex;align-items:center;gap:10px;font-size:11px;margin-top:4px;flex-wrap:wrap}
+.row-loc{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.row-tel{color:var(--blue);font-weight:800;text-decoration:none;white-space:nowrap}
+.row-tel:active{opacity:.7}
 .row-fig{flex-shrink:0;text-align:right}
 .fig-primary{font-size:16px;font-weight:900;line-height:1.1}
 .fig-primary.red{color:var(--red)}
@@ -74,8 +77,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div id="ptrIndicator"><span class="ptr-spin"></span><span id="ptrText">Pull to refresh</span></div>
 
 <div class="hdr dues" id="mainHdr">
-  <div class="hdr-title">Clients Due Dashboard</div>
-  <div class="hdr-bar">🔴 Top Dues</div>
+  <div class="hdr-title">Clients Due Board</div>
 </div>
 
 <div class="body">
@@ -120,6 +122,7 @@ async function loadClients(){
       shop:  r.c[3]?.v||'',
       loc:   r.c[4]?.v||'',
       zone:  r.c[5]?.v||'',
+      phone: String(r.c[6]?.v||'').trim(),
       det:   r.c[7]?.v||'',
       sales: Number(r.c[8]?.v)||0,
       paid:  Number(r.c[9]?.v)||0,
@@ -163,10 +166,18 @@ function render(){
   el.innerHTML=rows.map((c,i)=>{
     const rank=i+1;
     const rankCls=rank<=3?('r'+rank):'';
-    const sub=[c.shop,c.zone||c.loc].filter(Boolean).join(' · ');
+    const sub=[c.shop,c.zone].filter(Boolean).join(' · ');
+    const loc=c.loc||c.zone||'';
+    const contact='<div class="row-contact">'
+      +(loc?'<span class="row-loc">📍 '+loc+'</span>':'')
+      +(c.phone?'<a class="row-tel" href="tel:'+c.phone.replace(/[^0-9+]/g,'')+'">📞 '+c.phone+'</a>':'')
+      +'</div>';
     return '<div class="row">'
       +'<div class="rank '+rankCls+'">'+rank+'</div>'
-      +'<div class="row-main"><div class="row-name">'+(c.name||c.shop||'—')+'</div><div class="row-sub">'+(sub||'—')+'</div></div>'
+      +'<div class="row-main"><div class="row-name">'+(c.name||c.shop||'—')+'</div>'
+        +(sub?'<div class="row-sub">'+sub+'</div>':'')
+        +contact
+      +'</div>'
       +'<div class="row-fig"><div class="fig-primary red">'+tk(c.due)+'</div><div class="fig-sec">Sales '+tk(c.sales)+'</div></div>'
       +'</div>';
   }).join('');
