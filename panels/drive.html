@@ -42,6 +42,17 @@
       width:0; transition:width 0.4s ease; flex-shrink:0;
     }
 
+    /* pull-to-refresh indicator */
+    #ptrIndicator {
+      position:fixed; top:0; left:0; right:0; height:48px; margin-top:-48px;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      background:#f4f6f8; color:#888; font-size:13px; font-weight:500;
+      z-index:60; transition:margin-top .18s ease; pointer-events:none;
+    }
+    #ptrIndicator .ptr-spin { width:15px; height:15px; border:2px solid #dfe3e8; border-top-color:var(--blue); border-radius:50%; display:inline-block; }
+    #ptrIndicator.ptr-loading .ptr-spin { animation:ptrspin .7s linear infinite; }
+    @keyframes ptrspin { to { transform:rotate(360deg); } }
+
     .breadcrumb {
       background:#fff; border-bottom:1px solid #f0f0f0;
       padding:0 16px; height:36px;
@@ -83,6 +94,8 @@
 </head>
 <body>
 
+<div id="ptrIndicator"><span class="ptr-spin"></span><span id="ptrText">Pull to refresh</span></div>
+
 <div class="tab-bar" id="tab-bar"></div>
 <div class="loading-bar" id="loading-bar"></div>
 <div class="breadcrumb" id="breadcrumb"></div>
@@ -111,6 +124,12 @@
   const cache = {};          // folderId -> data
   let breadcrumbStack = [];
   let activeTabKey = null;
+  let _refreshing = false;
+
+  // ── PERSISTENT CACHE (stale-while-revalidate) ──
+  const DRIVE_CACHE_KEY = 'enkore_drive_cache_v1';
+  try { Object.assign(cache, JSON.parse(localStorage.getItem(DRIVE_CACHE_KEY) || '{}') || {}); } catch(_) {}
+  function saveDriveCache() { try { localStorage.setItem(DRIVE_CACHE_KEY, JSON.stringify(cache)); } catch(_) {} }
 
   function iconUrl(mime) {
     if (!mime) mime = 'application/octet-stream';
@@ -175,12 +194,13 @@
     }
   }
 
-  function fetchFolder(folderId, cb) {
-    if (cache[folderId]) { cb(cache[folderId]); return; }
+  function fetchFolder(folderId, cb, force) {
+    if (!force && cache[folderId]) { cb(cache[folderId]); return; }
     const cbName = 'cb_' + folderId.replace(/[^a-z0-9]/gi,'') + '_' + Date.now();
     window[cbName] = function(data) {
       delete window[cbName];
       cache[folderId] = data;
+      if (data && data.ok) saveDriveCache();   // persist successful listings
       cb(data);
     };
     const script = document.createElement('script');
@@ -281,18 +301,108 @@
       bar.appendChild(tab);
     });
 
-    // Set first tab active and show loading state
+    // Set first tab active
     activeTabKey = allowed[0];
     const firstF = FOLDERS[allowed[0]];
     breadcrumbStack = [{ id: firstF.id, name: firstF.name }];
     renderBreadcrumb();
-    document.getElementById('file-list').innerHTML =
-      '<div class="state-box"><span class="icon">⏳</span><span class="msg">Loading Drive...</span></div>';
-    showLoading(true);
 
-    // Fetch everything in background
-    prefetchAll();
+    // Mark dots for folders we already have cached.
+    allowed.forEach(function(key) {
+      if (cache[FOLDERS[key].id]) {
+        const tab = document.querySelector('.folder-tab[data-key="' + key + '"]');
+        const dot = tab && tab.querySelector('.tab-dot');
+        if (dot) dot.classList.add('loaded');
+      }
+    });
+
+    const hasAny     = allowed.some(function(k){ return cache[FOLDERS[k].id]; });
+    const loginToken = sessionStorage.getItem('erp_login_token') || '';
+    const doneToken  = sessionStorage.getItem('drive_refreshed_token') || '';
+
+    // Show last loaded content instantly (no spinner) if we have it.
+    if (cache[firstF.id]) renderItems(cache[firstF.id]);
+    else document.getElementById('file-list').innerHTML =
+      '<div class="state-box"><span class="icon">⏳</span><span class="msg">Loading Drive...</span></div>';
+
+    if (!hasAny) {
+      showLoading(true);
+      prefetchAll();                              // first ever load
+    } else if (loginToken && loginToken !== doneToken) {
+      forceRefresh();                             // fresh login — auto refresh once
+    }
+    // else (same session, cache present): show as-is; pull down to refresh
+    if (loginToken) sessionStorage.setItem('drive_refreshed_token', loginToken);
   }
+
+  // ── REFRESH ALL ROOT FOLDERS (force) ──
+  function refreshAllRoots() {
+    return new Promise(function(resolve) {
+      for (const k in cache) delete cache[k];    // drop stale listings (incl. subfolders)
+      let remaining = allowed.length;
+      if (!remaining) { resolve(); return; }
+      allowed.forEach(function(key) {
+        const f = FOLDERS[key];
+        if (!f) { remaining--; if (!remaining) resolve(); return; }
+        fetchFolder(f.id, function() {
+          const tab = document.querySelector('.folder-tab[data-key="' + key + '"]');
+          const dot = tab && tab.querySelector('.tab-dot');
+          if (dot) dot.classList.add('loaded');
+          if (key === activeTabKey) {
+            breadcrumbStack = [{ id: f.id, name: f.name }];
+            renderBreadcrumb();
+            renderItems(cache[f.id]);
+          }
+          remaining--;
+          if (!remaining) { saveDriveCache(); resolve(); }
+        }, true);
+      });
+    });
+  }
+
+  async function forceRefresh() {
+    if (_refreshing) return;
+    _refreshing = true;
+    const ind = document.getElementById('ptrIndicator');
+    ind.style.marginTop = '0px';
+    ind.classList.add('ptr-loading');
+    document.getElementById('ptrText').textContent = 'Refreshing…';
+    await refreshAllRoots();
+    ind.classList.remove('ptr-loading');
+    document.getElementById('ptrText').textContent = 'Pull to refresh';
+    ind.style.marginTop = '-48px';
+    _refreshing = false;
+  }
+
+  // ── PULL TO REFRESH (bound to the scrolling file list) ──
+  (function initPullToRefresh() {
+    const list = document.getElementById('file-list');
+    const ind  = document.getElementById('ptrIndicator');
+    const txt  = document.getElementById('ptrText');
+    const MAX = 80, FIRE = 56;
+    let startY = 0, pulling = false, dist = 0;
+    list.addEventListener('touchstart', function(e) {
+      if (_refreshing || list.scrollTop > 0) { pulling = false; return; }
+      startY = e.touches[0].clientY; pulling = true;
+    }, { passive:true });
+    list.addEventListener('touchmove', function(e) {
+      if (!pulling || _refreshing) return;
+      dist = e.touches[0].clientY - startY;
+      if (dist <= 0) { dist = 0; ind.style.marginTop = '-48px'; return; }
+      if (list.scrollTop > 0) { pulling = false; return; }
+      const eased = Math.min(MAX, dist * 0.5);
+      ind.style.marginTop = (eased - 48) + 'px';
+      txt.textContent = eased >= FIRE ? 'Release to refresh' : 'Pull to refresh';
+    }, { passive:true });
+    list.addEventListener('touchend', function() {
+      if (!pulling) return;
+      pulling = false;
+      const eased = Math.min(MAX, dist * 0.5);
+      if (eased >= FIRE) forceRefresh();
+      else ind.style.marginTop = '-48px';
+      dist = 0;
+    });
+  })();
 
   buildTabs();
 </script>
