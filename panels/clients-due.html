@@ -60,19 +60,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .sh-name{font-size:15px;font-weight:800}
 .sh-sub{font-size:11px;opacity:.85;margin-top:2px}
 .sh-tel{display:inline-block;margin-top:6px;font-size:12px;font-weight:800;color:#fff;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:20px;text-decoration:none}
-.sheet-chips{display:flex;gap:8px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border)}
-.chip{flex:1;text-align:center;background:var(--bg);border-radius:10px;padding:8px 4px}
+/* highlighted summary band — visually distinct from the transactions below */
+.sheet-chips{display:flex;gap:8px;padding:14px 16px;background:var(--redbg);border-bottom:3px solid #ffd8d0;box-shadow:0 4px 10px rgba(192,57,43,.08)}
+.chip{flex:1;text-align:center;background:#fff;border-radius:10px;padding:9px 4px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .chip-l{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
 .chip-v{font-size:15px;font-weight:900;margin-top:2px}
 .chip-v.red{color:var(--red)}
 .chip-v.grn{color:var(--g)}
-.sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px 24px;flex:1}
+.sheet-sec{padding:12px 16px 2px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 14px 24px;flex:1}
 .txn{background:#fff;border-radius:12px;padding:11px 13px;margin-bottom:9px;box-shadow:var(--sh);border-left:4px solid var(--g)}
 .txn.pay{border-left-color:var(--blue)}
 .txn-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
 .txn-date{font-size:13px;font-weight:800}
 .txn-seller{font-size:10px;color:var(--muted);font-weight:600}
 .txn-prod{font-size:11.5px;color:#495057;line-height:1.5;margin-bottom:7px}
+.txn-prod-item{padding:1px 0}
 .txn-pay-tag{display:inline-block;font-size:11px;font-weight:800;color:var(--blue);background:var(--bluebg);padding:2px 8px;border-radius:6px}
 .txn-amts{display:flex;gap:8px;flex-wrap:wrap}
 .amt{flex:1;min-width:70px;background:var(--bg);border-radius:8px;padding:6px 8px;text-align:center}
@@ -122,7 +125,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="sum-sub" id="sumSub">—</div>
   </div>
 
-  <input type="text" class="search" id="search" placeholder="Search name, shop or zone…" oninput="render()" autocomplete="off">
+  <input type="text" class="search" id="search" placeholder="Search name, shop, address or mobile…" oninput="render()" autocomplete="off">
 
   <div class="list" id="list">
     <div class="state"><div class="state-txt"><span class="spin"></span> Loading clients…</div></div>
@@ -145,6 +148,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="chip"><div class="chip-l">Paid</div><div class="chip-v" id="shPaid">৳ 0</div></div>
       <div class="chip"><div class="chip-l">Running Due</div><div class="chip-v red" id="shDue">৳ 0</div></div>
     </div>
+    <div class="sheet-sec">🧾 Detailed Transactions</div>
     <div class="sheet-body" id="shBody"></div>
   </div>
 </div>
@@ -214,8 +218,8 @@ function render(){
   const real=clients.filter(c=>(c.name||'').trim().toLowerCase()!=='demo');
   let rows=real.filter(c=>c.due>0);
 
-  // search
-  if(q) rows=rows.filter(c=>(c.name+' '+c.shop+' '+c.zone+' '+c.loc).toLowerCase().includes(q));
+  // search — matches name, shop, location, zone, mobile, full detail (like Sales panel)
+  if(q) rows=rows.filter(c=>(c.name+' '+c.shop+' '+c.loc+' '+c.zone+' '+c.phone+' '+c.det).toLowerCase().includes(q));
 
   // sort: highest due first
   rows.sort((a,b)=>b.due-a.due);
@@ -275,7 +279,7 @@ function groupTxns(rows){
 
 async function openHistory(c){
   document.getElementById('shName').textContent=c.name||c.shop||'—';
-  document.getElementById('shSub').textContent=[c.shop,c.zone||c.loc].filter(Boolean).join(' · ');
+  document.getElementById('shSub').textContent=[c.shop,c.loc,c.zone].filter(Boolean).join(', ')||'—';
   const tel=document.getElementById('shTel');
   if(c.phone){ tel.style.display='inline-block'; tel.textContent='📞 '+c.phone; tel.href='tel:'+c.phone.replace(/[^0-9+]/g,''); }
   else tel.style.display='none';
@@ -313,7 +317,7 @@ function renderTxns(groups){
     const isPay=g.products.length===0;
     const prodLine=isPay
       ? '<span class="txn-pay-tag">💳 Payment / Collection</span>'
-      : g.products.map(p=>escapeHtml(p.name)+' <b>×'+p.qty+'</b>').join(' · ');
+      : g.products.map(p=>'<div class="txn-prod-item">• '+escapeHtml(p.name)+' <b>×'+p.qty+'</b></div>').join('');
     const dueVal=g.due!==undefined?g.due:'';
     return '<div class="txn'+(isPay?' pay':'')+'">'
       +'<div class="txn-top"><span class="txn-date">'+escapeHtml(g.dateDisplay||'—')+(g.invoiceNo?' · #'+escapeHtml(g.invoiceNo):'')+'</span><span class="txn-seller">'+escapeHtml(g.seller||'')+'</span></div>'
