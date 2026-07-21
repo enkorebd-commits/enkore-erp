@@ -412,6 +412,8 @@
 
       currentUser = { id: userRow.id, name: userRow.name, role: userRow.role || '', panels: userPanels };
       sessionStorage.setItem('erp_user', JSON.stringify(currentUser));
+      // New token per login — panels (e.g. dashboard) use it to auto-refresh once on fresh login.
+      sessionStorage.setItem('erp_login_token', String(Date.now()));
       stat.textContent = '';
       showShell(currentUser);
 
