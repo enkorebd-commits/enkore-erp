@@ -35,7 +35,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 /* LIST */
 .list{display:flex;flex-direction:column;gap:8px}
-.row{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh)}
+.row{display:flex;align-items:flex-start;gap:12px;background:var(--card);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);cursor:pointer;transition:.12s}
+.row:active{transform:scale(.99);background:#fafbfc}
 .rank{flex-shrink:0;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;background:#f1f3f5;color:var(--muted)}
 .rank.r1{background:#fff3bf;color:#b8860b}
 .rank.r2{background:#e9ecef;color:#495057}
@@ -43,10 +44,44 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .row-main{flex:1;min-width:0}
 .row-name{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.row-contact{display:flex;align-items:center;gap:10px;font-size:11px;margin-top:4px;flex-wrap:wrap}
-.row-loc{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
-.row-tel{color:var(--blue);font-weight:800;text-decoration:none;white-space:nowrap}
-.row-tel:active{opacity:.7}
+.row-loc{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-tel-line{margin-top:5px}
+.row-tel{display:inline-block;font-size:12px;color:var(--blue);font-weight:800;text-decoration:none;white-space:nowrap}
+.row-tel:active{opacity:.6}
+.tap-hint{font-size:9px;color:#adb5bd;margin-top:6px;font-weight:600;letter-spacing:.3px}
+
+/* TRANSACTIONS POPUP */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.ov.open{display:flex}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:88vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;animation:up .22s ease}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-hd{background:#c0392b;color:#fff;padding:14px 16px;border-radius:18px 18px 0 0;display:flex;align-items:flex-start;gap:10px;position:sticky;top:0}
+.sheet-hd .sh-x{margin-left:auto;font-size:22px;line-height:1;cursor:pointer;opacity:.9;background:none;border:none;color:#fff;padding:0 2px}
+.sh-name{font-size:15px;font-weight:800}
+.sh-sub{font-size:11px;opacity:.85;margin-top:2px}
+.sh-tel{display:inline-block;margin-top:6px;font-size:12px;font-weight:800;color:#fff;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:20px;text-decoration:none}
+.sheet-chips{display:flex;gap:8px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border)}
+.chip{flex:1;text-align:center;background:var(--bg);border-radius:10px;padding:8px 4px}
+.chip-l{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.chip-v{font-size:15px;font-weight:900;margin-top:2px}
+.chip-v.red{color:var(--red)}
+.chip-v.grn{color:var(--g)}
+.sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px 24px;flex:1}
+.txn{background:#fff;border-radius:12px;padding:11px 13px;margin-bottom:9px;box-shadow:var(--sh);border-left:4px solid var(--g)}
+.txn.pay{border-left-color:var(--blue)}
+.txn-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.txn-date{font-size:13px;font-weight:800}
+.txn-seller{font-size:10px;color:var(--muted);font-weight:600}
+.txn-prod{font-size:11.5px;color:#495057;line-height:1.5;margin-bottom:7px}
+.txn-pay-tag{display:inline-block;font-size:11px;font-weight:800;color:var(--blue);background:var(--bluebg);padding:2px 8px;border-radius:6px}
+.txn-amts{display:flex;gap:8px;flex-wrap:wrap}
+.amt{flex:1;min-width:70px;background:var(--bg);border-radius:8px;padding:6px 8px;text-align:center}
+.amt-l{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+.amt-v{font-size:13px;font-weight:900;margin-top:1px}
+.amt-v.red{color:var(--red)}
+.amt-v.grn{color:var(--g)}
+.txn-cmt{font-size:10.5px;color:var(--muted);margin-top:6px;font-style:italic}
+.sheet-loading,.sheet-empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;font-weight:600}
 .row-fig{flex-shrink:0;text-align:right}
 .fig-primary{font-size:16px;font-weight:900;line-height:1.1}
 .fig-primary.red{color:var(--red)}
@@ -94,15 +129,49 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
 </div>
 
+<!-- TRANSACTIONS POPUP -->
+<div class="ov" id="txnOv">
+  <div class="sheet">
+    <div class="sheet-hd">
+      <div>
+        <div class="sh-name" id="shName">—</div>
+        <div class="sh-sub" id="shSub"></div>
+        <a class="sh-tel" id="shTel" style="display:none"></a>
+      </div>
+      <button class="sh-x" onclick="closeHistory()">×</button>
+    </div>
+    <div class="sheet-chips">
+      <div class="chip"><div class="chip-l">Total Sales</div><div class="chip-v grn" id="shSales">৳ 0</div></div>
+      <div class="chip"><div class="chip-l">Paid</div><div class="chip-v" id="shPaid">৳ 0</div></div>
+      <div class="chip"><div class="chip-l">Running Due</div><div class="chip-v red" id="shDue">৳ 0</div></div>
+    </div>
+    <div class="sheet-body" id="shBody"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
 const SHEET_ID  = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
 const CACHE_KEY = 'enkore_clientsdue_data';
-let clients = [], _ptrBusy = false;
+let clients = [], shownRows = [], _ptrBusy = false;
 
 function tk(n){ if(n===''||n===null||n===undefined) return '৳ 0'; return '৳ '+Number(n||0).toLocaleString('en-IN'); }
 function parseGviz(txt){ try{ const m=txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/); return m?JSON.parse(m[1]):null; }catch(_){ return null; } }
+function ordinal(n){ const s=['th','st','nd','rd'],v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtGvizDate(cell){
+  if(!cell) return {display:'',ts:0};
+  let display=cell.f||String(cell.v||''), ts=0;
+  if(cell.v){
+    const m=String(cell.v).match(/Date\((\d+),(\d+),(\d+)\)/);
+    if(m){ const dt=new Date(+m[1],+m[2],+m[3]); ts=dt.getTime();
+      const mos=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      display=`${ordinal(dt.getDate())} ${mos[dt.getMonth()]}, ${String(dt.getFullYear()).slice(-2)}`;
+    }
+  }
+  return {display,ts};
+}
 function toast(msg, type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='show'+(type==='err'?' err':''); clearTimeout(window._tt); window._tt=setTimeout(()=>t.className='',2200); }
 
 // ── DATA ─────────────────────────────────────────────────────
@@ -163,24 +232,105 @@ function render(){
     el.innerHTML='<div class="state"><div class="state-icon">✅</div><div class="state-txt">No outstanding dues 🎉</div></div>';
     return;
   }
+  shownRows=rows;
   el.innerHTML=rows.map((c,i)=>{
     const rank=i+1;
     const rankCls=rank<=3?('r'+rank):'';
     const sub=[c.shop,c.zone].filter(Boolean).join(' · ');
     const loc=c.loc||c.zone||'';
-    const contact='<div class="row-contact">'
-      +(loc?'<span class="row-loc">📍 '+loc+'</span>':'')
-      +(c.phone?'<a class="row-tel" href="tel:'+c.phone.replace(/[^0-9+]/g,'')+'">📞 '+c.phone+'</a>':'')
-      +'</div>';
-    return '<div class="row">'
+    const telLine=c.phone
+      ? '<div class="row-tel-line"><a class="row-tel" href="tel:'+c.phone.replace(/[^0-9+]/g,'')+'" onclick="event.stopPropagation()">📞 '+escapeHtml(c.phone)+'</a></div>'
+      : '';
+    return '<div class="row" data-idx="'+i+'">'
       +'<div class="rank '+rankCls+'">'+rank+'</div>'
-      +'<div class="row-main"><div class="row-name">'+(c.name||c.shop||'—')+'</div>'
-        +(sub?'<div class="row-sub">'+sub+'</div>':'')
-        +contact
+      +'<div class="row-main"><div class="row-name">'+escapeHtml(c.name||c.shop||'—')+'</div>'
+        +(sub?'<div class="row-sub">'+escapeHtml(sub)+'</div>':'')
+        +(loc?'<div class="row-loc">📍 '+escapeHtml(loc)+'</div>':'')
+        +telLine
       +'</div>'
       +'<div class="row-fig"><div class="fig-primary red">'+tk(c.due)+'</div><div class="fig-sec">Sales '+tk(c.sales)+'</div></div>'
       +'</div>';
   }).join('');
+}
+
+// ── TRANSACTIONS POPUP ───────────────────────────────────────
+function groupTxns(rows){
+  // rows in sheet (chronological) order; group by Invoice No, else by date.
+  const groups=[], seen=new Map();
+  rows.forEach(r=>{
+    const key=r.invoiceNo?('inv_'+r.invoiceNo):(r.dateDisplay||String(r.dateTs));
+    if(!seen.has(key)){
+      const g={dateDisplay:r.dateDisplay,dateTs:r.dateTs,invoiceNo:r.invoiceNo||'',seller:'',products:[],totalBill:0,totalPaid:0,due:undefined,comment:''};
+      seen.set(key,g); groups.push(g);
+    }
+    const g=seen.get(key);
+    if(r.seller)  g.seller=r.seller;
+    if(r.comment) g.comment=r.comment;
+    if(r.prod){ g.products.push({name:r.prod,qty:r.qty,final:r.final||r.bill}); g.totalBill+=(r.final||r.bill||0); }
+    if(r.paid) g.totalPaid+=r.paid;
+    if(r.due!==undefined) g.due=r.due;
+  });
+  return groups.reverse(); // newest first
+}
+
+async function openHistory(c){
+  document.getElementById('shName').textContent=c.name||c.shop||'—';
+  document.getElementById('shSub').textContent=[c.shop,c.zone||c.loc].filter(Boolean).join(' · ');
+  const tel=document.getElementById('shTel');
+  if(c.phone){ tel.style.display='inline-block'; tel.textContent='📞 '+c.phone; tel.href='tel:'+c.phone.replace(/[^0-9+]/g,''); }
+  else tel.style.display='none';
+  document.getElementById('shSales').textContent=tk(c.sales);
+  document.getElementById('shPaid').textContent =tk(c.paid);
+  document.getElementById('shDue').textContent  =tk(c.due);
+  document.getElementById('shBody').innerHTML='<div class="sheet-loading"><span class="spin"></span> Loading transactions…</div>';
+  document.getElementById('txnOv').classList.add('open');
+  document.body.style.overflow='hidden';
+
+  try{
+    const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sale%20Entry&t=${Date.now()}`;
+    const data=parseGviz(await fetch(url).then(r=>r.text()));
+    if(!data) throw new Error('parse');
+    const rows=(data.table.rows||[]).filter(r=>r.c?.[1]?.v===c.det).map(r=>{
+      const di=fmtGvizDate(r.c[0]);
+      return {
+        dateDisplay:di.display, dateTs:di.ts,
+        prod:r.c[3]?.v||'', bill:r.c[7]?.v||0, final:r.c[9]?.v||0,
+        qty:r.c[6]?.v||0, paid:r.c[12]?.v||0, due:r.c[13]?.v,
+        comment:r.c[14]?.v||'', seller:r.c[15]?.v||'', invoiceNo:r.c[23]?.v||''
+      };
+    });
+    renderTxns(groupTxns(rows));
+  }catch(e){
+    console.error('txn load:',e);
+    document.getElementById('shBody').innerHTML='<div class="sheet-empty">Failed to load. Check internet.</div>';
+  }
+}
+
+function renderTxns(groups){
+  const el=document.getElementById('shBody');
+  if(!groups.length){ el.innerHTML='<div class="sheet-empty">No transactions yet.</div>'; return; }
+  el.innerHTML=groups.map(g=>{
+    const isPay=g.products.length===0;
+    const prodLine=isPay
+      ? '<span class="txn-pay-tag">💳 Payment / Collection</span>'
+      : g.products.map(p=>escapeHtml(p.name)+' <b>×'+p.qty+'</b>').join(' · ');
+    const dueVal=g.due!==undefined?g.due:'';
+    return '<div class="txn'+(isPay?' pay':'')+'">'
+      +'<div class="txn-top"><span class="txn-date">'+escapeHtml(g.dateDisplay||'—')+(g.invoiceNo?' · #'+escapeHtml(g.invoiceNo):'')+'</span><span class="txn-seller">'+escapeHtml(g.seller||'')+'</span></div>'
+      +'<div class="txn-prod">'+prodLine+'</div>'
+      +'<div class="txn-amts">'
+        +(isPay?'':'<div class="amt"><div class="amt-l">Bill</div><div class="amt-v">'+tk(g.totalBill)+'</div></div>')
+        +'<div class="amt"><div class="amt-l">Paid</div><div class="amt-v grn">'+tk(g.totalPaid)+'</div></div>'
+        +'<div class="amt"><div class="amt-l">Due</div><div class="amt-v red">'+tk(dueVal)+'</div></div>'
+      +'</div>'
+      +(g.comment?'<div class="txn-cmt">📝 '+escapeHtml(g.comment)+'</div>':'')
+      +'</div>';
+  }).join('');
+}
+
+function closeHistory(){
+  document.getElementById('txnOv').classList.remove('open');
+  document.body.style.overflow='';
 }
 
 // ── PULL TO REFRESH ──────────────────────────────────────────
@@ -232,6 +382,16 @@ function initPullToRefresh(){
 window.addEventListener('DOMContentLoaded', ()=>{
   loadClients();
   initPullToRefresh();
+  // Tap a client card → open its transactions (ignore taps on the phone link).
+  document.getElementById('list').addEventListener('click', e=>{
+    if(e.target.closest('.row-tel')) return;
+    const row=e.target.closest('.row'); if(!row) return;
+    const c=shownRows[+row.dataset.idx]; if(c) openHistory(c);
+  });
+  // Tap dark backdrop to close the popup.
+  document.getElementById('txnOv').addEventListener('click', e=>{
+    if(e.target.id==='txnOv') closeHistory();
+  });
 });
 </script>
 </body>
