@@ -170,9 +170,16 @@
     .state { text-align:center; padding:30px 20px; color:var(--sub2); font-size:13px; }
     .spin { width:22px; height:22px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px; }
     @keyframes spin { to { transform:rotate(360deg); } }
+    /* minimal live-refresh bar (stale-while-revalidate) */
+    #live-bar { position:sticky; top:0; z-index:50; display:none; align-items:center; justify-content:center; gap:8px;
+      background:#eaf4fb; color:var(--blue-d); font-size:12px; font-weight:600; padding:7px 12px; border-bottom:1px solid #d4e8f7; }
+    #live-bar.show { display:flex; }
+    #live-bar .lb-spin { width:13px; height:13px; border:2px solid #b9dcf3; border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; }
   </style>
 </head>
 <body>
+
+<div id="live-bar"><span class="lb-spin"></span> Updating live data…</div>
 
 <div class="greeting">
   <div class="g-date"  id="g-date"></div>
@@ -234,7 +241,36 @@
     "Every great company started where you are now.",
     "Focus on the process — results will follow.",
     "Your team is your greatest asset.",
-    "Done is better than perfect."
+    "Done is better than perfect.",
+    "Take care of the customer and the numbers take care of themselves.",
+    "Discipline today, freedom tomorrow.",
+    "What gets measured gets managed.",
+    "Cash flow is the heartbeat of every business.",
+    "Slow is smooth, smooth is fast.",
+    "Sell the problem you solve, not the product.",
+    "A satisfied customer is the best marketing.",
+    "Consistency beats intensity over time.",
+    "Watch the pennies and the taka will follow.",
+    "Plan the work, then work the plan.",
+    "The best time to collect a due is the day it is due.",
+    "Grow revenue, guard margin, keep the cash.",
+    "Reputation is built in drops and lost in buckets.",
+    "Every rider you serve is a story we keep moving.",
+    "Quality is remembered long after price is forgotten.",
+    "Progress, not perfection, every single day.",
+    "Know your numbers before they surprise you.",
+    "One honest sale earns ten more.",
+    "Systems run the business; you run the systems.",
+    "Show up, follow up, and never give up.",
+    "Small margins, big volume, tight discipline.",
+    "Serve first, sell second, profit third.",
+    "The market rewards those who keep showing up.",
+    "Turn today's effort into tomorrow's advantage.",
+    "Care that keeps you moving starts with the team.",
+    "Fix the leak before you pour more water.",
+    "Trust is the cheapest marketing and the hardest to earn.",
+    "A good day is a collected day.",
+    "Momentum loves preparation."
   ];
 
   // open native date picker (desktop + mobile)
@@ -280,7 +316,8 @@
     const first = userName.split(' ')[0];
     document.getElementById('g-date').textContent  = wd+' · '+fmtDate(now);
     document.getElementById('g-name').textContent  = wrd + ', ' + first + ' 👋';
-    document.getElementById('g-quote').textContent = '" ' + QUOTES[now.getDay()] + ' "';
+    const doy = Math.floor((now - new Date(now.getFullYear(),0,0)) / 86400000); // day of year → rotates daily
+    document.getElementById('g-quote').textContent = '" ' + QUOTES[doy % QUOTES.length] + ' "';
   })();
 
   function initials(name) {
@@ -392,6 +429,7 @@
       });
 
       window._financeLoaded = true;
+      window._lastCash = { chayan, anik };
       buildDash({ cash:{ chayan, anik } });
     } catch(e) {
       console.error(e);
@@ -401,7 +439,6 @@
       }
     }
   }
-  loadFinance();
 
   /* ═══════════════════════════════════════════════════════════
      SALES ANALYTICS — reads "Sale Entry - Helper" tab from
@@ -466,6 +503,7 @@
         };
       }).filter(Boolean);
       AN_ROWS = rows;
+      window._anLoaded = true;
       renderYTD();
       renderAnalytics();
     } catch(e) {
@@ -638,7 +676,64 @@
     eEl.max = isoLocal(now);
     document.getElementById('ds-show').textContent = fmtDate(first);
     document.getElementById('de-show').textContent = fmtDate(now);
-    loadAnalytics();
+  })();
+
+  // ── STALE-WHILE-REVALIDATE (1-hour freshness) ──
+  // Show the last loaded data instantly; only pull fresh live data (with a
+  // minimal top bar) when the cache is older than one hour.
+  const DASH_CACHE_KEY = 'enkore_dash_cache_v1';
+  const DASH_TTL = 60 * 60 * 1000; // 1 hour
+  let _dashRefreshing = false;
+
+  function saveDashCache() {
+    if (!window._financeLoaded || !window._anLoaded) return; // cache only a complete load
+    try {
+      localStorage.setItem(DASH_CACHE_KEY, JSON.stringify({
+        ts:   Date.now(),
+        cash: window._lastCash || { chayan:'', anik:'' },
+        exp:  EXP_ROWS.map(e => ({ d: e.d.getTime(), amt: e.amt })),
+        an:   AN_ROWS.map(r => ({ d: r.d.getTime(), client:r.client, sales:r.sales, paid:r.paid, seller:r.seller, pmc:r.pmc }))
+      }));
+    } catch(_) {}
+  }
+
+  function hydrateDashCache() {
+    let c;
+    try { c = JSON.parse(localStorage.getItem(DASH_CACHE_KEY) || 'null'); } catch(_) { c = null; }
+    if (!c || !c.ts) return null;
+    EXP_ROWS = (c.exp||[]).map(e => ({ d: new Date(e.d), amt: e.amt }));
+    AN_ROWS  = (c.an ||[]).map(r => ({ d: new Date(r.d), client:r.client, sales:r.sales, paid:r.paid, seller:r.seller, pmc:r.pmc }));
+    window._expLoaded = true; window._financeLoaded = true; window._anLoaded = true;
+    window._lastCash = c.cash || { chayan:'', anik:'' };
+    buildDash({ cash: window._lastCash });
+    renderYTD();
+    renderAnalytics();
+    return c.ts;
+  }
+
+  function showLiveBar(on) {
+    const b = document.getElementById('live-bar');
+    if (b) b.classList.toggle('show', !!on);
+  }
+
+  async function refreshDashLive(showBar) {
+    if (_dashRefreshing) return;
+    _dashRefreshing = true;
+    if (showBar) showLiveBar(true);
+    await Promise.allSettled([loadFinance(), loadAnalytics()]);
+    saveDashCache();
+    showLiveBar(false);
+    _dashRefreshing = false;
+  }
+
+  (function startDashboard() {
+    const ts = hydrateDashCache();
+    if (ts === null) {
+      refreshDashLive(false);                 // first ever load — full-screen loaders already showing
+    } else if (Date.now() - ts >= DASH_TTL) {
+      refreshDashLive(true);                  // cache > 1h old — show cached, refresh with top bar
+    }
+    // else: cache < 1h old — show it as-is, no refetch
   })();
 </script>
 </body>
