@@ -170,16 +170,17 @@
     .state { text-align:center; padding:30px 20px; color:var(--sub2); font-size:13px; }
     .spin { width:22px; height:22px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    /* minimal live-refresh bar (stale-while-revalidate) */
-    #live-bar { position:sticky; top:0; z-index:50; display:none; align-items:center; justify-content:center; gap:8px;
-      background:#eaf4fb; color:var(--blue-d); font-size:12px; font-weight:600; padding:7px 12px; border-bottom:1px solid #d4e8f7; }
-    #live-bar.show { display:flex; }
-    #live-bar .lb-spin { width:13px; height:13px; border:2px solid #b9dcf3; border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; }
+    /* pull-to-refresh indicator */
+    #ptrIndicator { position:fixed; top:0; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:8px;
+      height:52px; margin-top:-52px; font-size:13px; font-weight:600; color:var(--sub2); background:var(--bg); z-index:60;
+      transition:margin-top .18s ease; pointer-events:none; }
+    #ptrIndicator .ptr-spin { width:15px; height:15px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; display:inline-block; }
+    #ptrIndicator.ptr-loading .ptr-spin { animation:spin .7s linear infinite; }
   </style>
 </head>
 <body>
 
-<div id="live-bar"><span class="lb-spin"></span> Updating live data…</div>
+<div id="ptrIndicator"><span class="ptr-spin"></span><span id="ptrText">Pull to refresh</span></div>
 
 <div class="greeting">
   <div class="g-date"  id="g-date"></div>
@@ -682,7 +683,6 @@
   // Show the last loaded data instantly; only pull fresh live data (with a
   // minimal top bar) when the cache is older than one hour.
   const DASH_CACHE_KEY = 'enkore_dash_cache_v1';
-  const DASH_TTL = 60 * 60 * 1000; // 1 hour
   let _dashRefreshing = false;
 
   function saveDashCache() {
@@ -711,29 +711,65 @@
     return c.ts;
   }
 
-  function showLiveBar(on) {
-    const b = document.getElementById('live-bar');
-    if (b) b.classList.toggle('show', !!on);
-  }
-
-  async function refreshDashLive(showBar) {
+  async function refreshDashLive() {
     if (_dashRefreshing) return;
     _dashRefreshing = true;
-    if (showBar) showLiveBar(true);
     await Promise.allSettled([loadFinance(), loadAnalytics()]);
     saveDashCache();
-    showLiveBar(false);
     _dashRefreshing = false;
   }
 
   (function startDashboard() {
+    const loginToken = sessionStorage.getItem('erp_login_token') || '';
+    const doneToken  = sessionStorage.getItem('dash_refreshed_token') || '';
     const ts = hydrateDashCache();
     if (ts === null) {
-      refreshDashLive(false);                 // first ever load — full-screen loaders already showing
-    } else if (Date.now() - ts >= DASH_TTL) {
-      refreshDashLive(true);                  // cache > 1h old — show cached, refresh with top bar
+      refreshDashLive();                              // first ever load — full-screen loaders showing
+    } else if (loginToken && loginToken !== doneToken) {
+      forceRefresh();                                 // fresh login — auto-refresh once, cached shown meanwhile
     }
-    // else: cache < 1h old — show it as-is, no refetch
+    // else (same session, cache present): show as-is; pull down for the latest
+    if (loginToken) sessionStorage.setItem('dash_refreshed_token', loginToken);
+  })();
+
+  // ── PULL TO REFRESH / AUTO REFRESH (manual + on login) ──
+  async function forceRefresh() {
+    const ind = document.getElementById('ptrIndicator');
+    ind.style.marginTop = '0px';
+    ind.classList.add('ptr-loading');
+    document.getElementById('ptrText').textContent = 'Refreshing…';
+    await refreshDashLive();
+    ind.classList.remove('ptr-loading');
+    document.getElementById('ptrText').textContent = 'Pull to refresh';
+    ind.style.marginTop = '-52px';
+  }
+
+  (function initPullToRefresh() {
+    const ind = document.getElementById('ptrIndicator');
+    const txt = document.getElementById('ptrText');
+    const MAX = 84, FIRE = 58;
+    let startY = 0, pulling = false, dist = 0;
+    document.addEventListener('touchstart', e => {
+      if (_dashRefreshing || window.scrollY > 0) { pulling = false; return; }
+      startY = e.touches[0].clientY; pulling = true;
+    }, { passive:true });
+    document.addEventListener('touchmove', e => {
+      if (!pulling || _dashRefreshing) return;
+      dist = e.touches[0].clientY - startY;
+      if (dist <= 0) { dist = 0; ind.style.marginTop = '-52px'; return; }
+      if (window.scrollY > 0) { pulling = false; return; }
+      const eased = Math.min(MAX, dist * 0.5);
+      ind.style.marginTop = (eased - 52) + 'px';
+      txt.textContent = eased >= FIRE ? 'Release to refresh' : 'Pull to refresh';
+    }, { passive:true });
+    document.addEventListener('touchend', () => {
+      if (!pulling) return;
+      pulling = false;
+      const eased = Math.min(MAX, dist * 0.5);
+      if (eased >= FIRE) forceRefresh();
+      else ind.style.marginTop = '-52px';
+      dist = 0;
+    });
   })();
 </script>
 </body>
