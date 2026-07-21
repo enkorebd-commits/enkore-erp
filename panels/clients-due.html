@@ -154,10 +154,13 @@ function setView(v){
 // ── RENDER ───────────────────────────────────────────────────
 function render(){
   const q=(document.getElementById('search').value||'').trim().toLowerCase();
-  let rows=clients.slice();
+  // Hide demo/test clients from this dashboard (name is literally "demo").
+  const real=clients.filter(c=>(c.name||'').trim().toLowerCase()!=='demo');
+  let rows=real.slice();
 
-  // filter to relevant set
-  if(view==='dues') rows=rows.filter(c=>c.due>0);
+  // filter to relevant set — hide zero-value clients
+  if(view==='dues')  rows=rows.filter(c=>c.due>0);
+  if(view==='sales') rows=rows.filter(c=>c.sales>0);
 
   // search
   if(q) rows=rows.filter(c=>(c.name+' '+c.shop+' '+c.zone+' '+c.loc).toLowerCase().includes(q));
@@ -167,14 +170,14 @@ function render(){
 
   // summary
   if(view==='dues'){
-    const totalDue=clients.reduce((s,c)=>s+(c.due>0?c.due:0),0);
-    const cnt=clients.filter(c=>c.due>0).length;
+    const totalDue=real.reduce((s,c)=>s+(c.due>0?c.due:0),0);
+    const cnt=real.filter(c=>c.due>0).length;
     document.getElementById('sumLbl').textContent='Total Outstanding Due';
     document.getElementById('sumAmt').textContent=tk(totalDue);
     document.getElementById('sumSub').textContent=cnt+' client'+(cnt===1?'':'s')+' with due';
   }else{
-    const totalSales=clients.reduce((s,c)=>s+(c.sales||0),0);
-    const cnt=clients.filter(c=>c.sales>0).length;
+    const totalSales=real.reduce((s,c)=>s+(c.sales||0),0);
+    const cnt=real.filter(c=>c.sales>0).length;
     document.getElementById('sumLbl').textContent='Total Sales (All Clients)';
     document.getElementById('sumAmt').textContent=tk(totalSales);
     document.getElementById('sumSub').textContent=cnt+' active client'+(cnt===1?'':'s');
