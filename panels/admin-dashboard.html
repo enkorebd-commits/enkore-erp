@@ -21,6 +21,7 @@
       --r:       16px;
       --sh:      0 1px 3px rgba(18,22,33,.06), 0 0 1px rgba(18,22,33,.08);
     }
+    html { background:#f4f6fa; }
     body {
       font-family:'Inter',sans-serif;
       background:var(--bg);
@@ -28,7 +29,11 @@
       overflow-y:auto;
       min-height:100vh;
       padding-bottom:28px;
+      /* Cloak until the cached data is painted, so opening the panel shows the
+         content in one step instead of flashing the loading placeholders. */
+      visibility:hidden;
     }
+    body.booted { visibility:visible; }
 
     /* ── greeting ── */
     /* brand navy — deep shades of the Enkore blue (#29ABE2) */
@@ -602,7 +607,7 @@
         ]
       },
       options: {
-        responsive:true, maintainAspectRatio:false,
+        responsive:true, maintainAspectRatio:false, animation:false,
         interaction:{ mode:'index', intersect:false },
         plugins:{
           legend:{ labels:{ boxWidth:10, color:'rgba(255,255,255,.75)', font:{ family:'Inter', size:10, weight:'700' } } },
@@ -723,6 +728,8 @@
     const loginToken = sessionStorage.getItem('erp_login_token') || '';
     const doneToken  = sessionStorage.getItem('dash_refreshed_token') || '';
     const ts = hydrateDashCache();
+    // Reveal now — cached content (or the first-load spinner) is painted in one step.
+    document.body.classList.add('booted');
     if (ts === null) {
       refreshDashLive();                              // first ever load — full-screen loaders showing
     } else if (loginToken && loginToken !== doneToken) {
@@ -731,6 +738,8 @@
     // else (same session, cache present): show as-is; pull down for the latest
     if (loginToken) sessionStorage.setItem('dash_refreshed_token', loginToken);
   })();
+  // Safety net: never leave the page cloaked if something above throws.
+  window.addEventListener('load', function(){ document.body.classList.add('booted'); });
 
   // ── PULL TO REFRESH / AUTO REFRESH (manual + on login) ──
   async function forceRefresh() {
