@@ -563,11 +563,11 @@
     outFrame.style.zIndex = '1';
     loadFrame(inFrame, url);
 
+    // Start the slide on the very next frame — the motion is immediate on tap;
+    // the incoming panel keeps loading during and after the slide. Its solid
+    // background (and per-panel cloak) covers the load so there's no white flash.
     _pendingSlide = { inIdx, file, dir, outFrame, inFrame };
-    let started = false;
-    const go = () => { if (started) return; started = true; _startSlide(); };
-    inFrame.addEventListener('load', go, { once: true });
-    setTimeout(go, 500); // fallback if the load event is slow
+    requestAnimationFrame(_startSlide);
   }
 
   let _pendingSlide = null;
