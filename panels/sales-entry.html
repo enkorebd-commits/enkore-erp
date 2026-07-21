@@ -70,6 +70,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .fi:focus{border-color:var(--g)}
 .fi[readonly]{background:#f8f9fa;color:var(--muted);cursor:default}
 .fi.big-calc{background:#1a1a2e;color:#69db7c;font-weight:900;font-size:18px;border-color:#1a1a2e;text-align:center}
+.fi.big-calc.due-red{background:#e03131;color:#fff;border-color:#e03131}
+
+/* PULL TO REFRESH */
+#ptrIndicator{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:8px;height:56px;margin-top:-56px;font-size:13px;font-weight:800;color:var(--muted);background:var(--bg);z-index:250;transition:margin-top .18s ease;pointer-events:none}
+#ptrIndicator .ptr-spin{width:16px;height:16px;border:2.5px solid #d0d4dc;border-top-color:var(--blue,#2f6fed);border-radius:50%;display:inline-block;animation:none}
+#ptrIndicator.ptr-ready .ptr-spin{transform:rotate(180deg);transition:transform .15s}
+#ptrIndicator.ptr-loading .ptr-spin{animation:ptr-rot .6s linear infinite}
+@keyframes ptr-rot{to{transform:rotate(360deg)}}
 select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
@@ -341,6 +349,8 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 </head>
 <body>
 
+<div id="ptrIndicator"><span class="ptr-spin"></span><span id="ptrText">Pull to refresh</span></div>
+
 <div class="hdr notes" id="mainHdr">
   <div class="tabs">
     <div class="tab on notes-tab" id="tabNotes" onclick="setMode('notes')">📋 Notes</div>
@@ -408,19 +418,16 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
       </div>
       <div class="fg">
         <div class="fl">New Due After Entry</div>
-        <input type="text" class="fi big-calc" id="newDue" readonly value="৳ 0">
-      </div>
-      <div class="fg" style="background:var(--gbg);border:1.5px solid var(--g);border-radius:8px;padding:10px 13px;display:flex;align-items:center;gap:10px">
-        <span style="font-size:20px">👤</span>
-        <div>
-          <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:1px">Entry By</div>
-          <div style="font-size:14px;font-weight:800;color:var(--g)" id="saleUserName">—</div>
-          <div style="font-size:11px;color:var(--muted)" id="saleUserId"></div>
-        </div>
+        <input type="text" class="fi big-calc due-red" id="newDue" readonly value="৳ 0">
       </div>
       <div class="fg">
         <div class="fl">Comment</div>
         <input type="text" class="fi" id="comment" placeholder="Optional note…">
+      </div>
+      <!-- Hidden — user info still tracked for submission, just not shown as a card -->
+      <div style="display:none">
+        <span id="saleUserName">—</span>
+        <span id="saleUserId"></span>
       </div>
     </div>
 
@@ -644,6 +651,7 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('online', () => { toast('🌐 Back online — syncing…', 'ok'); flushQueue(); flushNoteQueue(); });
   loadNotes();
   checkPendingPhotoUpload();
+  initPullToRefresh();
   document.addEventListener('click', e => {
     if (!e.target.closest('.cs-wrap')) { closeDd(); ndCloseDd(); }
   });
@@ -744,16 +752,20 @@ function tk(n) { if(n===''||n===null||n===undefined) return '৳ 0'; return '৳
 
 // ── DATA LOADING ──────────────────────────────────────────────
 async function loadAllData() {
+  // 1) Instant paint from cache for a fast first render (no early return —
+  //    we ALWAYS revalidate below so the card reflects live Clients Info figures).
   try {
     const cached = sessionStorage.getItem(CACHE_KEY);
     if (cached) {
       const { products, clientList, zoneList } = JSON.parse(cached);
       fillProductSelects(products); clients = clientList;
       if (zoneList) window._zones = zoneList;
-      return;
     }
   } catch(_) {}
+  // 2) Stale-while-revalidate: refetch the sheet in the background so the
+  //    Sales / Paid / Due your formulas compute reach the app every load.
   try {
+    const prevClients = Array.isArray(clients) ? clients.slice() : []; // may hold just-added local clients
     const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
     const [prodTxt, clientTxt, zoneTxt] = await Promise.all([
       fetch(`${base}&sheet=Control&range=F3:F`).then(r=>r.text()),
@@ -773,11 +785,86 @@ async function loadAllData() {
       paid:  r.c[9]?.v||0,
       due:   r.c[10]?.v||0,
     }));
+    // Preserve any locally-added client the sheet hasn't caught up to yet.
+    prevClients.forEach(pc => {
+      if (pc && pc.det && !clientList.some(c => c.det === pc.det)) clientList.push(pc);
+    });
     const zoneList   = (parseGviz(zoneTxt)?.table.rows||[]).map(r=>String(r.c?.[0]?.v||'').trim()).filter(v=>v);
     window._zones    = zoneList;
     sessionStorage.setItem(CACHE_KEY, JSON.stringify({ products, clientList, zoneList }));
     fillProductSelects(products); clients = clientList;
+    // Re-point the open card to the fresh figures (fixes stale Sales / Due).
+    if (selClient) {
+      const fresh = clients.find(x => x.det === selClient.det);
+      if (fresh) { selClient = fresh; showStatus(selClient); if (mode === 'payment') updatePayDue(selClient); }
+    }
   } catch(e) { console.error('data load:', e); }
+}
+
+// ── PULL TO REFRESH ──────────────────────────────────────────
+// Wipes the sheet cache and refetches Clients Info + Notes so the whole
+// panel (client card, sale/collection figures, notes list) is forced current.
+let _ptrBusy = false;
+async function forceFullRefresh() {
+  if (_ptrBusy) return;
+  _ptrBusy = true;
+  const ind = document.getElementById('ptrIndicator');
+  ind.classList.remove('ptr-ready'); ind.classList.add('ptr-loading');
+  document.getElementById('ptrText').textContent = 'Refreshing…';
+  try { sessionStorage.removeItem(CACHE_KEY); } catch(_) {}
+  try {
+    await loadAllData();
+    notesLoaded = false;
+    await loadNotes();
+    toast('✅ Refreshed', 'ok');
+  } catch(e) {
+    console.error('pull-to-refresh:', e);
+    toast('Refresh failed — check connection', 'err');
+  } finally {
+    _ptrBusy = false;
+    ind.classList.remove('ptr-loading');
+    document.getElementById('ptrText').textContent = 'Pull to refresh';
+  }
+}
+
+function initPullToRefresh() {
+  const ind  = document.getElementById('ptrIndicator');
+  const txt  = document.getElementById('ptrText');
+  const MAX  = 90;    // px of pull before it caps
+  const FIRE = 60;    // px pull required to trigger a refresh
+  let startY = 0, pulling = false, dist = 0;
+
+  document.addEventListener('touchstart', e => {
+    if (_ptrBusy) return;
+    // Only start tracking when the page is already scrolled to the very top —
+    // otherwise this would fight with normal list/drawer scrolling.
+    if (window.scrollY > 0) { pulling = false; return; }
+    startY  = e.touches[0].clientY;
+    pulling = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!pulling || _ptrBusy) return;
+    dist = e.touches[0].clientY - startY;
+    if (dist <= 0) { dist = 0; ind.style.marginTop = '-56px'; ind.classList.remove('ptr-ready'); return; }
+    if (window.scrollY > 0) { pulling = false; return; } // user started scrolling content instead
+    const eased = Math.min(MAX, dist * 0.5); // resistance so it doesn't feel too loose
+    ind.style.marginTop = (eased - 56) + 'px';
+    if (eased >= FIRE * 0.5) { ind.classList.add('ptr-ready'); txt.textContent = eased >= FIRE ? 'Release to refresh' : 'Pull to refresh'; }
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (!pulling) return;
+    pulling = false;
+    const eased = Math.min(MAX, dist * 0.5);
+    if (eased >= FIRE) {
+      ind.style.marginTop = '0px';
+      forceFullRefresh().then(() => { ind.style.marginTop = '-56px'; ind.classList.remove('ptr-ready'); });
+    } else {
+      ind.style.marginTop = '-56px'; ind.classList.remove('ptr-ready');
+    }
+    dist = 0;
+  });
 }
 
 function fillProductSelects(products) {
@@ -1868,7 +1955,7 @@ async function submitEntry() {
   try {
     const dateStr  = fmtDate(new Date());
     const submitId = 'se_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-    let params, newDueVal;
+    let params, newDueVal, saleAmount = 0, paidAmt = 0;
 
     if (mode === 'sale') {
       const rows  = document.querySelectorAll('#prodRows .prod-row');
@@ -1893,6 +1980,7 @@ async function submitEntry() {
       const prev     = selClient.due || 0;
       const totalFinal = prods.reduce((s,p) => s + Math.max(0, p.rate * p.qty - p.discount), 0);
       newDueVal = totalFinal + prev - paid;
+      saleAmount = totalFinal; paidAmt = paid;
 
       if (!valid)  { toast('Fill all product details', 'err'); resetBtn(btn, 'Submit Sale Entry'); return; }
       if (!seller) { toast('Not logged in — refresh ERP', 'err'); resetBtn(btn, 'Submit Sale Entry'); return; }
@@ -1912,6 +2000,7 @@ async function submitEntry() {
       const comment  = document.getElementById('pComment').value;
       const prev     = selClient.due || 0;
       newDueVal      = prev - paid;
+      paidAmt        = paid;
 
       if (!paid)   { toast('Enter amount collected', 'err'); resetBtn(btn, 'Submit Payment'); return; }
       if (!seller) { toast('Not logged in — refresh ERP', 'err'); resetBtn(btn, 'Submit Payment'); return; }
@@ -1926,9 +2015,15 @@ async function submitEntry() {
     const qs = Object.entries(params).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
 
     // ── OPTIMISTIC UI — instant feedback, no waiting ──
-    selClient.due = newDueVal;
+    // Update due AND sales/paid so the card moves immediately; the background
+    // revalidate in loadAllData() later reconciles to the exact sheet figures.
+    selClient.due   = newDueVal;
+    selClient.sales = (selClient.sales || 0) + saleAmount;
+    selClient.paid  = (selClient.paid  || 0) + paidAmt;
     const ci = clients.findIndex(x => x.det === selClient.det);
-    if (ci >= 0) clients[ci].due = newDueVal;
+    if (ci >= 0) { clients[ci].due = newDueVal; clients[ci].sales = selClient.sales; clients[ci].paid = selClient.paid; }
+    // Keep the cache aligned so a reload before revalidate still shows real numbers.
+    try { const cc = JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}'); cc.clientList = clients; sessionStorage.setItem(CACHE_KEY, JSON.stringify(cc)); } catch(_) {}
     showStatus(selClient);
     if (mode === 'payment') updatePayDue(selClient);
     if (window._pendingNoteId) {
@@ -2432,6 +2527,10 @@ function forwardToSale(noteId) {
   });
   calcAll();
   document.getElementById('comment').value = note.comment || '';
+  // Note: previously called an undefined autoFillSeller() here, which threw
+  // and silently aborted the function before this line ever ran — that's
+  // why _pendingNoteId was never actually being set, on any forward, ever.
+  // Seller info is already correct from fillUserBadges() at page load.
 
   window._pendingNoteId = noteId; // resolved only on actual sale submission
   toast('📋 Loaded from note — add payment and submit', 'ok');
