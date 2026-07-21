@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Clients Due — Enkore</title>
+<style>
+:root{
+  --g:#1b6b3a;--g2:#2d8a52;--gbg:#edf7f1;--red:#e03131;--redbg:#fff5f5;
+  --orange:#e67e22;--blue:#1971c2;--bluebg:#e7f1fb;--text:#1a1a2e;--muted:#868e96;
+  --border:#dee2e6;--bg:#f3f4f6;--card:#fff;--r:12px;--sh:0 2px 8px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior:none}
+
+/* HEADER + TABS (mirrors Sales panel) */
+.hdr{color:#fff;padding:12px 16px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2);transition:background .3s}
+.hdr.dues{background:#c0392b}
+.hdr.sales{background:var(--g)}
+.hdr-title{font-size:13px;font-weight:800;letter-spacing:.3px;margin-bottom:8px;opacity:.95}
+.tabs{display:flex;gap:2px}
+.tab{flex:1;padding:10px 8px;text-align:center;font-size:13px;font-weight:700;color:rgba(255,255,255,.55);border-bottom:3px solid transparent;cursor:pointer;transition:.2s;user-select:none}
+.tab.on.dues-tab{color:#fff;border-bottom-color:#ffa8a8}
+.tab.on.sales-tab{color:#fff;border-bottom-color:#69db7c}
+
+.body{padding:14px;max-width:560px;margin:0 auto}
+
+/* SUMMARY CARD */
+.sum{border-radius:var(--r);padding:16px;margin-bottom:12px;color:#fff}
+.sum.dues{background:linear-gradient(135deg,#c0392b,#e03131)}
+.sum.sales{background:linear-gradient(135deg,#1b6b3a,#2d8a52)}
+.sum-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:.85;margin-bottom:4px}
+.sum-amt{font-size:30px;font-weight:900;letter-spacing:-.5px;line-height:1}
+.sum-sub{font-size:12px;opacity:.85;margin-top:6px}
+
+/* SEARCH */
+.search{width:100%;padding:11px 14px;font-size:14px;border:1.5px solid var(--border);border-radius:10px;outline:none;background:#fff;color:var(--text);margin-bottom:12px}
+.search:focus{border-color:var(--blue)}
+
+/* LIST */
+.list{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh)}
+.rank{flex-shrink:0;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;background:#f1f3f5;color:var(--muted)}
+.rank.r1{background:#fff3bf;color:#b8860b}
+.rank.r2{background:#e9ecef;color:#495057}
+.rank.r3{background:#ffe8cc;color:#d9480f}
+.row-main{flex:1;min-width:0}
+.row-name{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.row-fig{flex-shrink:0;text-align:right}
+.fig-primary{font-size:16px;font-weight:900;line-height:1.1}
+.fig-primary.red{color:var(--red)}
+.fig-primary.grn{color:var(--g)}
+.fig-sec{font-size:10px;color:var(--muted);margin-top:2px;font-weight:600}
+.fig-sec.red{color:var(--red)}
+
+/* STATES */
+.state{text-align:center;padding:48px 20px;color:var(--muted)}
+.state-icon{font-size:34px;margin-bottom:8px}
+.state-txt{font-size:13px;font-weight:600}
+.spin{display:inline-block;width:16px;height:16px;border:2.5px solid #d0d4dc;border-top-color:var(--blue);border-radius:50%;animation:rot .6s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* PULL TO REFRESH */
+#ptrIndicator{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:8px;height:56px;margin-top:-56px;font-size:13px;font-weight:800;color:var(--muted);background:var(--bg);z-index:250;transition:margin-top .18s ease;pointer-events:none}
+#ptrIndicator .ptr-spin{width:16px;height:16px;border:2.5px solid #d0d4dc;border-top-color:var(--blue);border-radius:50%;display:inline-block}
+#ptrIndicator.ptr-loading .ptr-spin{animation:rot .6s linear infinite}
+
+/* TOAST */
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:400;opacity:0;transition:.25s;max-width:90%;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.err{background:#c0392b}
+</style>
+</head>
+<body>
+
+<div id="ptrIndicator"><span class="ptr-spin"></span><span id="ptrText">Pull to refresh</span></div>
+
+<div class="hdr dues" id="mainHdr">
+  <div class="hdr-title">Clients Dashboard</div>
+  <div class="tabs">
+    <div class="tab on dues-tab"  id="tabDues"  onclick="setView('dues')">🔴 Top Dues</div>
+    <div class="tab sales-tab"    id="tabSales" onclick="setView('sales')">📈 Top Sales</div>
+  </div>
+</div>
+
+<div class="body">
+  <div class="sum dues" id="sumCard">
+    <div class="sum-lbl" id="sumLbl">Total Outstanding Due</div>
+    <div class="sum-amt" id="sumAmt">৳ 0</div>
+    <div class="sum-sub" id="sumSub">—</div>
+  </div>
+
+  <input type="text" class="search" id="search" placeholder="Search name, shop or zone…" oninput="render()" autocomplete="off">
+
+  <div class="list" id="list">
+    <div class="state"><div class="state-txt"><span class="spin"></span> Loading clients…</div></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SHEET_ID  = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
+const CACHE_KEY = 'enkore_clientsdue_data';
+let clients = [], view = 'dues', _ptrBusy = false;
+
+function tk(n){ if(n===''||n===null||n===undefined) return '৳ 0'; return '৳ '+Number(n||0).toLocaleString('en-IN'); }
+function parseGviz(txt){ try{ const m=txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/); return m?JSON.parse(m[1]):null; }catch(_){ return null; } }
+function toast(msg, type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='show'+(type==='err'?' err':''); clearTimeout(window._tt); window._tt=setTimeout(()=>t.className='',2200); }
+
+// ── DATA ─────────────────────────────────────────────────────
+async function loadClients(){
+  // 1) instant paint from cache
+  try{
+    const c=sessionStorage.getItem(CACHE_KEY);
+    if(c){ clients=JSON.parse(c)||[]; render(); }
+  }catch(_){}
+  // 2) revalidate from sheet (stale-while-revalidate)
+  try{
+    const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Clients%20Info&t=${Date.now()}`;
+    const txt=await fetch(url).then(r=>r.text());
+    const rows=(parseGviz(txt)?.table.rows)||[];
+    clients=rows.filter(r=>r.c?.[7]?.v).map(r=>({
+      name:  r.c[2]?.v||'',
+      shop:  r.c[3]?.v||'',
+      loc:   r.c[4]?.v||'',
+      zone:  r.c[5]?.v||'',
+      det:   r.c[7]?.v||'',
+      sales: Number(r.c[8]?.v)||0,
+      paid:  Number(r.c[9]?.v)||0,
+      due:   Number(r.c[10]?.v)||0,
+    }));
+    try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify(clients)); }catch(_){}
+    render();
+  }catch(e){
+    console.error('clients load:', e);
+    if(!clients.length){
+      document.getElementById('list').innerHTML='<div class="state"><div class="state-icon">⚠️</div><div class="state-txt">Could not load. Pull down to retry.</div></div>';
+    }
+  }
+}
+
+// ── VIEW SWITCH ──────────────────────────────────────────────
+function setView(v){
+  view=v;
+  document.getElementById('mainHdr').className='hdr '+v;
+  document.getElementById('tabDues').className ='tab '+(v==='dues' ?'on ':'')+'dues-tab';
+  document.getElementById('tabSales').className='tab '+(v==='sales'?'on ':'')+'sales-tab';
+  document.getElementById('sumCard').className='sum '+v;
+  render();
+}
+
+// ── RENDER ───────────────────────────────────────────────────
+function render(){
+  const q=(document.getElementById('search').value||'').trim().toLowerCase();
+  let rows=clients.slice();
+
+  // filter to relevant set
+  if(view==='dues') rows=rows.filter(c=>c.due>0);
+
+  // search
+  if(q) rows=rows.filter(c=>(c.name+' '+c.shop+' '+c.zone+' '+c.loc).toLowerCase().includes(q));
+
+  // sort: highest first by the active metric
+  rows.sort((a,b)=> view==='dues' ? b.due-a.due : b.sales-a.sales);
+
+  // summary
+  if(view==='dues'){
+    const totalDue=clients.reduce((s,c)=>s+(c.due>0?c.due:0),0);
+    const cnt=clients.filter(c=>c.due>0).length;
+    document.getElementById('sumLbl').textContent='Total Outstanding Due';
+    document.getElementById('sumAmt').textContent=tk(totalDue);
+    document.getElementById('sumSub').textContent=cnt+' client'+(cnt===1?'':'s')+' with due';
+  }else{
+    const totalSales=clients.reduce((s,c)=>s+(c.sales||0),0);
+    const cnt=clients.filter(c=>c.sales>0).length;
+    document.getElementById('sumLbl').textContent='Total Sales (All Clients)';
+    document.getElementById('sumAmt').textContent=tk(totalSales);
+    document.getElementById('sumSub').textContent=cnt+' active client'+(cnt===1?'':'s');
+  }
+
+  // list
+  const el=document.getElementById('list');
+  if(!rows.length){
+    el.innerHTML='<div class="state"><div class="state-icon">'+(view==='dues'?'✅':'📈')+'</div><div class="state-txt">'+(view==='dues'?'No outstanding dues 🎉':'No clients found')+'</div></div>';
+    return;
+  }
+  el.innerHTML=rows.map((c,i)=>{
+    const rank=i+1;
+    const rankCls=rank<=3?('r'+rank):'';
+    const sub=[c.shop,c.zone||c.loc].filter(Boolean).join(' · ');
+    let primary, secondary;
+    if(view==='dues'){
+      primary ='<div class="fig-primary red">'+tk(c.due)+'</div>';
+      secondary='<div class="fig-sec">Sales '+tk(c.sales)+'</div>';
+    }else{
+      primary ='<div class="fig-primary grn">'+tk(c.sales)+'</div>';
+      secondary=c.due>0?'<div class="fig-sec red">Due '+tk(c.due)+'</div>':'<div class="fig-sec">No due</div>';
+    }
+    return '<div class="row">'
+      +'<div class="rank '+rankCls+'">'+rank+'</div>'
+      +'<div class="row-main"><div class="row-name">'+(c.name||c.shop||'—')+'</div><div class="row-sub">'+(sub||'—')+'</div></div>'
+      +'<div class="row-fig">'+primary+secondary+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ── PULL TO REFRESH ──────────────────────────────────────────
+async function forceRefresh(){
+  if(_ptrBusy) return;
+  _ptrBusy=true;
+  const ind=document.getElementById('ptrIndicator');
+  ind.classList.add('ptr-loading');
+  document.getElementById('ptrText').textContent='Refreshing…';
+  try{ sessionStorage.removeItem(CACHE_KEY); }catch(_){}
+  try{ await loadClients(); toast('✅ Refreshed'); }
+  catch(e){ toast('Refresh failed','err'); }
+  finally{
+    _ptrBusy=false;
+    ind.classList.remove('ptr-loading');
+    document.getElementById('ptrText').textContent='Pull to refresh';
+  }
+}
+
+function initPullToRefresh(){
+  const ind=document.getElementById('ptrIndicator');
+  const txt=document.getElementById('ptrText');
+  const MAX=90, FIRE=60;
+  let startY=0, pulling=false, dist=0;
+  document.addEventListener('touchstart', e=>{
+    if(_ptrBusy||window.scrollY>0){ pulling=false; return; }
+    startY=e.touches[0].clientY; pulling=true;
+  },{passive:true});
+  document.addEventListener('touchmove', e=>{
+    if(!pulling||_ptrBusy) return;
+    dist=e.touches[0].clientY-startY;
+    if(dist<=0){ dist=0; ind.style.marginTop='-56px'; return; }
+    if(window.scrollY>0){ pulling=false; return; }
+    const eased=Math.min(MAX,dist*0.5);
+    ind.style.marginTop=(eased-56)+'px';
+    txt.textContent=eased>=FIRE?'Release to refresh':'Pull to refresh';
+  },{passive:true});
+  document.addEventListener('touchend', ()=>{
+    if(!pulling) return;
+    pulling=false;
+    const eased=Math.min(MAX,dist*0.5);
+    if(eased>=FIRE){ ind.style.marginTop='0px'; forceRefresh().then(()=>{ ind.style.marginTop='-56px'; }); }
+    else ind.style.marginTop='-56px';
+    dist=0;
+  });
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', ()=>{
+  setView('dues');
+  loadClients();
+  initPullToRefresh();
+});
+</script>
+</body>
+</html>
