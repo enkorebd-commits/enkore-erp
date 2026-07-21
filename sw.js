@@ -1,10 +1,11 @@
-const CACHE_NAME = 'enkore-erp-v5';
+const CACHE_NAME = 'enkore-erp-v7';
 const STATIC_FILES = [
   '/enkore-erp',
   '/enkore-erp.html',
   '/manifest.json',
   '/assets/icon-192.png',
   '/assets/icon-512.png',
+  '/assets/invoice-logo.png',
   '/assets/logo-white.png',
 ];
 
@@ -12,7 +13,13 @@ self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(c => c.addAll(STATIC_FILES)).catch(() => {})
   );
-  self.skipWaiting();
+  // NOTE: no skipWaiting() here — the new worker waits until the page sends
+  // SKIP_WAITING (on fresh launch, or when the user taps the update banner),
+  // so an update never reloads the app in the middle of data entry.
+});
+
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
