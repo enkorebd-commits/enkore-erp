@@ -521,6 +521,23 @@
     if (f.contentWindow) { try { f.contentWindow.location.replace(url); return; } catch(_) {} }
     f.src = url;
   }
+  // Paint a frame's blank document grey. A default about:blank body is WHITE,
+  // and that white is what used to flash while the next panel slid in.
+  function paintBlank(f) {
+    const tint = () => { try {
+      const d = f.contentDocument;
+      if (d && /^about:blank$/.test(f.contentWindow.location.href)) {
+        d.documentElement.style.background = '#f4f6f8';
+        if (d.body) d.body.style.background = '#f4f6f8';
+      }
+    } catch(_) {} };
+    tint(); setTimeout(tint, 30);
+  }
+  function blankFrame(f) {
+    loadFrame(f, 'about:blank');
+    f.addEventListener('load', () => paintBlank(f), { once: true });
+    paintBlank(f);
+  }
   function syncNav(file, name) {
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.bnav-item').forEach(el => el.classList.remove('active'));
@@ -588,7 +605,7 @@
     outFrame.style.transition = 'none';
     outFrame.style.transform = 'translateX(0)';
     outFrame.style.zIndex = '0';
-    loadFrame(outFrame, 'about:blank'); // free the old panel
+    blankFrame(outFrame); // free the old panel (kept grey, never white)
     _activeIdx = inIdx;
     _currentFile = file;
     _sliding = false;
@@ -754,7 +771,7 @@
         console.warn('[ERP] Readonly injection error:', err);
       }
   }
-  frames().forEach(function(f) { f.addEventListener('load', function() { enforceReadonly(f); }); });
+  frames().forEach(function(f) { f.addEventListener('load', function() { enforceReadonly(f); }); paintBlank(f); });
 
   // ── USER MENU ──
   function toggleMenu() { menuOpen = !menuOpen; document.getElementById('user-menu').classList.toggle('open', menuOpen); }
@@ -769,8 +786,8 @@
     sessionStorage.removeItem('erp_user');
     sessionStorage.removeItem('enkore_sales_data');
     localStorage.removeItem(CACHE_KEY);
-    document.getElementById('pf0').src = 'about:blank';
-    document.getElementById('pf1').src = 'about:blank';
+    blankFrame(document.getElementById('pf0'));
+    blankFrame(document.getElementById('pf1'));
     _frames = null; _activeIdx = 0; _currentFile = null; _sliding = false;
     document.getElementById('shell').style.display = 'none';
     document.getElementById('login-screen').style.display = 'flex';
