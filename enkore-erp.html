@@ -118,7 +118,11 @@
       bottom:calc(58px + env(safe-area-inset-bottom,0px));
       background:#f4f6f8;
     }
-    .content iframe { width:100%; height:100%; border:none; display:block; background:#f4f6f8; }
+    .content { overflow:hidden; }
+    .content .pf {
+      position:absolute; top:0; left:0; width:100%; height:100%; border:none; display:block;
+      background:#f4f6f8; transform:translateX(0); will-change:transform; -webkit-overflow-scrolling:touch;
+    }
 
     /* BOTTOM NAV */
     .bottom-nav {
@@ -238,8 +242,9 @@
     <div class="sb-footer">Enkore ERP v1.0</div>
   </nav>
 
-  <div class="content">
-    <iframe id="panel-frame" src="" title="Panel" allowfullscreen></iframe>
+  <div class="content" id="content">
+    <iframe class="pf" id="pf0" src="" title="Panel" allowfullscreen></iframe>
+    <iframe class="pf" id="pf1" src="about:blank" title="Panel" allowfullscreen></iframe>
   </div>
 
   <nav class="bottom-nav" id="bottom-nav"></nav>
@@ -502,30 +507,92 @@
   let atHome = true;
   function homePanel() { return currentUser && currentUser.panels[0]; }
 
-  // Paints a panel into the shell (nav highlight + iframe). No history changes.
-  function applyPanel(file, name, readonly) {
+  // ── PANEL SLIDE TRANSITION (two layered iframes) ──
+  let _frames = null, _activeIdx = 0, _currentFile = null, _sliding = false, _slideTimer = null;
+  const SLIDE_MS = 300;
+  function frames() { if (!_frames) _frames = [document.getElementById('pf0'), document.getElementById('pf1')]; return _frames; }
+  function panelIndex(file) { return currentUser ? currentUser.panels.findIndex(p => p.file === file) : 0; }
+  function panelUrl(file, readonly) {
+    return 'panels/' + file + '.html?' + new URLSearchParams({
+      userId: currentUser.id, name: currentUser.name, role: currentUser.role, readonly: readonly ? '1' : '0'
+    }).toString();
+  }
+  function loadFrame(f, url) {
+    if (f.contentWindow) { try { f.contentWindow.location.replace(url); return; } catch(_) {} }
+    f.src = url;
+  }
+  function syncNav(file, name) {
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.bnav-item').forEach(el => el.classList.remove('active'));
-    const sn = document.getElementById('snav-' + file);
-    if (sn) sn.classList.add('active');
-    const bn = document.getElementById('bnav-' + file);
-    if (bn) bn.classList.add('active');
-
+    const sn = document.getElementById('snav-' + file); if (sn) sn.classList.add('active');
+    const bn = document.getElementById('bnav-' + file); if (bn) bn.classList.add('active');
     document.getElementById('tb-panel').textContent = name;
+  }
 
-    const p = new URLSearchParams({
-      userId:   currentUser.id,
-      name:     currentUser.name,
-      role:     currentUser.role,
-      readonly: readonly ? '1' : '0'
-    });
-    const frame = document.getElementById('panel-frame');
-    frame._readonly = !!readonly;
-    const url = 'panels/' + file + '.html?' + p.toString();
-    // location.replace keeps the iframe's own history from stacking.
-    if (frame.contentWindow) { try { frame.contentWindow.location.replace(url); } catch(_) { frame.src = url; } }
-    else frame.src = url;
+  // Paints a panel into the shell. No history changes. Animates a horizontal
+  // slide when moving between two different panels (direction follows nav order).
+  function applyPanel(file, name, readonly) {
+    syncNav(file, name);
     closeMenu();
+    const fr = frames();
+    const url = panelUrl(file, !!readonly);
+
+    // Finish any in-flight slide instantly so a new tap isn't lost.
+    if (_sliding && _slideTimer) { clearTimeout(_slideTimer); _finishSlide(); }
+
+    // First paint, or re-tapping the current panel → no animation.
+    if (_currentFile === null || file === _currentFile) {
+      const f = fr[_activeIdx];
+      f._readonly = !!readonly;
+      f.style.transition = 'none'; f.style.transform = 'translateX(0)'; f.style.zIndex = '1';
+      loadFrame(f, url);
+      _currentFile = file;
+      return;
+    }
+
+    // Slide: incoming enters from the side of its position in the nav order.
+    const dir = panelIndex(file) >= panelIndex(_currentFile) ? 1 : -1; // 1 = target is to the right
+    const outFrame = fr[_activeIdx];
+    const inIdx = 1 - _activeIdx;
+    const inFrame = fr[inIdx];
+    inFrame._readonly = !!readonly;
+
+    inFrame.style.transition = 'none';
+    inFrame.style.transform = 'translateX(' + (dir > 0 ? '100%' : '-100%') + ')';
+    inFrame.style.zIndex = '2';
+    outFrame.style.zIndex = '1';
+    loadFrame(inFrame, url);
+
+    _pendingSlide = { inIdx, file, dir, outFrame, inFrame };
+    let started = false;
+    const go = () => { if (started) return; started = true; _startSlide(); };
+    inFrame.addEventListener('load', go, { once: true });
+    setTimeout(go, 500); // fallback if the load event is slow
+  }
+
+  let _pendingSlide = null;
+  function _startSlide() {
+    if (!_pendingSlide) return;
+    const { dir, outFrame, inFrame } = _pendingSlide;
+    void inFrame.offsetWidth; // force reflow so the transition runs
+    _sliding = true;
+    outFrame.style.transition = inFrame.style.transition = 'transform ' + SLIDE_MS + 'ms ease';
+    inFrame.style.transform = 'translateX(0)';
+    outFrame.style.transform = 'translateX(' + (dir > 0 ? '-100%' : '100%') + ')';
+    _slideTimer = setTimeout(_finishSlide, SLIDE_MS + 20);
+  }
+  function _finishSlide() {
+    _slideTimer = null;
+    if (!_pendingSlide) { _sliding = false; return; }
+    const { inIdx, file, outFrame } = _pendingSlide;
+    outFrame.style.transition = 'none';
+    outFrame.style.transform = 'translateX(0)';
+    outFrame.style.zIndex = '0';
+    loadFrame(outFrame, 'about:blank'); // free the old panel
+    _activeIdx = inIdx;
+    _currentFile = file;
+    _sliding = false;
+    _pendingSlide = null;
   }
 
   // User taps a panel (sidebar or footer).
@@ -588,9 +655,7 @@
   // ── UNIVERSAL READONLY ENFORCEMENT ──
   // Runs on every panel load. If readonly=true, injects a CSS+JS lock
   // into the iframe so no panel needs its own readonly logic — ever.
-  (function() {
-    const frame = document.getElementById('panel-frame');
-    frame.addEventListener('load', function() {
+  function enforceReadonly(frame) {
       if (!frame._readonly) return;
       try {
         const doc = frame.contentDocument;
@@ -688,8 +753,8 @@
       } catch(err) {
         console.warn('[ERP] Readonly injection error:', err);
       }
-    });
-  })();
+  }
+  frames().forEach(function(f) { f.addEventListener('load', function() { enforceReadonly(f); }); });
 
   // ── USER MENU ──
   function toggleMenu() { menuOpen = !menuOpen; document.getElementById('user-menu').classList.toggle('open', menuOpen); }
@@ -704,7 +769,9 @@
     sessionStorage.removeItem('erp_user');
     sessionStorage.removeItem('enkore_sales_data');
     localStorage.removeItem(CACHE_KEY);
-    document.getElementById('panel-frame').src = 'about:blank';
+    document.getElementById('pf0').src = 'about:blank';
+    document.getElementById('pf1').src = 'about:blank';
+    _frames = null; _activeIdx = 0; _currentFile = null; _sliding = false;
     document.getElementById('shell').style.display = 'none';
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('inp-id').value  = '';
