@@ -1,0 +1,21 @@
+# Cloudflare Pages headers — force the browser to always revalidate the
+# service worker and the app shell so new deploys are picked up on next launch,
+# with no reinstall. Static hashed assets (icons/images) may still cache.
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/manifest.json
+  Cache-Control: no-cache
+
+/enkore-erp
+  Cache-Control: no-cache
+
+/enkore-erp.html
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
+
+/panels/*
+  Cache-Control: no-cache
