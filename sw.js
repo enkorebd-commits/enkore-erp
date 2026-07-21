@@ -1,4 +1,4 @@
-const CACHE_NAME = 'enkore-erp-v7';
+const CACHE_NAME = 'enkore-erp-v8';
 const STATIC_FILES = [
   '/enkore-erp',
   '/enkore-erp.html',
@@ -7,6 +7,12 @@ const STATIC_FILES = [
   '/assets/icon-512.png',
   '/assets/invoice-logo.png',
   '/assets/logo-white.png',
+  // Panels precached at install → first open is instant, no blank wait
+  '/panels/admin-dashboard.html',
+  '/panels/drive.html',
+  '/panels/sales-entry.html',
+  '/panels/expense-entry.html',
+  '/panels/clients-due.html',
 ];
 
 self.addEventListener('install', e => {
@@ -46,16 +52,23 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Network-first for all HTML (shell + panels) — always gets fresh version, caches on the fly
+  // Stale-while-revalidate for all HTML (shell + panels): serve the cached copy
+  // INSTANTLY so panel switches never wait on the network (that wait was the
+  // blank/white second during slide transitions), then refresh the cache in the
+  // background. New deploys still reach users via the sw.js version bump, which
+  // clears this cache and reloads.
   if (url.includes('.html') || url.endsWith('/enkore-erp')) {
     e.respondWith(
-      fetch(e.request)
-        .then(res => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
-          return res;
-        })
-        .catch(() => caches.match(e.request))
+      caches.match(e.request).then(cached => {
+        const net = fetch(e.request)
+          .then(res => {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+            return res;
+          })
+          .catch(() => cached);
+        return cached || net;
+      })
     );
     return;
   }
