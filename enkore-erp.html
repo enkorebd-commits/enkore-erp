@@ -683,23 +683,51 @@
   });
 
   // ── SERVICE WORKER + AUTO UPDATE ──
+  // Goal: users never reinstall. Every launch/refocus checks for a new version.
+  // A fresh launch updates silently; mid-session shows a "Tap to Update" banner.
+  let _updating = false;
   if ('serviceWorker' in navigator) {
+    // Reload once, only when WE intentionally activate a new worker (ignores the
+    // very first install's claim so it doesn't reload on first ever load).
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (_updating) window.location.reload();
+    });
+
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').then(reg => {
+      // updateViaCache:'none' → the browser never serves sw.js from HTTP cache,
+      // so a new deploy is always detected.
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+        reg.update().catch(() => {});
+        // Re-check whenever the installed app is reopened or brought to front.
+        const recheck = () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); };
+        document.addEventListener('visibilitychange', recheck);
+        window.addEventListener('focus', recheck);
+
+        if (reg.waiting && navigator.serviceWorker.controller) promptOrApply(reg);
+
         reg.addEventListener('updatefound', () => {
           const newSW = reg.installing;
+          if (!newSW) return;
           newSW.addEventListener('statechange', () => {
-            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-              document.getElementById('update-banner').style.display = 'flex';
-            }
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) promptOrApply(reg);
           });
         });
       }).catch(() => {});
     });
   }
 
+  function promptOrApply(reg) {
+    window._pendingReg = reg;
+    // "Working" = already logged in and inside a panel → don't interrupt; show banner.
+    if (currentUser) document.getElementById('update-banner').style.display = 'flex';
+    else applyUpdate(); // fresh launch → update silently
+  }
+
   function applyUpdate() {
-    window.location.reload();
+    const reg = window._pendingReg;
+    document.getElementById('update-banner').style.display = 'none';
+    if (reg && reg.waiting) { _updating = true; reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }
+    else window.location.reload();
   }
 </script>
 </body>
