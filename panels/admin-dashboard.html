@@ -176,9 +176,10 @@
     .spin { width:22px; height:22px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px; }
     @keyframes spin { to { transform:rotate(360deg); } }
     /* pull-to-refresh indicator */
-    #ptrIndicator { position:fixed; top:0; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:8px;
-      height:52px; margin-top:-52px; font-size:13px; font-weight:600; color:var(--sub2); background:var(--bg); z-index:60;
-      transition:margin-top .18s ease; pointer-events:none; }
+    #ptrIndicator { position:fixed; top:8px; left:50%; transform:translateX(-50%); display:flex; align-items:center; justify-content:center; gap:8px;
+      height:40px; padding:0 18px; margin-top:-60px; font-size:12px; font-weight:600; color:var(--sub2);
+      background:rgba(255,255,255,.96); border:1px solid #e3e7ee; border-radius:999px; box-shadow:0 4px 16px rgba(0,0,0,.14);
+      white-space:nowrap; z-index:60; transition:margin-top .18s ease; pointer-events:none; }
     #ptrIndicator .ptr-spin { width:15px; height:15px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; display:inline-block; }
     #ptrIndicator.ptr-loading .ptr-spin { animation:spin .7s linear infinite; }
   </style>
@@ -750,7 +751,7 @@
     await refreshDashLive();
     ind.classList.remove('ptr-loading');
     document.getElementById('ptrText').textContent = 'Pull to refresh';
-    ind.style.marginTop = '-52px';
+    ind.style.marginTop = '-60px';
   }
 
   (function initPullToRefresh() {
@@ -765,7 +766,7 @@
     document.addEventListener('touchmove', e => {
       if (!pulling || _dashRefreshing) return;
       dist = e.touches[0].clientY - startY;
-      if (dist <= 0) { dist = 0; ind.style.marginTop = '-52px'; return; }
+      if (dist <= 0) { dist = 0; ind.style.marginTop = '-60px'; return; }
       if (window.scrollY > 0) { pulling = false; return; }
       const eased = Math.min(MAX, dist * 0.5);
       ind.style.marginTop = (eased - 52) + 'px';
@@ -776,7 +777,7 @@
       pulling = false;
       const eased = Math.min(MAX, dist * 0.5);
       if (eased >= FIRE) forceRefresh();
-      else ind.style.marginTop = '-52px';
+      else ind.style.marginTop = '-60px';
       dist = 0;
     });
   })();
