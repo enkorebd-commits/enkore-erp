@@ -81,23 +81,19 @@
       display:flex; align-items:center; padding:0 12px 0 14px; gap:10px; z-index:100;
     }
     /* Logo and avatar share ONE height variable so they always line up.
-       On mobile the logo is a square crop of the bird (the wide banner left no
-       room for a centred panel title). CSS-cropped from the existing asset —
-       no new image file. */
-    .tb-logo {
-      width:var(--tb-item); height:var(--tb-item);
-      overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center;
-    }
-    .tb-logo img { width:100%; height:100%; object-fit:contain; transform:scale(2.2); display:block; }
-    .tb-spacer { flex:1; }
+       Logo stays the original black banner with its rounded corners. */
+    .tb-logo { flex-shrink:0; display:flex; align-items:center; }
+    .tb-logo img { height:var(--tb-item); width:auto; border-radius:6px; display:block; }
+    /* The banner is wide, so the title sits beside it (left-aligned) rather than
+       centred — centring would collide with the logo on a narrow phone. */
+    .tb-spacer { flex:0; }
 
-    /* PANEL HEADING — centred wayfinding title */
+    /* PANEL HEADING — wayfinding title */
     .tb-panel {
-      position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-      max-width:calc(100% - 130px);
+      flex:1; min-width:0;
       font-size:13px; font-weight:600; color:#8a9099; letter-spacing:.1px;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      text-align:center; pointer-events:none;
+      pointer-events:none;
     }
     .tb-avatar {
       position:relative;
@@ -200,8 +196,7 @@
       .bottom-nav { display:none; }
       .topbar     { left:var(--sidebar-w); height:48px; --tb-item:28px; }
       .tb-logo    { display:none; }
-      /* Desktop: sidebar already shows the brand, so the title sits left, not centred. */
-      .tb-panel   { position:static; transform:none; max-width:none; text-align:left; font-size:13px; }
+      .tb-panel   { font-size:13px; }
       .btn-logout-desk { display:block; }
       .content    { top:48px; left:var(--sidebar-w); bottom:0; }
       .user-menu  { top:54px; }
@@ -244,7 +239,7 @@
 <!-- SHELL -->
 <div id="shell">
   <div class="topbar">
-    <div class="tb-logo"><img src="assets/logo-icon-blue.png" alt="Enkore" /></div>
+    <div class="tb-logo"><img src="assets/invoice-logo.png" alt="Enkore" /></div>
     <div class="tb-panel" id="tb-panel"></div>
     <div class="tb-spacer"></div>
     <div class="tb-avatar" id="tb-avatar" onclick="toggleMenu()">--</div>
@@ -253,6 +248,7 @@
 
   <div class="user-menu" id="user-menu">
     <div class="um-info"><div class="um-n" id="um-n">-</div><div class="um-r" id="um-r">-</div><div class="um-id" id="um-id">-</div></div>
+    <div class="um-item" onclick="forceUpdate()"><span>🔄</span> Check for updates</div>
     <div class="um-item danger" onclick="doLogout()"><span>🚪</span> Sign Out</div>
   </div>
 
@@ -908,6 +904,31 @@
     document.getElementById('update-banner').style.display = 'none';
     if (reg && reg.waiting) { _updating = true; reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }
     else window.location.reload();
+  }
+
+  // ── MANUAL "CHECK FOR UPDATES" ──
+  // The nuclear option, from the profile menu. Wipes every cache and reloads
+  // from the network, so a deploy is guaranteed to land even if the service
+  // worker or the OS is holding on to an old copy.
+  async function forceUpdate() {
+    closeMenu();
+    const av = document.getElementById('tb-avatar');
+    const prev = av.textContent; av.textContent = '…';
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) {
+          await reg.update().catch(() => {});
+          if (reg.waiting) { _updating = true; reg.waiting.postMessage({ type: 'SKIP_WAITING' }); return; }
+        }
+      }
+      if (window.caches) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+    } catch(_) {}
+    av.textContent = prev;
+    window.location.reload();
   }
 </script>
 </body>
