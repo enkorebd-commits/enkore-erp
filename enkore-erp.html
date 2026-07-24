@@ -17,6 +17,9 @@
     :root {
       --blue:      #29ABE2;
       --blue-d:    #1a8bbf;
+      /* Exact blue sampled from the bird in the Enkore logo */
+      --brand-blue:#1E9DD6;
+      --tb-item:   26px;   /* shared height: topbar logo + profile circle */
       --black:     #0d0d0d;
       --dark1:     #161616;
       --dark2:     #1a1a1a;
@@ -77,15 +80,35 @@
       background:#fff; border-bottom:1px solid #eee;
       display:flex; align-items:center; padding:0 12px 0 14px; gap:10px; z-index:100;
     }
-    .tb-logo img { height:22px; border-radius:6px; }
-    .tb-spacer { flex:1; }
-    .tb-panel { font-size:13px; color:#999; font-weight:500; display:none; }
-    .tb-avatar {
-      width:32px; height:32px; border-radius:50%;
-      background:var(--blue); color:#fff;
-      display:flex; align-items:center; justify-content:center;
-      font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0;
+    /* Logo and avatar share ONE height variable so they always line up.
+       On mobile the logo is a square crop of the bird (the wide banner left no
+       room for a centred panel title). CSS-cropped from the existing asset —
+       no new image file. */
+    .tb-logo {
+      width:var(--tb-item); height:var(--tb-item);
+      overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center;
     }
+    .tb-logo img { width:100%; height:100%; object-fit:contain; transform:scale(2.2); display:block; }
+    .tb-spacer { flex:1; }
+
+    /* PANEL HEADING — centred wayfinding title */
+    .tb-panel {
+      position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+      max-width:calc(100% - 130px);
+      font-size:13px; font-weight:600; color:#8a9099; letter-spacing:.1px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      text-align:center; pointer-events:none;
+    }
+    .tb-avatar {
+      position:relative;
+      width:var(--tb-item); height:var(--tb-item); border-radius:50%;
+      background:var(--brand-blue); color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      font-size:10px; font-weight:700; letter-spacing:.2px;
+      cursor:pointer; flex-shrink:0;
+    }
+    /* Invisible hit area — keeps the circle small but the tap target finger-sized. */
+    .tb-avatar::after { content:''; position:absolute; inset:-9px; border-radius:50%; }
     .btn-logout-desk {
       display:none; padding:7px 14px;
       background:#f5f5f5; border:1px solid #e8e8e8; border-radius:7px;
@@ -175,9 +198,10 @@
     @media (min-width:769px) {
       .sidebar    { display:flex; }
       .bottom-nav { display:none; }
-      .topbar     { left:var(--sidebar-w); height:48px; }
+      .topbar     { left:var(--sidebar-w); height:48px; --tb-item:28px; }
       .tb-logo    { display:none; }
-      .tb-panel   { display:block; }
+      /* Desktop: sidebar already shows the brand, so the title sits left, not centred. */
+      .tb-panel   { position:static; transform:none; max-width:none; text-align:left; font-size:13px; }
       .btn-logout-desk { display:block; }
       .content    { top:48px; left:var(--sidebar-w); bottom:0; }
       .user-menu  { top:54px; }
@@ -220,7 +244,7 @@
 <!-- SHELL -->
 <div id="shell">
   <div class="topbar">
-    <div class="tb-logo"><img src="assets/invoice-logo.png" alt="Enkore" /></div>
+    <div class="tb-logo"><img src="assets/logo-icon-blue.png" alt="Enkore" /></div>
     <div class="tb-panel" id="tb-panel"></div>
     <div class="tb-spacer"></div>
     <div class="tb-avatar" id="tb-avatar" onclick="toggleMenu()">--</div>
