@@ -1,4 +1,4 @@
-const CACHE_NAME = 'enkore-erp-v10';
+const CACHE_NAME = 'enkore-erp-v11';
 const STATIC_FILES = [
   '/enkore-erp',
   '/enkore-erp.html',
@@ -40,6 +40,10 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Only GET is cacheable — HEAD (used by the app's update check) and POST
+  // must pass straight through, or cache.put() throws.
+  if (e.request.method !== 'GET') return;
+
   const url = e.request.url;
 
   // Always network-only for Google & external APIs
