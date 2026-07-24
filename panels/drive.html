@@ -1,410 +1,331 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Drive</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-    :root { --blue:#29ABE2; }
-    body {
-      font-family:'Inter','Segoe UI',sans-serif;
-      background:#f4f6f8; height:100vh;
-      display:flex; flex-direction:column; overflow:hidden;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>My Profile — Enkore</title>
+<style>
+:root{
+  --blue:#1971c2;--blue2:#4098e6;--bluebg:#e7f1fb;--navy:#0d0d0d;
+  --grn:#1b6b3a;--grn2:#2d8a52;--grnbg:#edf7f1;--red:#e03131;--redbg:#fff5f5;
+  --amber:#e67e22;--amberbg:#fff4e6;--gold:#b8860b;
+  --text:#1a1a2e;--muted:#868e96;--border:#dee2e6;--bg:#f3f4f6;--card:#fff;
+  --r:14px;--sh:0 2px 8px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior:none}
 
-    .tab-bar {
-      background:#fff; border-bottom:1px solid #e8e8e8;
-      display:flex; align-items:center; height:48px; padding:0 4px;
-      overflow-x:auto; gap:2px; flex-shrink:0;
-      -webkit-overflow-scrolling:touch; scrollbar-width:none;
-    }
-    .tab-bar::-webkit-scrollbar { display:none; }
-    .folder-tab {
-      display:flex; align-items:center; gap:7px;
-      padding:0 16px; height:48px; cursor:pointer;
-      font-size:13px; font-weight:500; color:#888;
-      border-bottom:2px solid transparent;
-      transition:all 0.15s; white-space:nowrap; flex-shrink:0;
-      user-select:none;
-    }
-    .folder-tab:active { background:#f5f5f5; }
-    .folder-tab.active { color:#111; border-bottom-color:var(--blue); font-weight:600; }
-    .tab-dot {
-      width:6px; height:6px; border-radius:50%;
-      background:#e0e0e0; flex-shrink:0;
-    }
-    .tab-dot.loaded { background:#34a853; }
+.hdr{background:linear-gradient(135deg,#123a63,#1971c2);color:#fff;padding:20px 16px 18px;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.hdr-name{font-size:21px;font-weight:900;letter-spacing:.2px}
+.motiv{font-size:12.5px;font-weight:600;margin-top:10px;line-height:1.5;background:rgba(255,255,255,.12);padding:10px 12px;border-radius:10px}
 
-    .loading-bar {
-      height:2px; background:var(--blue);
-      width:0; transition:width 0.4s ease; flex-shrink:0;
-    }
+/* commission bold card */
+.commcard{background:linear-gradient(135deg,#123a63,#1971c2);color:#fff;border-radius:var(--r);padding:16px;box-shadow:0 4px 14px rgba(25,113,194,.28);margin-bottom:10px}
+.cc-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;padding:3px 0}
+.cc-k{opacity:.85}
+.cc-v{font-weight:900}
+.cc-final{margin-top:11px;padding-top:12px;border-top:1px solid rgba(255,255,255,.25);text-align:center}
+.cc-final-l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:.9}
+.cc-final-v{font-size:32px;font-weight:900;letter-spacing:-.5px;margin-top:3px}
+.cc-final-v .u{font-size:13px;opacity:.85;margin-left:3px}
+.cc-final-s{font-size:11px;opacity:.85;margin-top:4px}
+.cc-locked{margin-top:11px;font-size:12.5px;font-weight:700;background:rgba(255,255,255,.15);padding:10px 12px;border-radius:10px;line-height:1.5}
 
-    /* pull-to-refresh indicator */
-    #ptrIndicator {
-      position:fixed; top:0; left:0; right:0; height:48px; margin-top:-48px;
-      display:flex; align-items:center; justify-content:center; gap:8px;
-      background:#f4f6f8; color:#888; font-size:13px; font-weight:500;
-      z-index:60; transition:margin-top .18s ease; pointer-events:none;
-    }
-    #ptrIndicator .ptr-spin { width:15px; height:15px; border:2px solid #dfe3e8; border-top-color:var(--blue); border-radius:50%; display:inline-block; }
-    #ptrIndicator.ptr-loading .ptr-spin { animation:ptrspin .7s linear infinite; }
-    @keyframes ptrspin { to { transform:rotate(360deg); } }
+.body{padding:14px;max-width:560px;margin:0 auto;padding-bottom:40px}
+.sec-t{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:18px 4px 8px}
+.sec-t:first-child{margin-top:4px}
 
-    .breadcrumb {
-      background:#fff; border-bottom:1px solid #f0f0f0;
-      padding:0 16px; height:36px;
-      display:flex; align-items:center; gap:4px;
-      overflow-x:auto; flex-shrink:0;
-      -webkit-overflow-scrolling:touch; scrollbar-width:none;
-    }
-    .breadcrumb::-webkit-scrollbar { display:none; }
-    .bc-item {
-      font-size:12px; color:var(--blue); cursor:pointer;
-      white-space:nowrap; font-weight:500;
-    }
-    .bc-item:last-child { color:#555; cursor:default; font-weight:600; }
-    .bc-sep { font-size:12px; color:#ccc; }
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px;margin-bottom:10px}
 
-    .file-list {
-      flex:1; overflow-y:auto; padding:8px 0;
-      -webkit-overflow-scrolling:touch;
-    }
-    .file-item {
-      display:flex; align-items:center; gap:12px;
-      padding:10px 16px; cursor:pointer;
-      border-bottom:1px solid #f0f0f0;
-      transition:background 0.1s;
-    }
-    .file-item:active { background:#f0f8fd; }
-    .file-icon { width:20px; height:20px; flex-shrink:0; object-fit:contain; }
-    .file-name { font-size:13px; color:#222; font-weight:500; flex:1; line-height:1.3; }
-    .file-arrow { font-size:13px; color:#ccc; flex-shrink:0; }
+/* month tri-stat */
+.tri{display:flex;gap:8px}
+.tri .box{flex:1;text-align:center;background:var(--bg);border-radius:12px;padding:11px 4px}
+.box-l{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.box-v{font-size:17px;font-weight:900;margin-top:3px;letter-spacing:-.3px}
+.box-v .u{font-size:9px;font-weight:800;color:var(--muted);margin-left:2px}
+.box-v.grn{color:var(--grn)}.box-v.red{color:var(--red)}.box-v.blue{color:var(--blue)}
 
-    .state-box {
-      padding:60px 40px; display:flex; flex-direction:column;
-      align-items:center; gap:10px; color:#aaa; text-align:center;
-    }
-    .state-box .icon { font-size:32px; }
-    .state-box .msg { font-size:13px; }
+/* big highlight amount */
+.big{border-radius:var(--r);padding:16px;color:#fff}
+.big.blue{background:linear-gradient(135deg,#1971c2,#4098e6)}
+.big.grn{background:linear-gradient(135deg,#1b6b3a,#2d8a52)}
+.big.amber{background:linear-gradient(135deg,#d9822b,#e8a04e)}
+.big-l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:.9}
+.big-v{font-size:30px;font-weight:900;letter-spacing:-.5px;line-height:1.05;margin-top:4px}
+.big-v .u{font-size:12px;font-weight:800;opacity:.85;margin-left:3px}
+.big-sub{font-size:12px;opacity:.9;margin-top:6px}
 
-  </style>
+/* product / commission table */
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);padding:6px 6px;border-bottom:1.5px solid var(--border)}
+.tbl td{padding:8px 6px;border-bottom:1px solid #f1f3f5;vertical-align:top}
+.tbl td.num,.tbl th.num{text-align:right;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl .pname{font-weight:700;line-height:1.35}
+.tbl .av{font-weight:900;color:var(--blue)}
+.tbl-total{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:2px solid var(--border);font-weight:900}
+.tbl-total .v{font-size:16px;color:var(--blue)}
+
+/* gauge */
+.gauge-wrap{margin-top:12px}
+.gauge-top{display:flex;justify-content:space-between;font-size:11px;font-weight:800;margin-bottom:5px}
+.gauge{height:12px;border-radius:8px;background:#e9ecef;overflow:hidden}
+.gauge-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,#1971c2,#4098e6);transition:width .5s}
+.gauge-fill.warn{background:linear-gradient(90deg,#e67e22,#f0a04b)}
+.gauge-fill.bad{background:linear-gradient(90deg,#e03131,#f06565)}
+
+/* locked commission */
+.locked{background:var(--amberbg);border:1.5px dashed #f0c088;border-radius:var(--r);padding:14px;text-align:center}
+.locked-ic{font-size:26px}
+.locked-t{font-weight:900;margin-top:4px;color:#b06a12}
+.locked-s{font-size:12px;color:#9a6414;margin-top:5px;line-height:1.5}
+
+/* target progress */
+.tgt-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.tgt-ach{font-size:22px;font-weight:900}
+.tgt-ach.met{color:var(--grn)}.tgt-ach.miss{color:var(--amber)}
+.tgt-bar{height:14px;border-radius:8px;background:#e9ecef;overflow:hidden;margin:6px 0}
+.tgt-fill{height:100%;background:linear-gradient(90deg,#1b6b3a,#2d8a52)}
+.tgt-fill.miss{background:linear-gradient(90deg,#e67e22,#f0a04b)}
+.tgt-row{display:flex;justify-content:space-between;font-size:12px;margin-top:6px}
+.tgt-row .k{color:var(--muted);font-weight:700}
+.tgt-row .val{font-weight:800}
+.tgt-note{font-size:12px;font-weight:700;margin-top:12px;background:var(--bluebg);color:#0f4f8a;padding:10px 12px;border-radius:10px;line-height:1.5}
+
+/* product list (all-time) */
+.plist{display:flex;flex-direction:column;gap:7px}
+.pitem{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:9px 11px}
+.pitem .pn{flex:1;min-width:0;font-size:12.5px;font-weight:700;line-height:1.3}
+.pitem .pq{flex-shrink:0;font-size:11px;font-weight:800;color:var(--muted)}
+.pitem .pv{flex-shrink:0;font-size:13px;font-weight:900;text-align:right;min-width:78px}
+
+/* submit form */
+.field{margin-bottom:10px}
+.field label{display:block;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.inp{width:100%;padding:12px 14px;font-size:16px;border:1.5px solid var(--border);border-radius:10px;outline:none;background:#fff;color:var(--text)}
+.inp:focus{border-color:var(--blue)}
+.btn{width:100%;padding:13px;font-size:15px;font-weight:800;color:#fff;background:var(--blue);border:none;border-radius:11px;cursor:pointer;transition:.15s}
+.btn:active{transform:scale(.99)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.cash-row{display:flex;gap:8px;margin-bottom:12px}
+.cash-row .box{flex:1}
+.hist{margin-top:12px}
+.hitem{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f1f3f5}
+.hitem:last-child{border-bottom:none}
+.hitem .hd{flex:1;min-width:0}
+.hitem .ha{font-size:14px;font-weight:900}
+.hitem .hdate{font-size:11px;color:var(--muted);margin-top:1px}
+.badge{flex-shrink:0;font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px}
+.badge.Pending{background:var(--amberbg);color:#b06a12}
+.badge.Approved{background:var(--grnbg);color:var(--grn)}
+.badge.Rejected{background:var(--redbg);color:var(--red)}
+
+/* states */
+.state{text-align:center;padding:48px 20px;color:var(--muted)}
+.state-icon{font-size:34px;margin-bottom:8px}
+.state-txt{font-size:13px;font-weight:600}
+.spin{display:inline-block;width:16px;height:16px;border:2.5px solid #d0d4dc;border-top-color:var(--blue);border-radius:50%;animation:rot .6s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+#ptrIndicator{position:fixed;top:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 18px;margin-top:-56px;font-size:12px;font-weight:800;color:var(--muted);background:rgba(255,255,255,.96);border:1px solid #e3e7ee;border-radius:999px;box-shadow:0 4px 16px rgba(0,0,0,.14);z-index:250;transition:margin-top .18s ease;pointer-events:none;white-space:nowrap}
+#ptrIndicator .ptr-spin{width:16px;height:16px;border:2.5px solid #d0d4dc;border-top-color:var(--blue);border-radius:50%;display:inline-block}
+#ptrIndicator.ptr-loading .ptr-spin{animation:rot .6s linear infinite}
+
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:400;opacity:0;transition:.25s;max-width:90%;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.err{background:#c0392b}
+.hide{display:none!important}
+</style>
 </head>
 <body>
 
 <div id="ptrIndicator"><span class="ptr-spin"></span><span id="ptrText">Pull to refresh</span></div>
 
-<div class="tab-bar" id="tab-bar"></div>
-<div class="loading-bar" id="loading-bar"></div>
-<div class="breadcrumb" id="breadcrumb"></div>
-<div class="file-list" id="file-list"></div>
+<div class="hdr">
+  <div class="hdr-name" id="hGreet">—</div>
+  <div class="motiv" id="motiv">Loading…</div>
+</div>
+
+<div class="body" id="body">
+  <div class="state"><div class="state-txt"><span class="spin"></span> Loading profile…</div></div>
+</div>
+
+<div id="toast"></div>
 
 <script>
-  const SCRIPT_URL = 'https://rapid-credit-0593.enkorebd.workers.dev';
-  const ICON_BASE = 'https://drive-thirdparty.googleusercontent.com/16/type/';
+const API   = 'https://script.google.com/macros/s/AKfycbylAEyTwyBrejsLKA1a5-dhL57K44UVUJOT9rDvLtd53GSzR-WEEAMYD-WYVx7SpGUaJA/exec';
+const PARAMS   = new URLSearchParams(location.search);
+const USER_ID  = PARAMS.get('userId') || '';
+const READONLY = PARAMS.get('readonly') === '1';
+const CACHE_KEY= 'enkore_profileS_' + USER_ID;
+let DATA = null, _ptrBusy = false, _submitting = false;
 
-  const params = new URLSearchParams(window.location.search);
-  const userId = params.get('userId') || '';
-  if (!userId) window.location.replace('../enkore-erp.html');
+function tk(n){ if(n===''||n==null||isNaN(n)) return '0 <span class="u">tk</span>'; return Number(n).toLocaleString('en-IN',{maximumFractionDigits:2}) + ' <span class="u">tk</span>'; }
+function tkPlain(n){ if(n===''||n==null||isNaN(n)) return '0 tk'; return Number(n).toLocaleString('en-IN',{maximumFractionDigits:2}) + ' tk'; }
+function pct(n){ return (Math.round((Number(n)||0)*10)/10) + '%'; }
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(m,t){ const e=document.getElementById('toast'); e.innerHTML=m; e.className='show'+(t==='err'?' err':''); clearTimeout(window._tt); window._tt=setTimeout(()=>e.className='',2400); }
+const MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(v){
+  if(!v) return '';
+  const d=new Date(v); if(isNaN(d)) return String(v);
+  return d.getDate()+' '+MOS[d.getMonth()]+', '+d.getFullYear();
+}
+function greeting(){ const h=new Date().getHours(); if(h<12) return 'Good morning'; if(h<17) return 'Good afternoon'; if(h<21) return 'Good evening'; return 'Good night'; }
 
-  const FOLDERS = {
-    ops:   { name:'Operations',            id:'1dfxMLytCzB31VYLuZwdpIa01b-K2Zw0g' },
-    fin:   { name:'Finance',               id:'1f3ZaTcAoQXYdi3pHOEdHLWJDFZRUFwhx' },
-    sales: { name:'Sales',                 id:'1KHl2DJbhNAeqfnnkLeQ2FnkvLBgi5a5j' },
-    mkt:   { name:'Marketing',             id:'1iUc2_GvNdIcld5N-efoesuZnEE0KSPka' },
-    pp:    { name:'Planning & Production', id:'1b_ZyI0gYSqN9n6369wSzL0039iCtApY4' },
-    sc:    { name:'Supply Chain',          id:'1aYRoKWZ9ZzMVlBZmVk1k82cNBUv18VQo' },
-    ir:    { name:'Investor Relations',    id:'15NpU64cIimEOpWjKQn5PMXqtLdqA_4NN' },
-  };
+function motivLine(d){
+  const cl = d.thisMonth.sales>0 ? (d.thisMonth.collected/d.thisMonth.sales*100) : 0;
+  if(d.commission.targetMet && cl>=90) return '🔥 Outstanding. Target smashed and collections are clean. Keep this pace.';
+  if(d.commission.targetMet) return '✅ Target met. Now push collection higher to lift your commission payout.';
+  if(d.target.target>0 && d.target.gap>0) return '🎯 You are '+tkPlain(d.target.gap)+' away from your target. Close the gap to unlock commission.';
+  if(cl<60 && d.thisMonth.sales>0) return '💪 Sales are moving. Focus on collecting dues to keep your cash clean.';
+  return '📈 A new month, a fresh start. Log sales and keep collections tight.';
+}
 
-  // All users with Drive panel access see all folders
-  const allowed = Object.keys(FOLDERS);
-  const cache = {};          // folderId -> data
-  let breadcrumbStack = [];
-  let activeTabKey = null;
-  let _refreshing = false;
+async function load(){
+  try{ const c=sessionStorage.getItem(CACHE_KEY); if(c){ DATA=JSON.parse(c); paint(); } }catch(_){}
+  if(!USER_ID){ document.getElementById('body').innerHTML='<div class="state"><div class="state-icon">🔒</div><div class="state-txt">No user id. Open this from the ERP.</div></div>'; return; }
+  try{
+    const r = await fetch(`${API}?action=getProfile&userId=${encodeURIComponent(USER_ID)}&t=${Date.now()}`).then(x=>x.json());
+    if(!r.ok) throw new Error(r.error||'load failed');
+    DATA=r; try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify(r)); }catch(_){}
+    paint();
+  }catch(e){
+    console.error(e);
+    if(!DATA) document.getElementById('body').innerHTML='<div class="state"><div class="state-icon">⚠️</div><div class="state-txt">Could not load. Pull down to retry.</div></div>';
+    else toast('Refresh failed','err');
+  }
+}
 
-  // ── PERSISTENT CACHE (stale-while-revalidate) ──
-  const DRIVE_CACHE_KEY = 'enkore_drive_cache_v1';
-  try { Object.assign(cache, JSON.parse(localStorage.getItem(DRIVE_CACHE_KEY) || '{}') || {}); } catch(_) {}
-  function saveDriveCache() { try { localStorage.setItem(DRIVE_CACHE_KEY, JSON.stringify(cache)); } catch(_) {} }
+function paint(){
+  const d=DATA;
+  document.getElementById('hGreet').textContent=greeting()+', '+(d.name||d.id);
+  document.getElementById('motiv').innerHTML=motivLine(d);
 
-  function iconUrl(mime) {
-    if (!mime) mime = 'application/octet-stream';
-    return ICON_BASE + encodeURIComponent(mime);
+  const c=d.commission, t=d.target, m=d.thisMonth, a=d.allTime;
+  let h='';
+
+  // 1) ALL-TIME SALES
+  h+='<div class="sec-t">All-Time Sales</div>';
+  h+='<div class="card"><div class="tri">'
+    +'<div class="box"><div class="box-l">Total Sales</div><div class="box-v blue">'+tk(a.sales)+'</div></div>'
+    +'<div class="box"><div class="box-l">Collected</div><div class="box-v grn">'+tk(a.collected)+'</div></div>'
+    +'<div class="box"><div class="box-l">Due</div><div class="box-v red">'+tk(a.due)+'</div></div>'
+    +'</div></div>';
+
+  // 2) THIS MONTH SALES
+  h+='<div class="sec-t">This Month · '+escapeHtml(d.month||'')+'</div>';
+  h+='<div class="card"><div class="tri">'
+    +'<div class="box"><div class="box-l">Sales</div><div class="box-v blue">'+tk(m.sales)+'</div></div>'
+    +'<div class="box"><div class="box-l">Collected</div><div class="box-v grn">'+tk(m.collected)+'</div></div>'
+    +'<div class="box"><div class="box-l">Due</div><div class="box-v red">'+tk(m.due)+'</div></div>'
+    +'</div></div>';
+
+  // 3) PRODUCTS, SALES & COMMISSION (this month only)
+  h+='<div class="sec-t">Products, Sales & Commission · this month</div>';
+  h+='<div class="card">';
+  if(c.rows&&c.rows.length){
+    h+='<table class="tbl"><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Sales</th><th class="num">%</th><th class="num">Availed</th></tr></thead><tbody>';
+    h+=c.rows.map(p=>'<tr><td class="pname">'+escapeHtml(p.product)+'</td><td class="num">'+(p.qty||0)+'</td><td class="num">'+tkPlain(p.salesValue)+'</td><td class="num">'+pct((p.commPct||0)*100)+'</td><td class="num av">'+tkPlain(p.availed)+'</td></tr>').join('');
+    h+='</tbody></table>';
+  } else {
+    h+='<div class="tgt-row"><span class="k">No sales this month yet.</span><span class="val"></span></div>';
+  }
+  h+='</div>';
+
+  // 4) MONTHLY TARGET
+  h+='<div class="sec-t">Monthly Target</div>';
+  h+='<div class="card">';
+  if(t.target>0){
+    const ach=Math.round(t.achievementPct*10)/10;
+    const met=t.actual>=t.target;
+    h+='<div class="tgt-top"><span class="box-l">Achievement</span><span class="tgt-ach '+(met?'met':'miss')+'">'+ach+'%</span></div>';
+    h+='<div class="tgt-bar"><div class="tgt-fill '+(met?'':'miss')+'" style="width:'+Math.min(ach,100)+'%"></div></div>';
+    h+='<div class="tgt-row"><span class="k">Target</span><span class="val">'+tkPlain(t.target)+'</span></div>';
+    h+='<div class="tgt-row"><span class="k">Actual</span><span class="val">'+tkPlain(t.actual)+'</span></div>';
+    h+='<div class="tgt-row"><span class="k">Gap remaining</span><span class="val" style="color:'+(met?'var(--grn)':'var(--amber)')+'">'+(met?'0 tk — done ✅':tkPlain(t.gap))+'</span></div>';
+    if(!met) h+='<div class="tgt-note">💡 Hit this target to unlock commission of about <b>'+tkPlain(t.projectedFinal)+'</b> at your current collection rate.</div>';
+  } else {
+    h+='<div class="tgt-row"><span class="k">No target set for this month.</span><span class="val"></span></div>';
+    h+='<div class="tgt-note">💡 Commission unlocks once a target is set and met.</div>';
+  }
+  h+='</div>';
+
+  // 5) COMMISSION THIS MONTH — bold separate card
+  h+='<div class="sec-t">Commission This Month</div>';
+  if(c.targetMet){
+    const clp=Math.round(c.collectionPct*1000)/10;
+    h+='<div class="commcard">'
+      +'<div class="cc-row"><span class="cc-k">Total Availed (this month)</span><span class="cc-v">'+tkPlain(c.totalAvailed)+'</span></div>'
+      +'<div class="cc-row"><span class="cc-k">Collection rate</span><span class="cc-v">'+clp+'%</span></div>'
+      +'<div class="cc-final"><div class="cc-final-l">Final Commission Earned</div><div class="cc-final-v">'+tk(c.finalCommission)+'</div><div class="cc-final-s">Availed × collection ('+clp+'%)</div></div>'
+      +'</div>';
+  } else {
+    h+='<div class="commcard">'
+      +'<div class="cc-row"><span class="cc-k">Total Availed (this month)</span><span class="cc-v">'+tkPlain(c.totalAvailed)+'</span></div>'
+      +'<div class="cc-locked">🔒 Locked. Final commission is <b>0 tk</b> until you meet this month\'s target.</div>'
+      +'</div>';
   }
 
-  function folderIconUrl() {
-    return ICON_BASE + encodeURIComponent('application/vnd.google-apps.folder');
+  // SUBMIT MONEY
+  h+='<div class="sec-t">Cash & Submit Money</div>';
+  h+='<div class="card">';
+  h+='<div class="cash-row">'
+    +'<div class="box"><div class="box-l">Cash Received</div><div class="box-v">'+tk(d.cashReceived)+'</div></div>'
+    +'<div class="box"><div class="box-l">Cash in Hand</div><div class="box-v '+((d.cashInHand||0)<0?'red':'grn')+'">'+tk(d.cashInHand)+'</div></div>'
+    +'</div>';
+  if(!READONLY){
+    h+='<div class="field"><label>Amount to submit (tk)</label><input class="inp" id="amt" type="number" inputmode="numeric" min="1" placeholder="e.g. 5000"></div>';
+    h+='<div class="field"><label>Comment (optional)</label><input class="inp" id="cmt" type="text" placeholder="e.g. cash handed to office"></div>';
+    h+='<button class="btn" id="subBtn" onclick="submitCash()">Submit for approval</button>';
   }
-
-  function showLoading(on) {
-    const bar = document.getElementById('loading-bar');
-    if (on) {
-      bar.style.transition = 'width 0.4s ease';
-      bar.style.width = '70%';
-    } else {
-      bar.style.width = '100%';
-      setTimeout(function() {
-        bar.style.transition = 'none';
-        bar.style.width = '0';
-      }, 300);
-    }
+  if(d.submitHistory&&d.submitHistory.length){
+    h+='<div class="hist"><div class="box-l" style="margin-bottom:4px">Submission History</div>';
+    h+=d.submitHistory.slice().reverse().map(s=>{
+      const st=(s.status||'Pending');
+      return '<div class="hitem"><div class="hd"><div class="ha">'+tkPlain(s.amount)+'</div><div class="hdate">'+(fmtDate(s.date)||'—')+'</div></div><span class="badge '+escapeHtml(st)+'">'+escapeHtml(st)+'</span></div>';
+    }).join('');
+    h+='</div>';
   }
+  h+='</div>';
 
-  function renderBreadcrumb() {
-    const bc = document.getElementById('breadcrumb');
-    bc.innerHTML = '';
-    breadcrumbStack.forEach(function(item, i) {
-      if (i > 0) {
-        const sep = document.createElement('span');
-        sep.className = 'bc-sep';
-        sep.textContent = '›';
-        bc.appendChild(sep);
-      }
-      const el = document.createElement('span');
-      el.className = 'bc-item';
-      el.textContent = item.name;
-      if (i < breadcrumbStack.length - 1) {
-        (function(idx){ el.onclick = function(){ navigateTo(idx); }; })(i);
-      }
-      bc.appendChild(el);
-    });
-    bc.scrollLeft = bc.scrollWidth;
-  }
+  document.getElementById('body').innerHTML=h;
+}
 
-  function navigateTo(idx) {
-    breadcrumbStack = breadcrumbStack.slice(0, idx + 1);
-    renderBreadcrumb();
-    showFolder(breadcrumbStack[breadcrumbStack.length - 1].id);
-  }
+async function submitCash(){
+  if(_submitting) return;
+  const amt=parseFloat((document.getElementById('amt').value||'').replace(/[^0-9.]/g,''));
+  const cmt=(document.getElementById('cmt').value||'').trim();
+  if(!amt||amt<=0){ toast('Enter a valid amount','err'); return; }
+  _submitting=true;
+  const btn=document.getElementById('subBtn'); btn.disabled=true; btn.textContent='Submitting…';
+  try{
+    const qs=new URLSearchParams({action:'submitCash',userId:USER_ID,amount:amt,comment:cmt});
+    const r=await fetch(`${API}?${qs}`).then(x=>x.json());
+    if(!r.ok) throw new Error(r.error||'failed');
+    toast('✅ Submitted '+tkPlain(amt)+' — pending approval');
+    try{ sessionStorage.removeItem(CACHE_KEY); }catch(_){}
+    await load();
+  }catch(e){ console.error(e); toast('Submit failed. Try again.','err'); btn.disabled=false; btn.textContent='Submit for approval'; }
+  finally{ _submitting=false; }
+}
 
-  // Show from cache immediately, no network call
-  function showFolder(folderId) {
-    const data = cache[folderId];
-    if (data) {
-      renderItems(data);
-    } else {
-      // subfolder not yet cached — fetch it
-      fetchFolder(folderId, function(data) {
-        renderItems(data);
-      });
-    }
-  }
-
-  function fetchFolder(folderId, cb, force) {
-    if (!force && cache[folderId]) { cb(cache[folderId]); return; }
-    const cbName = 'cb_' + folderId.replace(/[^a-z0-9]/gi,'') + '_' + Date.now();
-    window[cbName] = function(data) {
-      delete window[cbName];
-      cache[folderId] = data;
-      if (data && data.ok) saveDriveCache();   // persist successful listings
-      cb(data);
-    };
-    const script = document.createElement('script');
-    script.onerror = function() {
-      cache[folderId] = { ok:false, error:'Network error' };
-      cb(cache[folderId]);
-    };
-    script.src = SCRIPT_URL + '?folderId=' + encodeURIComponent(folderId) + '&callback=' + cbName;
-    document.head.appendChild(script);
-  }
-
-  function renderItems(data) {
-    const fl = document.getElementById('file-list');
-    fl.innerHTML = '';
-    if (!data || !data.ok) {
-      fl.innerHTML = '<div class="state-box"><span class="icon">⚠️</span><span class="msg">' + (data && data.error ? data.error : 'Error loading folder') + '</span></div>';
-      return;
-    }
-    if (!data.items || data.items.length === 0) {
-      fl.innerHTML = '<div class="state-box"><span class="icon">📭</span><span class="msg">This folder is empty.</span></div>';
-      return;
-    }
-    data.items.forEach(function(item) {
-      const div = document.createElement('div');
-      div.className = 'file-item';
-      const imgSrc = item.type === 'folder' ? folderIconUrl() : iconUrl(item.mime);
-      div.innerHTML =
-        '<img class="file-icon" src="' + imgSrc + '" alt="" onerror="this.style.display=\'none\'">' +
-        '<span class="file-name">' + item.name + '</span>' +
-        '<span class="file-arrow">' + (item.type === 'folder' ? '›' : '↗') + '</span>';
-      if (item.type === 'folder') {
-        div.onclick = function() {
-          breadcrumbStack.push({ id: item.id, name: item.name });
-          renderBreadcrumb();
-          showFolder(item.id);
-        };
-      } else {
-        div.onclick = function() { window.open(item.url, '_blank'); };
-      }
-      fl.appendChild(div);
-    });
-  }
-
-  function loadTab(key) {
-    activeTabKey = key;
-    document.querySelectorAll('.folder-tab').forEach(function(t) {
-      t.classList.toggle('active', t.dataset.key === key);
-    });
-    const f = FOLDERS[key];
-    breadcrumbStack = [{ id: f.id, name: f.name }];
-    renderBreadcrumb();
-    showFolder(f.id);
-  }
-
-  // Pre-fetch all allowed root folders on startup (once at login)
-  function prefetchAll() {
-    let remaining = allowed.length;
-    allowed.forEach(function(key) {
-      const f = FOLDERS[key];
-      if (!f) { remaining--; return; }
-      fetchFolder(f.id, function() {
-        remaining--;
-        // update dot indicator for this tab
-        const tab = document.querySelector('.folder-tab[data-key="' + key + '"]');
-        if (tab) {
-          const dot = tab.querySelector('.tab-dot');
-          if (dot) dot.classList.add('loaded');
-        }
-        // if active tab just finished loading, render it
-        if (key === activeTabKey) {
-          renderItems(cache[f.id]);
-          showLoading(false);
-        }
-      });
-    });
-  }
-
-  function buildTabs() {
-    const bar = document.getElementById('tab-bar');
-    if (allowed.length === 0) {
-      bar.style.display = 'none';
-      document.getElementById('breadcrumb').style.display = 'none';
-      document.getElementById('file-list').innerHTML =
-        '<div class="no-access"><span style="font-size:36px">🔒</span>' +
-        '<strong style="color:#555">Access Restricted</strong>' +
-        '<span>Contact your administrator.</span></div>';
-      return;
-    }
-
-    allowed.forEach(function(key, i) {
-      const f = FOLDERS[key];
-      if (!f) return;
-      const tab = document.createElement('div');
-      tab.className = 'folder-tab' + (i === 0 ? ' active' : '');
-      tab.dataset.key = key;
-      tab.innerHTML = f.name + '<span class="tab-dot"></span>';
-      tab.onclick = function() { loadTab(key); };
-      bar.appendChild(tab);
-    });
-
-    // Set first tab active
-    activeTabKey = allowed[0];
-    const firstF = FOLDERS[allowed[0]];
-    breadcrumbStack = [{ id: firstF.id, name: firstF.name }];
-    renderBreadcrumb();
-
-    // Mark dots for folders we already have cached.
-    allowed.forEach(function(key) {
-      if (cache[FOLDERS[key].id]) {
-        const tab = document.querySelector('.folder-tab[data-key="' + key + '"]');
-        const dot = tab && tab.querySelector('.tab-dot');
-        if (dot) dot.classList.add('loaded');
-      }
-    });
-
-    const hasAny     = allowed.some(function(k){ return cache[FOLDERS[k].id]; });
-    const loginToken = sessionStorage.getItem('erp_login_token') || '';
-    const doneToken  = sessionStorage.getItem('drive_refreshed_token') || '';
-
-    // Show last loaded content instantly (no spinner) if we have it.
-    if (cache[firstF.id]) renderItems(cache[firstF.id]);
-    else document.getElementById('file-list').innerHTML =
-      '<div class="state-box"><span class="icon">⏳</span><span class="msg">Loading Drive...</span></div>';
-
-    if (!hasAny) {
-      showLoading(true);
-      prefetchAll();                              // first ever load
-    } else if (loginToken && loginToken !== doneToken) {
-      forceRefresh();                             // fresh login — auto refresh once
-    }
-    // else (same session, cache present): show as-is; pull down to refresh
-    if (loginToken) sessionStorage.setItem('drive_refreshed_token', loginToken);
-  }
-
-  // ── REFRESH ALL ROOT FOLDERS (force) ──
-  function refreshAllRoots() {
-    return new Promise(function(resolve) {
-      for (const k in cache) delete cache[k];    // drop stale listings (incl. subfolders)
-      let remaining = allowed.length;
-      if (!remaining) { resolve(); return; }
-      allowed.forEach(function(key) {
-        const f = FOLDERS[key];
-        if (!f) { remaining--; if (!remaining) resolve(); return; }
-        fetchFolder(f.id, function() {
-          const tab = document.querySelector('.folder-tab[data-key="' + key + '"]');
-          const dot = tab && tab.querySelector('.tab-dot');
-          if (dot) dot.classList.add('loaded');
-          if (key === activeTabKey) {
-            breadcrumbStack = [{ id: f.id, name: f.name }];
-            renderBreadcrumb();
-            renderItems(cache[f.id]);
-          }
-          remaining--;
-          if (!remaining) { saveDriveCache(); resolve(); }
-        }, true);
-      });
-    });
-  }
-
-  async function forceRefresh() {
-    if (_refreshing) return;
-    _refreshing = true;
-    const ind = document.getElementById('ptrIndicator');
-    ind.style.marginTop = '0px';
-    ind.classList.add('ptr-loading');
-    document.getElementById('ptrText').textContent = 'Refreshing…';
-    await refreshAllRoots();
-    ind.classList.remove('ptr-loading');
-    document.getElementById('ptrText').textContent = 'Pull to refresh';
-    ind.style.marginTop = '-48px';
-    _refreshing = false;
-  }
-
-  // ── PULL TO REFRESH (bound to the scrolling file list) ──
-  (function initPullToRefresh() {
-    const list = document.getElementById('file-list');
-    const ind  = document.getElementById('ptrIndicator');
-    const txt  = document.getElementById('ptrText');
-    const MAX = 80, FIRE = 56;
-    let startY = 0, pulling = false, dist = 0;
-    list.addEventListener('touchstart', function(e) {
-      if (_refreshing || list.scrollTop > 0) { pulling = false; return; }
-      startY = e.touches[0].clientY; pulling = true;
-    }, { passive:true });
-    list.addEventListener('touchmove', function(e) {
-      if (!pulling || _refreshing) return;
-      dist = e.touches[0].clientY - startY;
-      if (dist <= 0) { dist = 0; ind.style.marginTop = '-48px'; return; }
-      if (list.scrollTop > 0) { pulling = false; return; }
-      const eased = Math.min(MAX, dist * 0.5);
-      ind.style.marginTop = (eased - 48) + 'px';
-      txt.textContent = eased >= FIRE ? 'Release to refresh' : 'Pull to refresh';
-    }, { passive:true });
-    list.addEventListener('touchend', function() {
-      if (!pulling) return;
-      pulling = false;
-      const eased = Math.min(MAX, dist * 0.5);
-      if (eased >= FIRE) forceRefresh();
-      else ind.style.marginTop = '-48px';
-      dist = 0;
-    });
-  })();
-
-  buildTabs();
+async function forceRefresh(){
+  if(_ptrBusy) return; _ptrBusy=true;
+  const ind=document.getElementById('ptrIndicator'); ind.classList.add('ptr-loading');
+  document.getElementById('ptrText').textContent='Refreshing…';
+  try{ sessionStorage.removeItem(CACHE_KEY); }catch(_){}
+  try{ await load(); toast('✅ Refreshed'); }catch(e){ toast('Refresh failed','err'); }
+  finally{ _ptrBusy=false; ind.classList.remove('ptr-loading'); document.getElementById('ptrText').textContent='Pull to refresh'; }
+}
+function initPTR(){
+  const ind=document.getElementById('ptrIndicator'), txt=document.getElementById('ptrText');
+  const MAX=90, FIRE=60; let startY=0, pulling=false, dist=0;
+  document.addEventListener('touchstart',e=>{ if(_ptrBusy||window.scrollY>0){pulling=false;return;} startY=e.touches[0].clientY; pulling=true; },{passive:true});
+  document.addEventListener('touchmove',e=>{ if(!pulling||_ptrBusy)return; dist=e.touches[0].clientY-startY; if(dist<=0){dist=0;ind.style.marginTop='-56px';return;} if(window.scrollY>0){pulling=false;return;} const es=Math.min(MAX,dist*0.5); ind.style.marginTop=(es-56)+'px'; txt.textContent=es>=FIRE?'Release to refresh':'Pull to refresh'; },{passive:true});
+  document.addEventListener('touchend',()=>{ if(!pulling)return; pulling=false; const es=Math.min(MAX,dist*0.5); if(es>=FIRE){ind.style.marginTop='0px';forceRefresh().then(()=>{ind.style.marginTop='-56px';});} else ind.style.marginTop='-56px'; dist=0; });
+}
+window.addEventListener('DOMContentLoaded',()=>{ load(); initPTR(); });
 </script>
 </body>
 </html>
