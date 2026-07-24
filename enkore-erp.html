@@ -129,6 +129,18 @@
     .um-item:hover { background:#fafafa; }
     .um-item.danger { color:#ef4444; }
 
+    /* SHELL TOAST */
+    #shell-toast {
+      position:fixed; left:50%; bottom:calc(76px + env(safe-area-inset-bottom,0px));
+      transform:translateX(-50%) translateY(16px);
+      background:#16181d; color:#fff; font-size:13px; font-weight:600;
+      padding:11px 18px; border-radius:999px; max-width:88%; text-align:center;
+      box-shadow:0 6px 22px rgba(0,0,0,.28); z-index:9998;
+      opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+    }
+    #shell-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    #shell-toast.ok  { background:#16b07c; }
+
     /* CONTENT */
     .content {
       position:fixed; top:44px; left:0; right:0;
@@ -268,6 +280,8 @@
 
   <nav class="bottom-nav" id="bottom-nav"></nav>
 </div>
+
+<div id="shell-toast"></div>
 
 <!-- UPDATE BANNER -->
 <div id="update-banner" style="display:none;position:fixed;left:0;right:0;z-index:9999;background:#1971c2;color:#fff;padding:12px 16px;align-items:center;justify-content:space-between;gap:12px;font-family:inherit;box-shadow:0 -2px 12px rgba(0,0,0,.2);bottom:calc(58px + env(safe-area-inset-bottom,0px));">
@@ -906,30 +920,89 @@
     else window.location.reload();
   }
 
+  // ── TOAST ──
+  let _toastTimer = null;
+  function showToast(msg, kind) {
+    const t = document.getElementById('shell-toast');
+    t.textContent = msg;
+    t.className = 'show' + (kind === 'ok' ? ' ok' : '');
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { t.className = ''; }, 3200);
+  }
+
+  // ── APP VERSION SIGNATURE ──
+  // Asks the server (HEAD, never cached) for the ETag of the shell and every
+  // panel the user can see. The joined ETags are a fingerprint of the deployed
+  // app. Comparing it against the fingerprint recorded at the last load tells
+  // us — accurately — whether a newer build exists.
+  const SIG_KEY = 'enkore_app_sig';
+  async function appSignature() {
+    const files = ['enkore-erp.html'].concat(
+      ((currentUser && currentUser.panels) || []).map(p => 'panels/' + p.file + '.html')
+    );
+    const tags = await Promise.all(files.map(f =>
+      fetch(f + '?v=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
+        .then(r => r.headers.get('etag') || r.headers.get('last-modified') || String(r.status))
+        .catch(() => '?')
+    ));
+    return tags.join('|');
+  }
+
   // ── MANUAL "CHECK FOR UPDATES" ──
-  // The nuclear option, from the profile menu. Wipes every cache and reloads
-  // from the network, so a deploy is guaranteed to land even if the service
-  // worker or the OS is holding on to an old copy.
+  let _checking = false;
   async function forceUpdate() {
+    if (_checking) return;
+    _checking = true;
     closeMenu();
-    const av = document.getElementById('tb-avatar');
-    const prev = av.textContent; av.textContent = '…';
+    showToast('Checking for updates…');
     try {
-      if ('serviceWorker' in navigator) {
-        const reg = await navigator.serviceWorker.getRegistration();
-        if (reg) {
-          await reg.update().catch(() => {});
-          if (reg.waiting) { _updating = true; reg.waiting.postMessage({ type: 'SKIP_WAITING' }); return; }
-        }
+      const netSig = await appSignature();
+      const running = localStorage.getItem(SIG_KEY);
+
+      // Signature unreadable (offline / headers stripped) — fall back to the
+      // service worker's own check rather than claiming anything false.
+      if (/\?/.test(netSig)) {
+        const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+        if (reg) await reg.update().catch(() => {});
+        if (reg && reg.waiting) { sessionStorage.setItem('erp_update_msg', '1'); _updating = true; reg.waiting.postMessage({ type: 'SKIP_WAITING' }); return; }
+        showToast('Could not check — you appear to be offline');
+        return;
       }
+
+      if (running && running === netSig) { showToast('✅ Already up to date', 'ok'); return; }
+
+      // A new build exists (or this is the first check) — wipe every cache so
+      // the reload is guaranteed to come from the network.
+      localStorage.setItem(SIG_KEY, netSig);
+      sessionStorage.setItem('erp_update_msg', running ? '1' : '0'); // 0 = first run, nothing to announce
+      showToast('Updating…');
       if (window.caches) {
         const keys = await caches.keys();
         await Promise.all(keys.map(k => caches.delete(k)));
       }
-    } catch(_) {}
-    av.textContent = prev;
-    window.location.reload();
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) await reg.update().catch(() => {});
+      }
+      setTimeout(() => window.location.reload(), 400);
+    } catch(e) {
+      console.error('[ERP] update check failed:', e);
+      showToast('Update check failed — try again');
+    } finally {
+      _checking = false;
+    }
   }
+
+  // After an update reload, tell the user it worked. Also refresh the stored
+  // signature on every normal launch so it always reflects what is running.
+  window.addEventListener('load', () => {
+    const msg = sessionStorage.getItem('erp_update_msg');
+    sessionStorage.removeItem('erp_update_msg');
+    if (msg === '1') setTimeout(() => showToast('✅ Updated to the latest version', 'ok'), 700);
+    setTimeout(() => {
+      appSignature().then(sig => { if (!/\?/.test(sig)) localStorage.setItem(SIG_KEY, sig); }).catch(() => {});
+    }, 3000);
+  });
 </script>
 </body>
 </html>
