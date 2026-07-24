@@ -1,4 +1,4 @@
-const CACHE_NAME = 'enkore-erp-v8';
+const CACHE_NAME = 'enkore-erp-v9';
 const STATIC_FILES = [
   '/enkore-erp',
   '/enkore-erp.html',
@@ -13,6 +13,8 @@ const STATIC_FILES = [
   '/panels/sales-entry.html',
   '/panels/expense-entry.html',
   '/panels/clients-due.html',
+  '/panels/approval-s.html',
+  '/panels/profile-s.html',
 ];
 
 self.addEventListener('install', e => {
