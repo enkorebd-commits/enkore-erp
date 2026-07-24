@@ -73,7 +73,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .fi.big-calc.due-red{background:#e03131;color:#fff;border-color:#e03131}
 
 /* PULL TO REFRESH */
-#ptrIndicator{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:8px;height:56px;margin-top:-56px;font-size:13px;font-weight:800;color:var(--muted);background:var(--bg);z-index:250;transition:margin-top .18s ease;pointer-events:none}
+#ptrIndicator{position:fixed;top:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 18px;margin-top:-56px;font-size:12px;font-weight:800;color:var(--muted);background:rgba(255,255,255,.96);border:1px solid #e3e7ee;border-radius:999px;box-shadow:0 4px 16px rgba(0,0,0,.14);z-index:250;transition:margin-top .18s ease;pointer-events:none;white-space:nowrap}
 #ptrIndicator .ptr-spin{width:16px;height:16px;border:2.5px solid #d0d4dc;border-top-color:var(--blue,#2f6fed);border-radius:50%;display:inline-block;animation:none}
 #ptrIndicator.ptr-ready .ptr-spin{transform:rotate(180deg);transition:transform .15s}
 #ptrIndicator.ptr-loading .ptr-spin{animation:ptr-rot .6s linear infinite}
@@ -2581,6 +2581,21 @@ function fmtNoteDate(ts) {
   if (isNaN(d.getTime())) return String(ts||'').split(' ')[0] || '';
   return `${d.getDate()} ${mos[d.getMonth()]}, ${String(d.getFullYear()).slice(-2)}`;
 }
+
+// ── SHELL BACK-BUTTON HOOK ─────────────────────────────────────
+// Called by the ERP shell when Back is pressed. If a popup/drawer is open,
+// close the TOPMOST one and return true — the shell then keeps the user on
+// this panel instead of jumping to the first panel.
+window.__erpHandleBack = function() {
+  const isOpen = id => { const el = document.getElementById(id); return el && el.classList.contains('open'); };
+  if (isOpen('invOverlay'))     { closeInvoice();    return true; } // invoice sits above history
+  if (isOpen('confirmOverlay')) { closeConfirm();    return true; }
+  if (isOpen('histOverlay'))    { closeHistory();    return true; }
+  if (isOpen('ncOverlay'))      { closeNewClient();  return true; }
+  if (isOpen('noteOverlay'))    { closeNoteDrawer(); return true; }
+  if (isOpen('csDd'))           { closeDd();         return true; }
+  return false;
+};
 </script>
 </body>
 </html>
