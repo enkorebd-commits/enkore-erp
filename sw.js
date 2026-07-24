@@ -1,4 +1,4 @@
-const CACHE_NAME = 'enkore-erp-v9';
+const CACHE_NAME = 'enkore-erp-v10';
 const STATIC_FILES = [
   '/enkore-erp',
   '/enkore-erp.html',
@@ -54,24 +54,38 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Stale-while-revalidate for all HTML (shell + panels): serve the cached copy
-  // INSTANTLY so panel switches never wait on the network (that wait was the
-  // blank/white second during slide transitions), then refresh the cache in the
-  // background. New deploys still reach users via the sw.js version bump, which
-  // clears this cache and reloads.
+  // NETWORK-FIRST (with a short timeout) for all HTML — shell + panels.
+  //
+  // The old strategy was stale-while-revalidate: it served the cached copy and
+  // refreshed the cache in the background. That made a new deploy invisible
+  // until something forced a full page reload — and an installed PWA resumed
+  // from memory never reloads. So updated panels sat in the cache, unused.
+  //
+  // Now: try the network first, but give up after TIMEOUT_MS and fall back to
+  // cache. On a normal connection the user always gets the newest file; on a
+  // bad connection or offline they still get the cached copy fast.
   if (url.includes('.html') || url.endsWith('/enkore-erp')) {
-    e.respondWith(
-      caches.match(e.request).then(cached => {
-        const net = fetch(e.request)
-          .then(res => {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
-            return res;
-          })
-          .catch(() => cached);
-        return cached || net;
-      })
-    );
+    const TIMEOUT_MS = 2500;
+    e.respondWith((async () => {
+      const cached = await caches.match(e.request);
+
+      const fromNet = fetch(e.request).then(res => {
+        if (res && res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone)).catch(() => {});
+        }
+        return res;
+      });
+
+      // Whichever resolves first: the network, or the timeout handing back cache.
+      if (!cached) return fromNet;
+      const timeout = new Promise(resolve => setTimeout(() => resolve(cached), TIMEOUT_MS));
+      try {
+        return await Promise.race([fromNet, timeout]);
+      } catch (_) {
+        return cached; // network errored outright (offline)
+      }
+    })());
     return;
   }
 
