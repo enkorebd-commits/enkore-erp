@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Salesman Approvals — Enkore</title>
+<style>
+:root{
+  --blue:#1971c2;--blue2:#4098e6;--bluebg:#e7f1fb;--navy:#123a63;
+  --grn:#1b6b3a;--grn2:#2d8a52;--grnbg:#edf7f1;--red:#e03131;--redbg:#fff5f5;
+  --amber:#e67e22;--amberbg:#fff4e6;--gold:#b8860b;
+  --text:#1a1a2e;--muted:#868e96;--border:#dee2e6;--bg:#f3f4f6;--card:#fff;
+  --r:14px;--sh:0 2px 8px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior:none}
+
+.hdr{background:linear-gradient(135deg,#0d0d0d,#123a63);color:#fff;padding:16px 16px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.hdr-title{font-size:17px;font-weight:900;letter-spacing:.2px}
+.hdr-sub{font-size:11px;opacity:.8;margin-top:2px}
+.tabs{display:flex;gap:4px;margin-top:12px}
+.tab{flex:1;text-align:center;padding:10px 4px;font-size:12px;font-weight:800;color:rgba(255,255,255,.7);border-bottom:3px solid transparent;cursor:pointer}
+.tab.on{color:#fff;border-bottom-color:#4098e6}
+.tab .cnt{display:inline-block;min-width:17px;font-size:10px;background:#e03131;color:#fff;border-radius:10px;padding:0 5px;margin-left:3px}
+
+.body{padding:14px;max-width:600px;margin:0 auto;padding-bottom:40px}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px;margin-bottom:10px}
+.sec-t{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:4px 4px 8px}
+
+/* pending item */
+.psub{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:13px 14px;margin-bottom:10px;border-left:4px solid var(--amber)}
+.psub-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.psub-name{font-size:14px;font-weight:800}
+.psub-amt{font-size:18px;font-weight:900;color:var(--blue);white-space:nowrap}
+.psub-amt .u{font-size:10px;color:var(--muted);margin-left:2px}
+.psub-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.psub-cmt{font-size:12px;color:#555;margin-top:6px;font-style:italic}
+.psub-btns{display:flex;gap:8px;margin-top:11px}
+.b{flex:1;padding:10px;font-size:13px;font-weight:800;border:none;border-radius:10px;cursor:pointer;transition:.15s}
+.b:active{transform:scale(.98)}
+.b.ok{background:var(--grn);color:#fff}
+.b.no{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.b:disabled{opacity:.5;cursor:not-allowed}
+
+/* form */
+.field{margin-bottom:10px}
+.field label{display:block;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.inp,.sel{width:100%;padding:12px 14px;font-size:16px;border:1.5px solid var(--border);border-radius:10px;outline:none;background:#fff;color:var(--text)}
+.inp:focus,.sel:focus{border-color:var(--blue)}
+.btn{width:100%;padding:13px;font-size:15px;font-weight:800;color:#fff;background:var(--blue);border:none;border-radius:11px;cursor:pointer}
+.btn:active{transform:scale(.99)}
+.btn:disabled{opacity:.55}
+
+/* overview */
+.search{width:100%;padding:11px 14px;font-size:14px;border:1.5px solid var(--border);border-radius:10px;outline:none;background:#fff;color:var(--text);margin-bottom:12px}
+.search:focus{border-color:var(--blue)}
+.ov-item{display:flex;align-items:center;gap:11px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:12px 13px;margin-bottom:8px}
+.rank{flex-shrink:0;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;background:#f1f3f5;color:var(--muted)}
+.rank.r1{background:#fff3bf;color:#b8860b}.rank.r2{background:#e9ecef;color:#495057}.rank.r3{background:#ffe8cc;color:#d9480f}
+.ov-main{flex:1;min-width:0}
+.ov-name{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-stats{font-size:11px;color:var(--muted);margin-top:3px}
+.ov-stats b{color:var(--text)}
+.ov-fig{flex-shrink:0;text-align:right}
+.ov-fig .f1{font-size:14px;font-weight:900}
+.ov-fig .f2{font-size:10px;color:var(--muted);margin-top:2px;font-weight:700}
+.clr{font-weight:900}
+.clr.hi{color:var(--grn)}.clr.mid{color:var(--amber)}.clr.lo{color:var(--red)}
+
+.state{text-align:center;padding:44px 20px;color:var(--muted)}
+.state-icon{font-size:34px;margin-bottom:8px}
+.state-txt{font-size:13px;font-weight:600}
+.spin{display:inline-block;width:16px;height:16px;border:2.5px solid #d0d4dc;border-top-color:var(--blue);border-radius:50%;animation:rot .6s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+#ptrIndicator{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:8px;height:56px;margin-top:-56px;font-size:13px;font-weight:800;color:var(--muted);background:var(--bg);z-index:250;transition:margin-top .18s ease;pointer-events:none}
+#ptrIndicator .ptr-spin{width:16px;height:16px;border:2.5px solid #d0d4dc;border-top-color:var(--blue);border-radius:50%;display:inline-block}
+#ptrIndicator.ptr-loading .ptr-spin{animation:rot .6s linear infinite}
+
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:400;opacity:0;transition:.25s;max-width:90%;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.err{background:#c0392b}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+
+<div id="ptrIndicator"><span class="ptr-spin"></span><span id="ptrText">Pull to refresh</span></div>
+
+<div class="hdr">
+  <div class="hdr-title">Salesman Approvals</div>
+  <div class="hdr-sub" id="hSub">Management panel</div>
+  <div class="tabs">
+    <div class="tab on" data-t="approve" onclick="switchTab('approve')">Approvals<span class="cnt hide" id="pendCnt">0</span></div>
+    <div class="tab" data-t="target" onclick="switchTab('target')">Targets</div>
+    <div class="tab" data-t="overview" onclick="switchTab('overview')">Overview</div>
+  </div>
+</div>
+
+<div class="body">
+  <div id="tab-approve">
+    <div class="state"><div class="state-txt"><span class="spin"></span> Loading…</div></div>
+  </div>
+  <div id="tab-target" class="hide"></div>
+  <div id="tab-overview" class="hide"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API   = 'https://script.google.com/macros/s/AKfycbylAEyTwyBrejsLKA1a5-dhL57K44UVUJOT9rDvLtd53GSzR-WEEAMYD-WYVx7SpGUaJA/exec';
+const PARAMS   = new URLSearchParams(location.search);
+const USER_ID  = PARAMS.get('userId') || '';
+const READONLY = PARAMS.get('readonly') === '1';
+const CACHE_KEY= 'enkore_approvalS';
+let DATA=null, TAB='approve', _ptrBusy=false, _busy=false;
+
+const MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function tkPlain(n){ if(n===''||n==null||isNaN(n)) return '0 tk'; return Number(n).toLocaleString('en-IN',{maximumFractionDigits:2})+' tk'; }
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(m,t){ const e=document.getElementById('toast'); e.innerHTML=m; e.className='show'+(t==='err'?' err':''); clearTimeout(window._tt); window._tt=setTimeout(()=>e.className='',2400); }
+function fmtDate(v){ if(!v) return ''; const d=new Date(v); if(isNaN(d)) return String(v); return d.getDate()+' '+MOS[d.getMonth()]+', '+d.getFullYear(); }
+function curMonthKey(){ const d=new Date(); return MOS[d.getMonth()]+', '+String(d.getFullYear()).slice(-2); }
+
+function switchTab(t){
+  TAB=t;
+  document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('on',el.dataset.t===t));
+  ['approve','target','overview'].forEach(x=>document.getElementById('tab-'+x).classList.toggle('hide',x!==t));
+}
+
+async function load(){
+  try{ const c=sessionStorage.getItem(CACHE_KEY); if(c){ DATA=JSON.parse(c); paint(); } }catch(_){}
+  if(!USER_ID){ document.getElementById('tab-approve').innerHTML='<div class="state"><div class="state-icon">🔒</div><div class="state-txt">No user id. Open from the ERP.</div></div>'; return; }
+  try{
+    const r=await fetch(`${API}?action=getApprovalQueue&approverId=${encodeURIComponent(USER_ID)}&t=${Date.now()}`).then(x=>x.json());
+    if(!r.ok){ if(String(r.error||'').indexOf('authorized')>=0){ lockOut(); return; } throw new Error(r.error||'load'); }
+    DATA=r; try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify(r)); }catch(_){}
+    paint();
+  }catch(e){ console.error(e); if(!DATA) document.getElementById('tab-approve').innerHTML='<div class="state"><div class="state-icon">⚠️</div><div class="state-txt">Could not load. Pull to retry.</div></div>'; else toast('Refresh failed','err'); }
+}
+function lockOut(){
+  document.getElementById('hSub').textContent='Access denied';
+  document.getElementById('tab-approve').innerHTML='<div class="state"><div class="state-icon">🔒</div><div class="state-txt">You are not assigned as an approver.</div></div>';
+}
+
+function paint(){
+  const d=DATA;
+  document.getElementById('hSub').textContent=(d.month||'')+' · '+(d.pending?d.pending.length:0)+' pending';
+  const pc=document.getElementById('pendCnt');
+  if(d.pending&&d.pending.length){ pc.textContent=d.pending.length; pc.classList.remove('hide'); } else pc.classList.add('hide');
+  paintApprove(); paintTarget(); paintOverview();
+}
+
+function paintApprove(){
+  const d=DATA, el=document.getElementById('tab-approve');
+  if(!d.pending||!d.pending.length){ el.innerHTML='<div class="state"><div class="state-icon">✅</div><div class="state-txt">No pending submissions. All clear.</div></div>'; return; }
+  el.innerHTML='<div class="sec-t">Pending cash submissions</div>'+d.pending.map(p=>{
+    const sid=escapeHtml(p.subId||'');
+    const btns=READONLY?'':'<div class="psub-btns"><button class="b ok" onclick="decide(this,\''+sid+'\',\'Approved\')">✓ Approve</button><button class="b no" onclick="decide(this,\''+sid+'\',\'Rejected\')">✕ Reject</button></div>';
+    return '<div class="psub" data-sid="'+sid+'"><div class="psub-top"><div class="psub-name">'+escapeHtml(p.name||p.id)+'</div><div class="psub-amt">'+Number(p.amount||0).toLocaleString('en-IN')+'<span class="u">tk</span></div></div>'
+      +'<div class="psub-meta">ID '+escapeHtml(p.id)+(p.date?' · '+fmtDate(p.date):'')+'</div>'
+      +(p.comment?'<div class="psub-cmt">📝 '+escapeHtml(p.comment)+'</div>':'')
+      +btns+'</div>';
+  }).join('');
+}
+
+async function decide(btn,subId,decision){
+  if(_busy) return; _busy=true;
+  const card=btn.closest('.psub'); card.querySelectorAll('button').forEach(b=>b.disabled=true);
+  btn.textContent=decision==='Approved'?'Approving…':'Rejecting…';
+  try{
+    const qs=new URLSearchParams({action:'decideSubmission',approverId:USER_ID,subId:subId,decision:decision});
+    const r=await fetch(`${API}?${qs}`).then(x=>x.json());
+    if(!r.ok) throw new Error(r.error||'failed');
+    toast(decision==='Approved'?'✅ Approved':'✕ Rejected');
+    try{ sessionStorage.removeItem(CACHE_KEY); }catch(_){}
+    await load();
+  }catch(e){ console.error(e); toast('Action failed. Retry.','err'); card.querySelectorAll('button').forEach(b=>b.disabled=false); }
+  finally{ _busy=false; }
+}
+
+function paintTarget(){
+  const d=DATA, el=document.getElementById('tab-target');
+  if(READONLY){ el.innerHTML='<div class="state"><div class="state-icon">🔒</div><div class="state-txt">Read-only. You cannot set targets.</div></div>'; return; }
+  const people=(d.overview||[]).slice().sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  const opts=people.map(p=>'<option value="'+escapeHtml(p.id)+'">'+escapeHtml(p.name||p.id)+' ('+escapeHtml(p.id)+')</option>').join('');
+  el.innerHTML='<div class="sec-t">Set monthly sales target</div><div class="card">'
+    +'<div class="field"><label>Month</label><input class="inp" id="tMonth" type="text" value="'+curMonthKey()+'" placeholder="Jul, 26"></div>'
+    +'<div class="field"><label>Salesman</label><select class="sel" id="tWho">'+opts+'</select></div>'
+    +'<div class="field"><label>Sales target (tk)</label><input class="inp" id="tAmt" type="number" inputmode="numeric" min="0" placeholder="e.g. 50000"></div>'
+    +'<button class="btn" id="tBtn" onclick="saveTarget()">Save target</button>'
+    +'<div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5">Format the month as <b>Mmm, yy</b> (e.g. Jul, 26). Saving again for the same month and salesman updates the existing target.</div>'
+    +'</div>';
+}
+
+async function saveTarget(){
+  if(_busy) return;
+  const month=(document.getElementById('tMonth').value||'').trim();
+  const who=document.getElementById('tWho').value;
+  const amt=parseFloat((document.getElementById('tAmt').value||'').replace(/[^0-9.]/g,''));
+  if(!month){ toast('Enter month','err'); return; }
+  if(!who){ toast('Pick a salesman','err'); return; }
+  if(isNaN(amt)||amt<0){ toast('Enter a valid target','err'); return; }
+  _busy=true; const btn=document.getElementById('tBtn'); btn.disabled=true; btn.textContent='Saving…';
+  try{
+    const qs=new URLSearchParams({action:'setTarget',approverId:USER_ID,month:month,salesmanId:who,target:amt});
+    const r=await fetch(`${API}?${qs}`).then(x=>x.json());
+    if(!r.ok) throw new Error(r.error||'failed');
+    toast('✅ Target '+(r.updated?'updated':'set')+' — '+tkPlain(amt));
+    document.getElementById('tAmt').value='';
+    try{ sessionStorage.removeItem(CACHE_KEY); }catch(_){}
+    await load();
+  }catch(e){ console.error(e); toast('Save failed. Retry.','err'); }
+  finally{ _busy=false; btn.disabled=false; btn.textContent='Save target'; }
+}
+
+function clrCls(p){ return p>=90?'hi':(p>=70?'mid':'lo'); }
+function paintOverview(){
+  const d=DATA, el=document.getElementById('tab-overview');
+  el.innerHTML='<input type="text" class="search" id="ovSearch" placeholder="Search name or ID…" oninput="renderOverview()"><div id="ovList"></div>';
+  renderOverview();
+}
+function renderOverview(){
+  const d=DATA; if(!d||!d.overview){ return; }
+  const q=(document.getElementById('ovSearch')?.value||'').trim().toLowerCase();
+  let rows=d.overview.slice();
+  if(q) rows=rows.filter(r=>((r.name||'')+' '+(r.id||'')).toLowerCase().includes(q));
+  const el=document.getElementById('ovList');
+  if(!rows.length){ el.innerHTML='<div class="state"><div class="state-txt">No match.</div></div>'; return; }
+  el.innerHTML=rows.map(r=>{
+    const rk=(r.rank&&r.rank!=='-')?r.rank:'—';
+    const rkCls=(r.rank>=1&&r.rank<=3)?('r'+r.rank):'';
+    const cl=Math.round((r.clearancePct||0)*10)/10;
+    return '<div class="ov-item"><div class="rank '+rkCls+'">'+rk+'</div>'
+      +'<div class="ov-main"><div class="ov-name">'+escapeHtml(r.name||r.id)+'</div>'
+        +'<div class="ov-stats">Sales <b>'+tkPlain(r.sales)+'</b> · Due <b>'+tkPlain(r.due)+'</b> · Hand <b>'+tkPlain(r.cashInHand)+'</b></div></div>'
+      +'<div class="ov-fig"><div class="f1 clr '+clrCls(cl)+'">'+cl+'%</div><div class="f2">clearance</div></div>'
+      +'</div>';
+  }).join('');
+}
+
+async function forceRefresh(){
+  if(_ptrBusy) return; _ptrBusy=true;
+  const ind=document.getElementById('ptrIndicator'); ind.classList.add('ptr-loading');
+  document.getElementById('ptrText').textContent='Refreshing…';
+  try{ sessionStorage.removeItem(CACHE_KEY); }catch(_){}
+  try{ await load(); toast('✅ Refreshed'); }catch(e){ toast('Refresh failed','err'); }
+  finally{ _ptrBusy=false; ind.classList.remove('ptr-loading'); document.getElementById('ptrText').textContent='Pull to refresh'; }
+}
+function initPTR(){
+  const ind=document.getElementById('ptrIndicator'), txt=document.getElementById('ptrText');
+  const MAX=90, FIRE=60; let startY=0, pulling=false, dist=0;
+  document.addEventListener('touchstart',e=>{ if(_ptrBusy||window.scrollY>0){pulling=false;return;} startY=e.touches[0].clientY; pulling=true; },{passive:true});
+  document.addEventListener('touchmove',e=>{ if(!pulling||_ptrBusy)return; dist=e.touches[0].clientY-startY; if(dist<=0){dist=0;ind.style.marginTop='-56px';return;} if(window.scrollY>0){pulling=false;return;} const es=Math.min(MAX,dist*0.5); ind.style.marginTop=(es-56)+'px'; txt.textContent=es>=FIRE?'Release to refresh':'Pull to refresh'; },{passive:true});
+  document.addEventListener('touchend',()=>{ if(!pulling)return; pulling=false; const es=Math.min(MAX,dist*0.5); if(es>=FIRE){ind.style.marginTop='0px';forceRefresh().then(()=>{ind.style.marginTop='-56px';});} else ind.style.marginTop='-56px'; dist=0; });
+}
+window.addEventListener('DOMContentLoaded',()=>{ load(); initPTR(); });
+</script>
+</body>
+</html>
