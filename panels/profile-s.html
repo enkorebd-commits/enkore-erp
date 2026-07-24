@@ -221,17 +221,15 @@ function paint(){
     +'<div class="box"><div class="box-l">Due</div><div class="box-v red">'+tk(m.due)+'</div></div>'
     +'</div></div>';
 
-  // 3) PRODUCTS, SALES & COMMISSION (single all-time table)
-  h+='<div class="sec-t">Products, Sales & Commission</div>';
+  // 3) PRODUCTS, SALES & COMMISSION (this month only)
+  h+='<div class="sec-t">Products, Sales & Commission · this month</div>';
   h+='<div class="card">';
-  if(a.products&&a.products.length){
-    let totAv=0;
-    h+='<table class="tbl"><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Total Sales</th><th class="num">%</th><th class="num">Availed</th></tr></thead><tbody>';
-    h+=a.products.map(p=>{ totAv+=(p.availed||0); return '<tr><td class="pname">'+escapeHtml(p.name)+'</td><td class="num">'+p.qty+'</td><td class="num">'+tkPlain(p.salesValue)+'</td><td class="num">'+pct((p.commPct||0)*100)+'</td><td class="num av">'+tkPlain(p.availed)+'</td></tr>'; }).join('');
+  if(c.rows&&c.rows.length){
+    h+='<table class="tbl"><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Sales</th><th class="num">%</th><th class="num">Availed</th></tr></thead><tbody>';
+    h+=c.rows.map(p=>'<tr><td class="pname">'+escapeHtml(p.product)+'</td><td class="num">'+(p.qty||0)+'</td><td class="num">'+tkPlain(p.salesValue)+'</td><td class="num">'+pct((p.commPct||0)*100)+'</td><td class="num av">'+tkPlain(p.availed)+'</td></tr>').join('');
     h+='</tbody></table>';
-    h+='<div class="tbl-total"><span>Total Availed (lifetime)</span><span class="v">'+tkPlain(totAv)+'</span></div>';
   } else {
-    h+='<div class="tgt-row"><span class="k">No products sold yet.</span><span class="val"></span></div>';
+    h+='<div class="tgt-row"><span class="k">No sales this month yet.</span><span class="val"></span></div>';
   }
   h+='</div>';
 
