@@ -73,21 +73,18 @@
 
     /* TOP BAR */
     .topbar {
-      position:fixed; top:0; left:0; right:0; height:52px;
+      position:fixed; top:0; left:0; right:0; height:44px;
       background:#fff; border-bottom:1px solid #eee;
-      display:flex; align-items:center; padding:0 14px 0 16px; gap:10px; z-index:100;
+      display:flex; align-items:center; padding:0 12px 0 14px; gap:10px; z-index:100;
     }
-    .tb-logo img { height:24px; border-radius:6px; }
+    .tb-logo img { height:22px; border-radius:6px; }
     .tb-spacer { flex:1; }
     .tb-panel { font-size:13px; color:#999; font-weight:500; display:none; }
-    .tb-uinfo .tbun { font-size:12px; font-weight:600; color:#111; }
-    .tb-uinfo .tbur { font-size:10px; color:#888; }
-    .tb-uinfo .tbuid { font-size:9px; color:#aaa; letter-spacing:0.3px; }
     .tb-avatar {
-      width:34px; height:34px; border-radius:50%;
+      width:32px; height:32px; border-radius:50%;
       background:var(--blue); color:#fff;
       display:flex; align-items:center; justify-content:center;
-      font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0;
+      font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0;
     }
     .btn-logout-desk {
       display:none; padding:7px 14px;
@@ -99,7 +96,7 @@
 
     /* USER MENU */
     .user-menu {
-      position:fixed; top:56px; right:12px;
+      position:fixed; top:50px; right:12px;
       background:#fff; border:1px solid #e8e8e8; border-radius:12px; padding:6px 0;
       min-width:190px; box-shadow:0 8px 28px rgba(0,0,0,0.12);
       z-index:300; display:none;
@@ -108,13 +105,14 @@
     .um-info { padding:10px 16px; border-bottom:1px solid #f0f0f0; margin-bottom:4px; }
     .um-info .um-n { font-size:13px; font-weight:600; color:#111; }
     .um-info .um-r { font-size:11px; color:#888; margin-top:2px; }
+    .um-info .um-id { font-size:10px; color:#aaa; margin-top:2px; letter-spacing:0.3px; }
     .um-item { padding:11px 16px; font-size:13px; color:#444; cursor:pointer; display:flex; align-items:center; gap:9px; }
     .um-item:hover { background:#fafafa; }
     .um-item.danger { color:#ef4444; }
 
     /* CONTENT */
     .content {
-      position:fixed; top:52px; left:0; right:0;
+      position:fixed; top:44px; left:0; right:0;
       bottom:calc(58px + env(safe-area-inset-bottom,0px));
       background:#f4f6f8;
     }
@@ -177,11 +175,13 @@
     @media (min-width:769px) {
       .sidebar    { display:flex; }
       .bottom-nav { display:none; }
-      .topbar     { left:var(--sidebar-w); height:56px; }
+      .topbar     { left:var(--sidebar-w); height:48px; }
       .tb-logo    { display:none; }
       .tb-panel   { display:block; }
       .btn-logout-desk { display:block; }
-      .content    { top:56px; left:var(--sidebar-w); bottom:0; }
+      .content    { top:48px; left:var(--sidebar-w); bottom:0; }
+      .user-menu  { top:54px; }
+      #update-banner { bottom:0 !important; left:var(--sidebar-w) !important; }
     }
   </style>
 </head>
@@ -223,13 +223,12 @@
     <div class="tb-logo"><img src="assets/invoice-logo.png" alt="Enkore" /></div>
     <div class="tb-panel" id="tb-panel"></div>
     <div class="tb-spacer"></div>
-    <div class="tb-uinfo"><div class="tbun" id="tb-name">-</div><div class="tbur" id="tb-role">-</div><div class="tbuid" id="tb-uid">-</div></div>
     <div class="tb-avatar" id="tb-avatar" onclick="toggleMenu()">--</div>
     <button class="btn-logout-desk" onclick="doLogout()">Logout</button>
   </div>
 
   <div class="user-menu" id="user-menu">
-    <div class="um-info"><div class="um-n" id="um-n">-</div><div class="um-r" id="um-r">-</div></div>
+    <div class="um-info"><div class="um-n" id="um-n">-</div><div class="um-r" id="um-r">-</div><div class="um-id" id="um-id">-</div></div>
     <div class="um-item danger" onclick="doLogout()"><span>🚪</span> Sign Out</div>
   </div>
 
@@ -243,7 +242,7 @@
   </nav>
 
   <div class="content" id="content">
-    <iframe class="pf" id="pf0" src="" title="Panel" allowfullscreen></iframe>
+    <iframe class="pf" id="pf0" src="about:blank" title="Panel" allowfullscreen></iframe>
     <iframe class="pf" id="pf1" src="about:blank" title="Panel" allowfullscreen></iframe>
   </div>
 
@@ -251,7 +250,7 @@
 </div>
 
 <!-- UPDATE BANNER -->
-<div id="update-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1971c2;color:#fff;padding:12px 16px;align-items:center;justify-content:space-between;gap:12px;font-family:inherit;box-shadow:0 -2px 12px rgba(0,0,0,.2);">
+<div id="update-banner" style="display:none;position:fixed;left:0;right:0;z-index:9999;background:#1971c2;color:#fff;padding:12px 16px;align-items:center;justify-content:space-between;gap:12px;font-family:inherit;box-shadow:0 -2px 12px rgba(0,0,0,.2);bottom:calc(58px + env(safe-area-inset-bottom,0px));">
   <span style="font-size:13px;font-weight:600;">🔄 New update available</span>
   <button onclick="applyUpdate()" style="background:#fff;color:#1971c2;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Tap to Update</button>
 </div>
@@ -463,11 +462,9 @@
 
     const ini = user.name.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
     document.getElementById('tb-avatar').textContent = ini;
-    document.getElementById('tb-name').textContent   = user.name;
-    document.getElementById('tb-role').textContent   = user.role;
-    document.getElementById('tb-uid').textContent    = user.id;
     document.getElementById('um-n').textContent      = user.name;
     document.getElementById('um-r').textContent      = user.role;
+    document.getElementById('um-id').textContent     = 'ID: ' + user.id;
 
     buildNav(user.panels);
     initHome();
@@ -509,7 +506,8 @@
 
   // ── PANEL SLIDE TRANSITION (two layered iframes) ──
   let _frames = null, _activeIdx = 0, _currentFile = null, _sliding = false, _slideTimer = null;
-  const SLIDE_MS = 300;
+  const SLIDE_MS = 340;
+  const SLIDE_EASE = 'cubic-bezier(.32,.72,.28,1)'; // iOS-style ease-out
   function frames() { if (!_frames) _frames = [document.getElementById('pf0'), document.getElementById('pf1')]; return _frames; }
   function panelIndex(file) { return currentUser ? currentUser.panels.findIndex(p => p.file === file) : 0; }
   function panelUrl(file, readonly) {
@@ -561,7 +559,7 @@
     if (_currentFile === null || file === _currentFile) {
       const f = fr[_activeIdx];
       f._readonly = !!readonly;
-      f.style.transition = 'none'; f.style.transform = 'translateX(0)'; f.style.zIndex = '1';
+      f.style.transition = 'none'; f.style.transform = 'translateX(0)'; f.style.opacity = '1'; f.style.zIndex = '1';
       loadFrame(f, url);
       _currentFile = file;
       return;
@@ -576,34 +574,45 @@
 
     inFrame.style.transition = 'none';
     inFrame.style.transform = 'translateX(' + (dir > 0 ? '100%' : '-100%') + ')';
+    inFrame.style.opacity = '1';
     inFrame.style.zIndex = '2';
     outFrame.style.zIndex = '1';
-    loadFrame(inFrame, url);
 
-    // Start the slide on the very next frame — the motion is immediate on tap;
-    // the incoming panel keeps loading during and after the slide. Its solid
-    // background (and per-panel cloak) covers the load so there's no white flash.
+    // The heavy iframe load is DEFERRED until the slide has started — parsing
+    // a panel document on the main thread used to delay the first animation
+    // frames, which is what made the transition feel rough.
+    _pendingLoad = { frame: inFrame, url: url };
     _pendingSlide = { inIdx, file, dir, outFrame, inFrame };
     requestAnimationFrame(_startSlide);
   }
 
-  let _pendingSlide = null;
+  let _pendingSlide = null, _pendingLoad = null, _loadTimer = null;
+  function _doPendingLoad() {
+    if (_loadTimer) { clearTimeout(_loadTimer); _loadTimer = null; }
+    if (_pendingLoad) { loadFrame(_pendingLoad.frame, _pendingLoad.url); _pendingLoad = null; }
+  }
   function _startSlide() {
     if (!_pendingSlide) return;
     const { dir, outFrame, inFrame } = _pendingSlide;
     void inFrame.offsetWidth; // force reflow so the transition runs
     _sliding = true;
-    outFrame.style.transition = inFrame.style.transition = 'transform ' + SLIDE_MS + 'ms ease';
+    inFrame.style.transition  = 'transform ' + SLIDE_MS + 'ms ' + SLIDE_EASE;
+    outFrame.style.transition = 'transform ' + SLIDE_MS + 'ms ' + SLIDE_EASE + ', opacity ' + SLIDE_MS + 'ms ease';
     inFrame.style.transform = 'translateX(0)';
-    outFrame.style.transform = 'translateX(' + (dir > 0 ? '-100%' : '100%') + ')';
+    // Parallax: the outgoing panel moves slower and dims — native-app feel.
+    outFrame.style.transform = 'translateX(' + (dir > 0 ? '-30%' : '30%') + ')';
+    outFrame.style.opacity = '0.55';
+    _loadTimer = setTimeout(_doPendingLoad, 90); // load once the motion is airborne
     _slideTimer = setTimeout(_finishSlide, SLIDE_MS + 20);
   }
   function _finishSlide() {
     _slideTimer = null;
+    _doPendingLoad(); // never lose a deferred load on interrupt
     if (!_pendingSlide) { _sliding = false; return; }
     const { inIdx, file, outFrame } = _pendingSlide;
     outFrame.style.transition = 'none';
     outFrame.style.transform = 'translateX(0)';
+    outFrame.style.opacity = '1';
     outFrame.style.zIndex = '0';
     blankFrame(outFrame); // free the old panel (kept grey, never white)
     _activeIdx = inIdx;
@@ -650,6 +659,28 @@
     if (!currentUser) return;
     const home = homePanel();
     const st = e.state;
+
+    // ── POPUP-AWARE BACK ──
+    // If the visible panel has an open popup/drawer (history, invoice, new
+    // client, note, confirm…), Back must close THAT — not change panels.
+    // Panels opt in by defining window.__erpHandleBack() → true if consumed.
+    let consumed = false;
+    try {
+      const w = frames()[_activeIdx].contentWindow;
+      consumed = !!(w && typeof w.__erpHandleBack === 'function' && w.__erpHandleBack());
+    } catch(_) {}
+    if (consumed) {
+      // Restore the history entry this Back just popped, so the user stays put.
+      const cur = (currentUser.panels || []).find(p => p.file === _currentFile) || home;
+      if (home && cur && cur.file !== home.file) {
+        history.pushState({ erp:'panel', panel:cur.file, name:cur.name, readonly:!!cur.readonly }, '', '#' + cur.file);
+        atHome = false;
+      } else if (home) {
+        history.pushState({ erp:'panel', panel:home.file, name:home.name, readonly:!!home.readonly }, '', '#' + home.file);
+        atHome = true;
+      }
+      return;
+    }
 
     if (st && st.erp === 'exit') {
       // Back was pressed while on the main panel → actually leave the app
