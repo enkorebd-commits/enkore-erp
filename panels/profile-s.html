@@ -138,7 +138,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <div class="hdr-name" id="hName">—</div>
   <div class="hdr-meta">
     <span class="pill" id="hId">ID —</span>
-    <span class="pill rank" id="hRank">Rank —</span>
     <span class="pill" id="hMonth">—</span>
   </div>
   <div class="motiv" id="motiv">Loading your numbers…</div>
@@ -200,7 +199,6 @@ function paint(){
   document.getElementById('greet').textContent=greeting()+',';
   document.getElementById('hName').textContent=d.name||d.id;
   document.getElementById('hId').textContent='ID '+d.id;
-  document.getElementById('hRank').textContent = (d.rank&&d.rank!=='-') ? ('🏅 Rank #'+d.rank) : 'Rank —';
   document.getElementById('hMonth').textContent=d.month||'';
   document.getElementById('motiv').innerHTML=motivLine(d);
 
@@ -219,12 +217,7 @@ function paint(){
   h+='<div class="sec-t">Commission (this month)</div>';
   if(c.targetMet){
     h+='<div class="card">';
-    if(c.rows.length){
-      h+='<table class="tbl"><thead><tr><th>Product</th><th class="num">Sales</th><th class="num">%</th><th class="num">Availed</th></tr></thead><tbody>';
-      h+=c.rows.map(r=>'<tr><td class="pname">'+escapeHtml(r.product)+'</td><td class="num">'+tkPlain(r.salesValue)+'</td><td class="num">'+pct(r.commPct*100)+'</td><td class="num av">'+tkPlain(r.availed)+'</td></tr>').join('');
-      h+='</tbody></table>';
-    }
-    h+='<div class="tbl-total"><span>Total Availed</span><span class="v">'+tkPlain(c.totalAvailed)+'</span></div>';
+    h+='<div class="tbl-total" style="border-top:none;margin-top:0;padding-top:0"><span>Total Availed (this month)</span><span class="v">'+tkPlain(c.totalAvailed)+'</span></div>';
     const clp=Math.round(c.collectionPct*1000)/10;
     const gc=clp>=90?'':(clp>=70?'warn':'bad');
     h+='<div class="gauge-wrap"><div class="gauge-top"><span>Collection rate</span><span>'+clp+'%</span></div><div class="gauge"><div class="gauge-fill '+gc+'" style="width:'+clp+'%"></div></div></div>';
@@ -261,11 +254,19 @@ function paint(){
     +'<div class="box"><div class="box-l">Collected</div><div class="box-v grn">'+tk(a.collected)+'</div></div>'
     +'<div class="box"><div class="box-l">Due</div><div class="box-v red">'+tk(a.due)+'</div></div>'
     +'</div></div>';
+  // SINGLE PRODUCT + COMMISSION TABLE (all-time)
+  h+='<div class="sec-t">Products, Sales & Commission</div>';
+  h+='<div class="card">';
   if(a.products&&a.products.length){
-    h+='<div class="card"><div class="box-l" style="margin-bottom:8px">Products Sold</div><div class="plist">';
-    h+=a.products.map(p=>'<div class="pitem"><div class="pn">'+escapeHtml(p.name)+'</div><div class="pq">×'+p.qty+'</div><div class="pv">'+tkPlain(p.salesValue)+'</div></div>').join('');
-    h+='</div></div>';
+    let totAv=0;
+    h+='<table class="tbl"><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Total Sales</th><th class="num">%</th><th class="num">Availed</th></tr></thead><tbody>';
+    h+=a.products.map(p=>{ totAv+=(p.availed||0); return '<tr><td class="pname">'+escapeHtml(p.name)+'</td><td class="num">'+p.qty+'</td><td class="num">'+tkPlain(p.salesValue)+'</td><td class="num">'+pct((p.commPct||0)*100)+'</td><td class="num av">'+tkPlain(p.availed)+'</td></tr>'; }).join('');
+    h+='</tbody></table>';
+    h+='<div class="tbl-total"><span>Total Availed (lifetime)</span><span class="v">'+tkPlain(totAv)+'</span></div>';
+  } else {
+    h+='<div class="tgt-row"><span class="k">No products sold yet.</span><span class="val"></span></div>';
   }
+  h+='</div>';
 
   // SUBMIT MONEY
   h+='<div class="sec-t">Cash & Submit Money</div>';
