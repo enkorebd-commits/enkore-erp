@@ -259,8 +259,9 @@
   </div>
 
   <div class="user-menu" id="user-menu">
-    <div class="um-info"><div class="um-n" id="um-n">-</div><div class="um-r" id="um-r">-</div><div class="um-id" id="um-id">-</div></div>
+    <div class="um-info"><div class="um-n" id="um-n">-</div><div class="um-r" id="um-r">-</div><div class="um-id" id="um-id">-</div><div class="um-id" id="um-build">-</div></div>
     <div class="um-item" onclick="forceUpdate()"><span>🔄</span> Check for updates</div>
+    <div class="um-item" onclick="hardReinstall()"><span>🧹</span> Force reinstall app</div>
     <div class="um-item danger" onclick="doLogout()"><span>🚪</span> Sign Out</div>
   </div>
 
@@ -291,6 +292,9 @@
 
 <script>
   // ── CONFIG ──
+  // Bump BUILD on every deploy. It is shown in the profile menu so you can see
+  // at a glance whether a phone is actually running the newest files.
+  const BUILD = '2026.07.30-4';
   const SHEET_ID   = '1mXI0MI9R_5_ImxiTvw8vH0EaQ38M3WlHncjZgmPLTmc';
   const ACCESS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Access`;
   const LINK_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Panels`;
@@ -499,6 +503,7 @@
     document.getElementById('um-n').textContent      = user.name;
     document.getElementById('um-r').textContent      = user.role;
     document.getElementById('um-id').textContent     = 'ID: ' + user.id;
+    document.getElementById('um-build').textContent  = 'Build ' + BUILD;
 
     buildNav(user.panels);
     initHome();
@@ -1086,6 +1091,31 @@
         .catch(() => '?')
     ));
     return tags.join('|');
+  }
+
+  // ── FORCE REINSTALL ──
+  // The nuclear option for a phone that refuses to pick up a new deploy: kill
+  // every service worker and cache, then reload straight from the network.
+  // Login details are kept; only cached FILES are destroyed.
+  async function hardReinstall() {
+    closeMenu();
+    if (!confirm('Wipe this device\'s cached app files and reload the newest version?\n\nYour login is kept.')) return;
+    showToast('Reinstalling…');
+    try {
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister().catch(() => {})));
+      }
+      if (window.caches) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+      localStorage.removeItem(SIG_KEY);
+      localStorage.removeItem(CACHE_KEY);
+      sessionStorage.setItem('erp_update_msg', '1');
+    } catch(e) { console.error('[ERP] reinstall:', e); }
+    // Cache-busted URL so even the HTML itself cannot come from a stale copy.
+    location.replace(location.pathname + '?fresh=' + Date.now());
   }
 
   // ── MANUAL "CHECK FOR UPDATES" ──
