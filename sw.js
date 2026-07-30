@@ -1,4 +1,4 @@
-const CACHE_NAME = 'enkore-erp-v12';
+const CACHE_NAME = 'enkore-erp-v13';
 const STATIC_FILES = [
   '/enkore-erp',
   '/enkore-erp.html',
@@ -17,9 +17,28 @@ const STATIC_FILES = [
   '/panels/profile-s.html',
 ];
 
+// Cloudflare Pages 308-redirects "/panels/x.html" → "/panels/x". A redirected
+// response stored in the cache is REJECTED by Chrome when served to an iframe
+// navigation (shows "temporarily down or moved permanently"). So every response
+// is rebuilt into a clean, non-redirected Response before caching or serving.
+async function sanitize(res) {
+  const body = await res.arrayBuffer();
+  return new Response(body, {
+    status: 200,
+    headers: { 'Content-Type': res.headers.get('Content-Type') || 'text/html; charset=utf-8' }
+  });
+}
+
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(c => c.addAll(STATIC_FILES)).catch(() => {})
+    caches.open(CACHE_NAME).then(c =>
+      Promise.all(STATIC_FILES.map(async f => {
+        try {
+          const res = await fetch(f, { redirect: 'follow', cache: 'no-store' });
+          if (res.ok) await c.put(f, await sanitize(res));
+        } catch (_) {}
+      }))
+    ).catch(() => {})
   );
   // NOTE: no skipWaiting() here — the new worker waits until the page sends
   // SKIP_WAITING (on fresh launch, or when the user taps the update banner),
@@ -76,18 +95,19 @@ self.addEventListener('fetch', e => {
       // and a slow/failed network left the iframe blank on first open.
       const cached = await caches.match(e.request, { ignoreSearch: true });
 
-      const fromNet = fetch(e.request).then(res => {
-        if (res && res.ok) {
-          const clone = res.clone();
-          // Cache under the query-stripped URL so every user/session shares
-          // one fresh copy per file.
-          caches.open(CACHE_NAME).then(c => c.put(url.split('?')[0], clone)).catch(() => {});
-          return res;
-        }
+      // Fetch by URL (not the navigation Request) so redirects are FOLLOWED
+      // here instead of surfacing as an un-cacheable opaqueredirect.
+      const fromNet = (async () => {
+        const res = await fetch(e.request.url, { redirect: 'follow' });
         // Bad response (5xx, edge error page) → serve the cached copy instead
         // of rendering an error/white page inside the panel iframe.
-        return cached || res;
-      });
+        if (!res.ok) return cached || res;
+        const clean = await sanitize(res);
+        // Cache under the query-stripped URL so every user/session shares
+        // one fresh copy per file.
+        caches.open(CACHE_NAME).then(c => c.put(url.split('?')[0], clean.clone())).catch(() => {});
+        return clean;
+      })();
 
       // Whichever resolves first: the network, or the timeout handing back cache.
       if (!cached) return fromNet;
