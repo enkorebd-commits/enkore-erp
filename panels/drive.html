@@ -275,6 +275,7 @@
           renderItems(cache[f.id]);
           showLoading(false);
         }
+        if (!remaining) markRefreshed();
       });
     });
   }
@@ -317,24 +318,35 @@
       }
     });
 
-    const hasAny     = allowed.some(function(k){ return cache[FOLDERS[k].id]; });
-    const loginToken = sessionStorage.getItem('erp_login_token') || '';
-    const doneToken  = sessionStorage.getItem('drive_refreshed_token') || '';
+    const hasAny = allowed.some(function(k){ return cache[FOLDERS[k].id]; });
 
     // Show last loaded content instantly (no spinner) if we have it.
     if (cache[firstF.id]) renderItems(cache[firstF.id]);
     else document.getElementById('file-list').innerHTML =
       '<div class="state-box"><span class="icon">⏳</span><span class="msg">Loading Drive...</span></div>';
 
+    // ── REFRESH POLICY ──
+    // The cache persists across opens and logins. A network refresh happens only:
+    //   • first ever load (nothing cached yet)
+    //   • first open after 6:00 AM each day
+    //   • manual pull-to-refresh
     if (!hasAny) {
       showLoading(true);
-      prefetchAll();                              // first ever load
-    } else if (loginToken && loginToken !== doneToken) {
-      forceRefresh();                             // fresh login — auto refresh once
+      prefetchAll();
+    } else if (refreshDue()) {
+      forceRefresh();
     }
-    // else (same session, cache present): show as-is; pull down to refresh
-    if (loginToken) sessionStorage.setItem('drive_refreshed_token', loginToken);
   }
+
+  // ── DAILY 6 AM REFRESH BOUNDARY ──
+  const LAST_REFRESH_KEY = 'enkore_drive_last_refresh';
+  function refreshDue() {
+    const last = parseInt(localStorage.getItem(LAST_REFRESH_KEY) || '0', 10);
+    const b = new Date(); b.setHours(6, 0, 0, 0);              // today 06:00
+    if (Date.now() < b.getTime()) b.setDate(b.getDate() - 1);  // before 6 AM → yesterday 06:00
+    return last < b.getTime();
+  }
+  function markRefreshed() { try { localStorage.setItem(LAST_REFRESH_KEY, String(Date.now())); } catch(_) {} }
 
   // ── REFRESH ALL ROOT FOLDERS (force) ──
   function refreshAllRoots() {
@@ -355,7 +367,7 @@
             renderItems(cache[f.id]);
           }
           remaining--;
-          if (!remaining) { saveDriveCache(); resolve(); }
+          if (!remaining) { saveDriveCache(); markRefreshed(); resolve(); }
         }, true);
       });
     });
@@ -404,6 +416,13 @@
       dist = 0;
     });
   })();
+
+  // ── SHELL BACK-BUTTON HOOK ──
+  // Back steps up one folder level first; only leaves the panel from a root folder.
+  window.__erpHandleBack = function() {
+    if (breadcrumbStack.length > 1) { navigateTo(breadcrumbStack.length - 2); return true; }
+    return false;
+  };
 
   buildTabs();
 </script>
