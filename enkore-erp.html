@@ -529,17 +529,92 @@
     });
   }
 
-  // ── PANEL NAVIGATION ──
-  // Back-button model (Android-style):
-  //   • Back from ANY panel        → jump straight to the main (leftmost) panel.
-  //   • Back from the MAIN panel    → leave / minimize the app.
-  // The main panel is the base history entry; we never stack more than one extra
-  // entry above it, so one Back always lands on the main panel.
+  // ── PANEL NAVIGATION + BACK BUTTON ────────────────────────────
+  // ONE real history entry per visible step, so hardware Back unwinds serially:
+  //   [exit] [main panel] [other panel]? [popup] [popup] [popup] …
+  // Panels announce their own popups/drawers through __erpOv / __erpOvClose, so
+  // the shell never guesses and never re-pushes entries after the fact (the old
+  // re-push model is what produced blank screens and random panels).
   let atHome = true;
+  let ovDepth   = 0;      // history entries currently held by panel popups
+  let _backDriven = false;// true while Back is closing a popup (mutes __erpOvClose)
+  let _pendingNav = null; // panel switch waiting for popup entries to unwind
   function homePanel() { return currentUser && currentUser.panels[0]; }
 
+  // Popstates WE caused. A plain counter can desync forever if a history.go()
+  // is clamped by the browser and no popstate ever arrives — that would swallow
+  // the user's next real Back press permanently. Each mark self-expires instead.
+  let _progQ = [];
+  function markProgrammatic() {
+    const token = {};
+    _progQ.push(token);
+    setTimeout(() => {
+      const i = _progQ.indexOf(token);
+      if (i >= 0) { _progQ.splice(i, 1); if (!_progQ.length) drainOps(); }
+    }, 600);
+  }
+
+  // History traversals (back/go) are ASYNC. Pushing a new entry before a
+  // pending traversal lands silently destroys it — that desync is what made
+  // Back feel random. Every history operation is serialized through here.
+  let _opQ = [];
+  function runOp(fn) { if (_progQ.length) _opQ.push(fn); else fn(); }
+  function drainOps() {
+    if (_progQ.length || !_opQ.length) return;
+    const q = _opQ; _opQ = [];
+    q.forEach(function(fn) { try { fn(); } catch(_) {} });
+  }
+
+  function activeWin() { try { return frames()[_activeIdx].contentWindow; } catch(_) { return null; } }
+  // Ask the visible panel to close its TOPMOST popup (panels order them in
+  // __erpHandleBack). Muted notification so we don't double-count the entry.
+  // Returns false if the panel had nothing open — the shell then knows its
+  // count is stale (panel reloaded under it) and must not eat the press.
+  function closeTopOverlay() {
+    let consumed = false;
+    _backDriven = true;
+    try { const w = activeWin(); if (w && typeof w.__erpHandleBack === 'function') consumed = !!w.__erpHandleBack(); } catch(_) {}
+    _backDriven = false;
+    return consumed;
+  }
+
+  // A panel that reloads (retry watchdog, refresh) loses its popups but not
+  // their history entries. Release them so Back never hits a dead step.
+  function releaseStaleOverlays() {
+    runOp(function() {
+      if (ovDepth <= 0) return;
+      const n = ovDepth;
+      ovDepth = 0;
+      markProgrammatic();
+      history.go(-n);
+    });
+  }
+
+  // Called BY a panel the moment a popup/drawer opens.
+  window.__erpOv = function() {
+    runOp(function() {
+      ovDepth++;
+      history.pushState({ erp:'ov', d: ovDepth }, '');  // 2-arg → URL unchanged
+    });
+  };
+  // Called BY a panel when a popup is closed by tap (X, backdrop, save, cancel).
+  // n > 1 collapses several levels at once (e.g. a breadcrumb jump in Drive).
+  window.__erpOvClose = function(n) {
+    if (_backDriven) return;                  // Back already unwound this entry
+    runOp(function() {
+      if (ovDepth <= 0) return;
+      const k = Math.min(Math.max(parseInt(n, 10) || 1, 1), ovDepth);
+      ovDepth -= k;
+      markProgrammatic();
+      history.go(-k);                         // fires exactly ONE popstate
+    });
+  };
+
   // ── PANEL SLIDE TRANSITION (two layered iframes) ──
-  let _frames = null, _activeIdx = 0, _currentFile = null, _sliding = false, _slideTimer = null;
+  // _currentFile only settles when the slide finishes (340ms). _viewFile is the
+  // panel the user is logically on RIGHT NOW — Back pressed mid-slide must use
+  // this one, or it acts on the panel we just left.
+  let _frames = null, _activeIdx = 0, _currentFile = null, _viewFile = null, _sliding = false, _slideTimer = null;
   const SLIDE_MS = 340;
   const SLIDE_EASE = 'cubic-bezier(.32,.72,.28,1)'; // iOS-style ease-out
   function frames() { if (!_frames) _frames = [document.getElementById('pf0'), document.getElementById('pf1')]; return _frames; }
@@ -599,6 +674,7 @@
   function applyPanel(file, name, readonly) {
     syncNav(file, name);
     closeMenu();
+    _viewFile = file;
     const fr = frames();
     const url = panelUrl(file, !!readonly);
 
@@ -671,24 +747,46 @@
     _pendingSlide = null;
   }
 
-  // User taps a panel (sidebar or footer).
-  function loadPanel(file, name, readonly) {
+  // The actual panel switch, run once no popup entries are left above us.
+  function _doNav(file, name, readonly) {
     const home = homePanel();
     if (!home) return;
+    ovDepth = 0;                                  // a fresh panel has no popups
 
     if (file === home.file) {
-      // Going to the main panel: if we're deeper, pop back to it.
-      if (!atHome) { history.back(); return; } // popstate paints home
+      // Going to the main panel: drop the extra panel entry if we have one.
+      if (!atHome) { markProgrammatic(); history.back(); }
+      atHome = true;
       applyPanel(file, name, readonly);
       return;
     }
 
-    // Going to a non-home panel: keep exactly ONE entry above home.
+    // Non-home panel: keep exactly ONE panel entry above home.
     const state = { erp: 'panel', panel: file, name: name, readonly: !!readonly };
     if (atHome) history.pushState(state, '', '#' + file);
     else        history.replaceState(state, '', '#' + file);
     atHome = false;
     applyPanel(file, name, readonly);
+  }
+
+  // User taps a panel (sidebar or footer).
+  function loadPanel(file, name, readonly) {
+    if (!homePanel()) return;
+    runOp(function() { _loadPanel(file, name, readonly); });
+  }
+  function _loadPanel(file, name, readonly) {
+    if (ovDepth > 0) {
+      // Popups are open. Close them all, drop their history entries in one jump,
+      // then switch panels once that jump has actually landed (no race).
+      const n = ovDepth;
+      for (let i = 0; i < n; i++) closeTopOverlay();
+      ovDepth = 0;
+      _pendingNav = { file: file, name: name, readonly: readonly };
+      markProgrammatic();
+      history.go(-n);                             // fires exactly ONE popstate
+      return;
+    }
+    _doNav(file, name, readonly);
   }
 
   // Sets up two history entries after login:
@@ -697,6 +795,7 @@
   function initHome() {
     const home = homePanel();
     if (!home) return;
+    ovDepth = 0; _progQ = []; _pendingNav = null; _exiting = false;
     history.replaceState({ erp: 'exit' }, '', location.pathname + location.search);
     history.pushState({ erp: 'panel', panel: home.file, name: home.name, readonly: !!home.readonly }, '', '#' + home.file);
     atHome = true;
@@ -707,43 +806,44 @@
   let _exiting = false;
   window.addEventListener('popstate', function(e) {
     if (!currentUser) return;
-    const home = homePanel();
-    const st = e.state;
 
-    // ── POPUP-AWARE BACK ──
-    // If the visible panel has an open popup/drawer (history, invoice, new
-    // client, note, confirm…), Back must close THAT — not change panels.
-    // Panels opt in by defining window.__erpHandleBack() → true if consumed.
-    let consumed = false;
-    try {
-      const w = frames()[_activeIdx].contentWindow;
-      consumed = !!(w && typeof w.__erpHandleBack === 'function' && w.__erpHandleBack());
-    } catch(_) {}
-    if (consumed) {
-      // Restore the history entry this Back just popped, so the user stays put.
-      const cur = (currentUser.panels || []).find(p => p.file === _currentFile) || home;
-      if (home && cur && cur.file !== home.file) {
-        history.pushState({ erp:'panel', panel:cur.file, name:cur.name, readonly:!!cur.readonly }, '', '#' + cur.file);
-        atHome = false;
-      } else if (home) {
-        history.pushState({ erp:'panel', panel:home.file, name:home.name, readonly:!!home.readonly }, '', '#' + home.file);
-        atHome = true;
-      }
+    // 0) A pop WE triggered. The screen is already correct — just run whatever
+    //    was waiting on it (a panel switch queued behind closing popups).
+    if (_progQ.length) {
+      _progQ.shift();
+      if (_pendingNav) { const p = _pendingNav; _pendingNav = null; _doNav(p.file, p.name, p.readonly); }
+      drainOps();   // anything queued behind this traversal now runs safely
       return;
     }
+
+    // 1) A popup entry was popped → close exactly ONE popup and stay on the
+    //    panel. Nested popups unwind one Back at a time, in reverse order.
+    //    If the panel had nothing open our count was stale (it reloaded under
+    //    us) — clear it and let this press do real navigation instead.
+    if (ovDepth > 0) {
+      ovDepth--;
+      if (closeTopOverlay()) return;
+      // Nothing was open — our count was stale. Don't waste the user's press:
+      // consume the phantom entry and immediately act on the real one below it.
+      ovDepth = 0;
+      history.back();
+      return;
+    }
+
+    const home = homePanel();
+    const st = e.state;
 
     if (st && st.erp === 'exit') {
       // If we hit the exit-guard while a NON-home panel is on screen, the home
       // history entry was pruned (happens after a Back-minimize + resume).
       // Restore it and paint home instead of leaving from the wrong panel.
-      if (home && _currentFile && _currentFile !== home.file) {
+      if (home && _viewFile && _viewFile !== home.file) {
         history.pushState({ erp:'panel', panel:home.file, name:home.name, readonly:!!home.readonly }, '', '#' + home.file);
         atHome = true;
         applyPanel(home.file, home.name, home.readonly);
         return;
       }
-      // Back was pressed while on the main panel → actually leave the app
-      // (minimize on an installed phone app) instead of re-rendering a panel.
+      // 2) Back on the main panel → actually leave / minimize the app.
       if (_exiting) return;
       _exiting = true;
       history.back();
@@ -754,7 +854,7 @@
       atHome = false;                                   // forward onto the non-home entry
       applyPanel(st.panel, st.name, st.readonly);
     } else {
-      atHome = true;                                    // popped down to the main panel
+      atHome = true;                                    // 3) popped down to the main panel
       if (home) applyPanel(home.file, home.name, home.readonly);
     }
   });
@@ -868,7 +968,14 @@
         console.warn('[ERP] Readonly injection error:', err);
       }
   }
-  frames().forEach(function(f) { f.addEventListener('load', function() { enforceReadonly(f); }); paintBlank(f); });
+  frames().forEach(function(f) {
+    f.addEventListener('load', function() {
+      enforceReadonly(f);
+      // The visible panel just (re)loaded → any popups it had are gone.
+      if (frames()[_activeIdx] === f) releaseStaleOverlays();
+    });
+    paintBlank(f);
+  });
 
   // ── USER MENU ──
   function toggleMenu() { menuOpen = !menuOpen; document.getElementById('user-menu').classList.toggle('open', menuOpen); }
@@ -886,6 +993,7 @@
     blankFrame(document.getElementById('pf0'));
     blankFrame(document.getElementById('pf1'));
     _frames = null; _activeIdx = 0; _currentFile = null; _sliding = false;
+    ovDepth = 0; _progQ = []; _pendingNav = null; _backDriven = false;
     document.getElementById('shell').style.display = 'none';
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('inp-id').value  = '';
