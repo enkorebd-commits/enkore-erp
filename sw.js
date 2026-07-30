@@ -1,4 +1,4 @@
-const CACHE_NAME = 'enkore-erp-v11';
+const CACHE_NAME = 'enkore-erp-v12';
 const STATIC_FILES = [
   '/enkore-erp',
   '/enkore-erp.html',
@@ -71,14 +71,22 @@ self.addEventListener('fetch', e => {
   if (url.includes('.html') || url.endsWith('/enkore-erp')) {
     const TIMEOUT_MS = 2500;
     e.respondWith((async () => {
-      const cached = await caches.match(e.request);
+      // ignoreSearch → a panel requested as /panels/x.html?userId=… still hits
+      // the precached /panels/x.html. Without this the precache never matched
+      // and a slow/failed network left the iframe blank on first open.
+      const cached = await caches.match(e.request, { ignoreSearch: true });
 
       const fromNet = fetch(e.request).then(res => {
         if (res && res.ok) {
           const clone = res.clone();
-          caches.open(CACHE_NAME).then(c => c.put(e.request, clone)).catch(() => {});
+          // Cache under the query-stripped URL so every user/session shares
+          // one fresh copy per file.
+          caches.open(CACHE_NAME).then(c => c.put(url.split('?')[0], clone)).catch(() => {});
+          return res;
         }
-        return res;
+        // Bad response (5xx, edge error page) → serve the cached copy instead
+        // of rendering an error/white page inside the panel iframe.
+        return cached || res;
       });
 
       // Whichever resolves first: the network, or the timeout handing back cache.
