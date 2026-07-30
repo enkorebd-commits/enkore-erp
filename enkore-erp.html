@@ -550,8 +550,24 @@
     }).toString();
   }
   function loadFrame(f, url) {
+    clearTimeout(f._wd);
+    if (url !== 'about:blank') watchFrame(f, url, 0);
     if (f.contentWindow) { try { f.contentWindow.location.replace(url); return; } catch(_) {} }
     f.src = url;
+  }
+  // Watchdog: if a panel frame is still blank a few seconds after a load was
+  // requested (network died, bad response swallowed), retry automatically.
+  // This is what used to leave the first page white until a nav button was tapped.
+  function watchFrame(f, url, attempt) {
+    f._wd = setTimeout(() => {
+      let stuck = false;
+      try {
+        const href = f.contentWindow.location.href;
+        const body = f.contentDocument && f.contentDocument.body;
+        stuck = /^about:blank$/.test(href) || !body || body.children.length === 0;
+      } catch(_) {}
+      if (stuck && attempt < 2) { f.src = url; watchFrame(f, url, attempt + 1); }
+    }, 4000);
   }
   // Paint a frame's blank document grey. A default about:blank body is WHITE,
   // and that white is what used to flash while the next panel slid in.
@@ -717,6 +733,15 @@
     }
 
     if (st && st.erp === 'exit') {
+      // If we hit the exit-guard while a NON-home panel is on screen, the home
+      // history entry was pruned (happens after a Back-minimize + resume).
+      // Restore it and paint home instead of leaving from the wrong panel.
+      if (home && _currentFile && _currentFile !== home.file) {
+        history.pushState({ erp:'panel', panel:home.file, name:home.name, readonly:!!home.readonly }, '', '#' + home.file);
+        atHome = true;
+        applyPanel(home.file, home.name, home.readonly);
+        return;
+      }
       // Back was pressed while on the main panel → actually leave the app
       // (minimize on an installed phone app) instead of re-rendering a panel.
       if (_exiting) return;
@@ -732,6 +757,13 @@
       atHome = true;                                    // popped down to the main panel
       if (home) applyPanel(home.file, home.name, home.readonly);
     }
+  });
+
+  // App resumed after a Back-minimize → arm the exit guard again. Without this
+  // reset, Back went dead or misrouted in every panel until a full reload.
+  window.addEventListener('pageshow', () => { _exiting = false; });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') _exiting = false;
   });
 
   // ── UNIVERSAL READONLY ENFORCEMENT ──
