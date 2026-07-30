@@ -176,10 +176,16 @@
     bc.scrollLeft = bc.scrollWidth;
   }
 
-  function navigateTo(idx) {
+  // Move to a level already in the breadcrumb. `notify` tells the shell how many
+  // history entries to drop; it is false when the shell itself drove the move
+  // (hardware Back), because that entry is already gone.
+  function navigateTo(idx, notify) {
+    const drop = breadcrumbStack.length - 1 - idx;
+    if (drop <= 0) return;
     breadcrumbStack = breadcrumbStack.slice(0, idx + 1);
     renderBreadcrumb();
     showFolder(breadcrumbStack[breadcrumbStack.length - 1].id);
+    if (notify !== false) { try { if (parent && parent.__erpOvClose) parent.__erpOvClose(drop); } catch(_) {} }
   }
 
   // Show from cache immediately, no network call
@@ -237,6 +243,8 @@
           breadcrumbStack.push({ id: item.id, name: item.name });
           renderBreadcrumb();
           showFolder(item.id);
+          // One history entry per folder level → Back steps up one folder.
+          try { if (parent && parent.__erpOv) parent.__erpOv(); } catch(_) {}
         };
       } else {
         div.onclick = function() { window.open(item.url, '_blank'); };
@@ -246,6 +254,10 @@
   }
 
   function loadTab(key) {
+    // Switching root tabs abandons the current folder depth — release those
+    // history entries so Back doesn't have to eat phantom steps.
+    const drop = breadcrumbStack.length - 1;
+    if (drop > 0) { try { if (parent && parent.__erpOvClose) parent.__erpOvClose(drop); } catch(_) {} }
     activeTabKey = key;
     document.querySelectorAll('.folder-tab').forEach(function(t) {
       t.classList.toggle('active', t.dataset.key === key);
@@ -420,7 +432,7 @@
   // ── SHELL BACK-BUTTON HOOK ──
   // Back steps up one folder level first; only leaves the panel from a root folder.
   window.__erpHandleBack = function() {
-    if (breadcrumbStack.length > 1) { navigateTo(breadcrumbStack.length - 2); return true; }
+    if (breadcrumbStack.length > 1) { navigateTo(breadcrumbStack.length - 2, false); return true; }
     return false;
   };
 
