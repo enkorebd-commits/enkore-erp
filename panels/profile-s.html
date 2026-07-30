@@ -299,6 +299,14 @@ function paint(){
       +'</div>';
   }
 
+  // Products sold this month that have no rate row in the Control sheet. They
+  // earn 0% — say so plainly with the exact spelling, instead of hiding it.
+  if(d.commissionGaps && d.commissionGaps.length){
+    h+='<div class="tgt-note">⚠️ No commission rate set for: <b>'
+      + d.commissionGaps.map(escapeHtml).join('</b>, <b>')
+      + '</b>. Add these exact names to the Control sheet to make them earn.</div>';
+  }
+
   // SUBMIT MONEY
   h+='<div class="sec-t">Cash & Submit Money</div>';
   h+='<div class="card">';
