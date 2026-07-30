@@ -287,7 +287,7 @@ async function openHistory(c){
   document.getElementById('shPaid').textContent =tk(c.paid);
   document.getElementById('shDue').textContent  =tk(c.due);
   document.getElementById('shBody').innerHTML='<div class="sheet-loading"><span class="spin"></span> Loading transactions…</div>';
-  document.getElementById('txnOv').classList.add('open');
+  ovOpen('txnOv');
   document.body.style.overflow='hidden';
 
   try{
@@ -333,8 +333,24 @@ function renderTxns(groups){
 }
 
 function closeHistory(){
-  document.getElementById('txnOv').classList.remove('open');
+  ovClose('txnOv');
   document.body.style.overflow='';
+}
+
+// ── SHELL POPUP REGISTRATION ──
+// Each popup takes ONE history entry from the shell so Back closes it instead
+// of leaving the panel. Both helpers are idempotent.
+function ovOpen(id){
+  const el=document.getElementById(id);
+  if(!el||el.classList.contains('open')) return;
+  el.classList.add('open');
+  try{ if(parent&&parent.__erpOv) parent.__erpOv(); }catch(_){}
+}
+function ovClose(id){
+  const el=document.getElementById(id);
+  if(!el||!el.classList.contains('open')) return;
+  el.classList.remove('open');
+  try{ if(parent&&parent.__erpOvClose) parent.__erpOvClose(); }catch(_){}
 }
 
 // ── PULL TO REFRESH ──────────────────────────────────────────
