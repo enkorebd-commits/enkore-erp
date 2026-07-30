@@ -159,7 +159,23 @@ const PARAMS   = new URLSearchParams(location.search);
 const USER_ID  = PARAMS.get('userId') || '';
 const READONLY = PARAMS.get('readonly') === '1';
 const CACHE_KEY= 'enkore_profileS_' + USER_ID;
+const LAST_REFRESH_KEY = 'enkore_profileS_last_refresh_' + USER_ID;
 let DATA = null, _ptrBusy = false, _submitting = false;
+
+// ── REFRESH POLICY (same as Drive) ──
+// Cached data persists across opens and logins. A network call happens only:
+//   • first ever load (nothing cached)
+//   • first open after 6:00 AM each day
+//   • manual pull-to-refresh, or right after submitting cash
+function refreshDue(){
+  const last = parseInt(localStorage.getItem(LAST_REFRESH_KEY) || '0', 10);
+  const b = new Date(); b.setHours(6,0,0,0);                  // today 06:00
+  if (Date.now() < b.getTime()) b.setDate(b.getDate() - 1);   // before 6 AM → yesterday 06:00
+  return last < b.getTime();
+}
+function markRefreshed(){ try{ localStorage.setItem(LAST_REFRESH_KEY, String(Date.now())); }catch(_){} }
+function readCache(){ try{ return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); }catch(_){ return null; } }
+function writeCache(d){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(d)); }catch(_){} }
 
 function tk(n){ if(n===''||n==null||isNaN(n)) return '0 <span class="u">tk</span>'; return Number(n).toLocaleString('en-IN',{maximumFractionDigits:2}) + ' <span class="u">tk</span>'; }
 function tkPlain(n){ if(n===''||n==null||isNaN(n)) return '0 tk'; return Number(n).toLocaleString('en-IN',{maximumFractionDigits:2}) + ' tk'; }
@@ -185,13 +201,17 @@ function motivLine(d){
   return '📈 A new month, a fresh start. Log sales and keep collections tight.';
 }
 
-async function load(){
-  try{ const c=sessionStorage.getItem(CACHE_KEY); if(c){ DATA=JSON.parse(c); paint(); } }catch(_){}
+async function load(force){
+  const cached = readCache();
+  if(cached){ DATA=cached; paint(); }
   if(!USER_ID){ document.getElementById('body').innerHTML='<div class="state"><div class="state-icon">🔒</div><div class="state-txt">No user id. Open this from the ERP.</div></div>'; return; }
+  // Nothing to fetch: we have data, it is not past the 6 AM boundary, and this
+  // is not a manual refresh. Panel stays fixed instead of reloading every open.
+  if(!force && DATA && !refreshDue()) return;
   try{
     const r = await fetch(`${API}?action=getProfile&userId=${encodeURIComponent(USER_ID)}&t=${Date.now()}`).then(x=>x.json());
     if(!r.ok) throw new Error(r.error||'load failed');
-    DATA=r; try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify(r)); }catch(_){}
+    DATA=r; writeCache(r); markRefreshed();
     paint();
   }catch(e){
     console.error(e);
@@ -316,8 +336,7 @@ async function submitCash(){
     const r=await fetch(`${API}?${qs}`).then(x=>x.json());
     if(!r.ok) throw new Error(r.error||'failed');
     toast('✅ Submitted '+tkPlain(amt)+' — pending approval');
-    try{ sessionStorage.removeItem(CACHE_KEY); }catch(_){}
-    await load();
+    await load(true); // own action changed the data — always pull fresh
   }catch(e){ console.error(e); toast('Submit failed. Try again.','err'); btn.disabled=false; btn.textContent='Submit for approval'; }
   finally{ _submitting=false; }
 }
@@ -326,8 +345,7 @@ async function forceRefresh(){
   if(_ptrBusy) return; _ptrBusy=true;
   const ind=document.getElementById('ptrIndicator'); ind.classList.add('ptr-loading');
   document.getElementById('ptrText').textContent='Refreshing…';
-  try{ sessionStorage.removeItem(CACHE_KEY); }catch(_){}
-  try{ await load(); toast('✅ Refreshed'); }catch(e){ toast('Refresh failed','err'); }
+  try{ await load(true); toast('✅ Refreshed'); }catch(e){ toast('Refresh failed','err'); }
   finally{ _ptrBusy=false; ind.classList.remove('ptr-loading'); document.getElementById('ptrText').textContent='Pull to refresh'; }
 }
 function initPTR(){
