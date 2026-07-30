@@ -1024,8 +1024,26 @@ function calcPay() {
 }
 
 // ── CLIENT SEARCH ────────────────────────────────────────────
-function openDd() { renderOpts(clients); document.getElementById('csDd').classList.add('open'); }
-function closeDd() { document.getElementById('csDd').classList.remove('open'); }
+// ── SHELL POPUP REGISTRATION ───────────────────────────────────
+// Every popup/drawer takes ONE history entry from the shell, so the phone's
+// Back button unwinds them one at a time in reverse order instead of jumping
+// out of the panel. Both helpers are idempotent — opening an already-open
+// popup or closing an already-closed one never touches history.
+function ovOpen(id) {
+  const el = document.getElementById(id);
+  if (!el || el.classList.contains('open')) return;
+  el.classList.add('open');
+  try { if (parent && parent.__erpOv) parent.__erpOv(); } catch(_) {}
+}
+function ovClose(id) {
+  const el = document.getElementById(id);
+  if (!el || !el.classList.contains('open')) return;
+  el.classList.remove('open');
+  try { if (parent && parent.__erpOvClose) parent.__erpOvClose(); } catch(_) {}
+}
+
+function openDd() { renderOpts(clients); ovOpen('csDd'); }
+function closeDd() { ovClose('csDd'); }
 
 function clearClient() {
   document.getElementById('csInput').value = '';
@@ -1050,7 +1068,7 @@ function filterClients(q) {
     c.phone.includes(lq)
   ) : clients;
   renderOpts(filtered);
-  document.getElementById('csDd').classList.add('open');
+  ovOpen('csDd');
 }
 
 function renderOpts(list) {
@@ -1123,7 +1141,7 @@ function openNewClient() {
   _ncSubmitting = false;
   closeDd();
   window._lockBodyScroll();
-  document.getElementById('ncOverlay').classList.add('open');
+  ovOpen('ncOverlay');
 }
 
 // ── PHOTO HELPERS ─────────────────────────────────────────────
@@ -1234,7 +1252,7 @@ function handleZoneSelect() {
 
 function closeNewClient() {
   const ov = document.getElementById('ncOverlay');
-  ov.classList.remove('open');
+  ovClose('ncOverlay');
   ov.style.height = ''; ov.style.top = '';
   const dr = ov.querySelector('.drawer'); if (dr) dr.style.maxHeight = '';
   window._unlockBodyScroll();
@@ -1362,7 +1380,7 @@ async function openHistory() {
   document.getElementById('dSub').textContent   = `${mos[now.getMonth()]} ${now.getFullYear()} · loading…`;
   document.getElementById('dBody').innerHTML    = '<div class="d-loading">⏳ Loading…</div>';
   window._lockBodyScroll();
-  document.getElementById('histOverlay').classList.add('open');
+  ovOpen('histOverlay');
 
   try {
     const url  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sale%20Entry&t=${Date.now()}`;
@@ -1494,7 +1512,7 @@ function renderHistory(showAll) {
 
 function closeHistory() {
   const ov = document.getElementById('histOverlay');
-  ov.classList.remove('open');
+  ovClose('histOverlay');
   ov.style.height = ''; ov.style.top = '';
   const dr = ov.querySelector('.drawer'); if (dr) dr.style.maxHeight = '';
   window._unlockBodyScroll();
@@ -1652,7 +1670,7 @@ function openInvoice(idx) {
   window._invFileBase = `ENKORE_Invoice_${g.invoiceNo}`;
   window._invInvoiceNo = g.invoiceNo;
   window._invPdfReady = null; // discard any previous invoice's pre-built PDF
-  document.getElementById('invOverlay').classList.add('open');
+  ovOpen('invOverlay');
   enableInvoiceZoom();
   requestAnimationFrame(() => {
     autoFitInvoicePage();
@@ -1670,7 +1688,7 @@ function openInvoice(idx) {
 }
 
 function closeInvoice() {
-  document.getElementById('invOverlay').classList.remove('open');
+  ovClose('invOverlay');
   disableInvoiceZoom();
   window.removeEventListener('resize', fitInvoiceToScreen);
 }
@@ -2303,12 +2321,12 @@ function openNoteDrawer(noteId) {
   ndSyncSeller();
   calcNote();
   window._lockBodyScroll();
-  document.getElementById('noteOverlay').classList.add('open');
+  ovOpen('noteOverlay');
 }
 
 function closeNoteDrawer() {
   const ov = document.getElementById('noteOverlay');
-  ov.classList.remove('open');
+  ovClose('noteOverlay');
   ov.style.height = ''; ov.style.top = '';
   const dr = ov.querySelector('.drawer'); if (dr) dr.style.maxHeight = '';
   _editNoteId = null;
@@ -2547,7 +2565,7 @@ function forwardToSale(noteId) {
 
 // ── DELETE NOTE ───────────────────────────────────────────────
 function deleteNote(noteId) {
-  document.getElementById('confirmOverlay').classList.add('open');
+  ovOpen('confirmOverlay');
   const btn = document.getElementById('confirmOkBtn');
   btn.onclick = async () => {
     closeConfirm();
@@ -2563,7 +2581,7 @@ function deleteNote(noteId) {
 }
 
 function closeConfirm() {
-  document.getElementById('confirmOverlay').classList.remove('open');
+  ovClose('confirmOverlay');
 }
 
 // ── UPDATE STATUS ─────────────────────────────────────────────
