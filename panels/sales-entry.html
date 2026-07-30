@@ -52,6 +52,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .cs-status.show{display:block}
 .cs-status-name{font-size:15px;font-weight:800;margin-bottom:2px}
 .cs-status-sub{font-size:12px;opacity:.8;margin-bottom:12px}
+/* Tap-to-call phone inside the client card. Horizontal padding only — the pill
+   never changes the line height, so the card keeps its exact original size. */
+.cs-tel{display:inline;color:#fff;opacity:1;font-weight:800;text-decoration:none;
+        background:rgba(255,255,255,.24);border-radius:5px;padding:0 5px;white-space:nowrap}
+.cs-tel:active{background:rgba(255,255,255,.45)}
 .stats{display:flex;gap:8px}
 .stat{flex:1;background:rgba(255,255,255,.15);border-radius:8px;padding:9px 6px;text-align:center}
 .stat-v{font-size:16px;font-weight:900;line-height:1}
@@ -1081,7 +1086,13 @@ function pickClient(det) {
 function showStatus(c) {
   const due = c.due || 0;
   document.getElementById('sName').textContent = c.name || c.shop;
-  document.getElementById('sSub').textContent  = [c.shop, c.loc, c.zone, c.phone].filter(Boolean).join(' · ');
+  // Same line as before — only the phone part becomes a tap-to-call link.
+  const subBits = [c.shop, c.loc, c.zone].filter(Boolean).map(v => escapeHtml(v));
+  if (c.phone) {
+    subBits.push('<a class="cs-tel" href="tel:' + String(c.phone).replace(/[^0-9+]/g, '') +
+                 '" onclick="event.stopPropagation()">📞 ' + escapeHtml(c.phone) + '</a>');
+  }
+  document.getElementById('sSub').innerHTML = subBits.join(' · ');
   const dEl = document.getElementById('sDue');
   dEl.textContent = tk(due); dEl.className = 'stat-v ' + (due > 0 ? 'red' : 'grn');
   document.getElementById('sSales').textContent = tk(c.sales);
