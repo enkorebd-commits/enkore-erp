@@ -168,7 +168,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   100%{opacity:.55;transform:translate(-50%,-50%) scale(1.06)}}
 @keyframes blink{50%{opacity:0}}
 .hdr-name.pending{opacity:0}
-.hdr-name{transition:opacity .35s ease}
+.hdr-name{transition:opacity .3s ease}
+/* The flyer is a pixel-clone of the header greeting. It starts enlarged in the
+   middle of the screen and animates to transform:none, which IS the header's
+   real position — so the words land exactly on the heading, not near it. */
+#introFly{position:fixed;z-index:901;opacity:0;margin:0;transform-origin:center center;
+  will-change:transform,opacity;
+  transition:transform .64s cubic-bezier(.32,.72,.28,1),opacity .16s ease}
+#introFly.in{opacity:1}
+/* stacked typing block dissolves as the single header line takes its place.
+   Slower than the swap itself so the cheer line stays readable a moment longer. */
+#introTxt.merge{opacity:0;transform:scale(.97)!important;
+  transition:opacity .3s ease,transform .3s ease}
 
 /* ── header chips ── */
 .hdr-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
@@ -270,26 +281,40 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .mo-hd:first-child{margin-top:2px}
 .mo-hd .mo-sum{text-transform:none;letter-spacing:0;font-size:11px;color:var(--blue);font-weight:900}
 
-.dcard{background:var(--card);border-radius:12px;box-shadow:var(--sh);margin-bottom:8px;overflow:hidden}
-.dhd{display:flex;align-items:center;gap:10px;padding:12px 13px;cursor:pointer}
+/* Each day is a clearly bounded block. Everything used to be white on white,
+   so an expanded day bled into the next one. */
+.dcard{background:var(--card);border:1.5px solid #e3e7ee;border-radius:12px;
+  box-shadow:var(--sh);margin-bottom:10px;overflow:hidden}
+.dcard.open{border-color:var(--blue);box-shadow:0 4px 16px rgba(25,113,194,.18)}
+.dhd{display:flex;align-items:center;gap:10px;padding:12px 13px;cursor:pointer;background:var(--card)}
+.dcard.open .dhd{background:linear-gradient(135deg,#123a63,#1971c2);color:#fff}
 .dhl{flex:1;min-width:0}
 .dday{font-size:13.5px;font-weight:900;line-height:1.25}
 .dmeta{font-size:11px;color:var(--muted);font-weight:700;margin-top:2px}
+.dcard.open .dmeta{color:rgba(255,255,255,.82)}
 .dhr{text-align:right;flex-shrink:0}
 .dsale{font-size:14px;font-weight:900;color:var(--blue)}
 .dcol{font-size:10.5px;font-weight:700;color:var(--grn);margin-top:2px}
+.dcard.open .dsale{color:#fff}
+.dcard.open .dcol{color:#a9e6c4}
 .dhd .chev{flex-shrink:0;font-size:19px;font-weight:900;color:var(--muted);transition:transform .18s}
-.dcard.open .dhd .chev{transform:rotate(90deg)}
-.dbody{display:none;border-top:1px solid #f1f3f5;padding:4px 13px 10px;background:#fbfcfe}
+.dcard.open .dhd .chev{transform:rotate(90deg);color:#fff}
+.dbody{display:none;padding:8px 11px 11px;background:#eef2f7}
 .dcard.open .dbody{display:block}
 
-.ent{padding:10px 0;border-bottom:1px dashed #e6e9ef}
-.ent:last-child{border-bottom:none}
-.ent-t{display:flex;align-items:baseline;gap:8px}
+/* one bounded white card per entry, numbered, so entries never merge visually */
+.ent{position:relative;background:var(--card);border:1px solid #dde3ec;border-radius:10px;
+  padding:10px 11px 9px 11px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.ent:last-child{margin-bottom:0}
+.ent-t{display:flex;align-items:baseline;gap:7px;padding-bottom:7px;border-bottom:1px solid #eef1f5}
+.ent-sn{flex-shrink:0;font-size:8.5px;font-weight:900;color:var(--muted);
+  background:var(--bg);border-radius:5px;padding:2px 5px;letter-spacing:.4px;line-height:1.3}
 .ent-c{font-size:12.5px;font-weight:900;flex:1;min-width:0;line-height:1.35}
-.ent-i{font-size:10px;font-weight:800;color:var(--muted);flex-shrink:0}
-.ent-items{margin:6px 0 5px}
-.it{display:flex;gap:8px;font-size:12px;padding:2px 0}
+.ent-i{font-size:9.5px;font-weight:800;color:var(--muted);flex-shrink:0}
+.ent-items{margin:7px 0 7px}
+.it{display:flex;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px dotted #eceff4}
+.it:last-child{border-bottom:none}
+.it-sn{flex-shrink:0;font-size:8.5px;font-weight:800;color:#adb5bd;min-width:12px;line-height:1.55}
 .it-n{flex:1;min-width:0;line-height:1.35}
 .it-q{flex-shrink:0;font-weight:800;color:var(--muted)}
 .it-a{flex-shrink:0;min-width:74px;text-align:right;font-weight:800}
@@ -529,17 +554,45 @@ function runIntro(greetWord, name){
     timers.forEach(f=>f());
     gEl.innerHTML=escapeHtml(greetWord); nEl.innerHTML=escapeHtml(name);
     rEl.classList.add('in'); cEl.classList.add('in');
-    // Fly the whole block up to where the header greeting sits, then fade.
-    const a=tx.getBoundingClientRect(), b=head.getBoundingClientRect();
-    const scale=0.62;
-    const dx=(b.left+b.width/2)-(a.left+a.width/2);
-    const dy=(b.top +b.height/2)-(a.top +a.height/2);
+
+    /* MORPH ONTO THE HEADING.
+       Rather than sliding the stacked block "towards" the header, we build a
+       clone of the header greeting — same text, same computed font, same box —
+       pin it at the header's real coordinates, then invert it out to the centre
+       of the screen and animate back to transform:none. Because the resting
+       state IS the header, the words land on the heading exactly. */
+    const cs=getComputedStyle(head);
+    const b=head.getBoundingClientRect();
+    const fly=document.createElement('div');
+    fly.id='introFly';
+    fly.textContent=greetWord+', '+name;
+    fly.style.left=b.left+'px';
+    fly.style.top=b.top+'px';
+    fly.style.maxWidth=Math.max(b.width,1)+'px';   // wraps exactly like the header
+    ['fontSize','fontWeight','fontFamily','letterSpacing','lineHeight','color']
+      .forEach(k=>{ fly.style[k]=cs[k]; });
+    document.body.appendChild(fly);
+
+    const f=fly.getBoundingClientRect();
+    // Enlarge only as far as the screen allows, so a long name never overflows.
+    const scale=Math.min(1.5, Math.max(1.0, (window.innerWidth*0.86)/Math.max(f.width,1)));
+    const dx=(window.innerWidth/2)-(f.left+f.width/2);
+    const dy=(window.innerHeight/2)-(f.top+f.height/2);
+    fly.style.transform='translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px) scale('+scale.toFixed(3)+')';
+
     requestAnimationFrame(()=>{
-      tx.style.transform='translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px) scale('+scale+')';
-      ov.classList.add('fade');
+      tx.classList.add('merge');                   // two lines dissolve…
+      fly.classList.add('in');                     // …into the one header line
+      setTimeout(()=>{
+        fly.style.transform='translate(0px,0px) scale(1)';
+        ov.classList.add('fade');
+      },150);
     });
-    setTimeout(()=>{ head.classList.remove('pending'); },380);
-    setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); },660);
+    // Header un-hides while the clone is still on the same pixels, so the
+    // handover is invisible.
+    setTimeout(()=>{ head.classList.remove('pending'); },150+620);
+    setTimeout(()=>{ if(fly.parentNode) fly.parentNode.removeChild(fly); },150+960);
+    setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); },150+700);
   };
 
   (async()=>{
@@ -550,7 +603,9 @@ function runIntro(greetWord, name){
     rEl.classList.add('in');
     await wait(120); if(done) return;
     cEl.classList.add('in');
-    await wait(620); if(done) return;
+    // Hold long enough to actually READ the cheer line. A 6-word line needs
+    // roughly 1.8s at normal reading speed; the fade-out adds a little more.
+    await wait(1500); if(done) return;
     finish();
   })();
 
@@ -824,18 +879,22 @@ function renderAct(){
         +'<div class="dhr"><div class="dsale">'+tkPlain(d.sales)+'</div>'
         +'<div class="dcol">Collected '+tkPlain(d.collected)+'</div></div>'
         +'<span class="chev">›</span></div><div class="dbody">';
-      d.entries.forEach(e=>{
+      d.entries.forEach((e,ei)=>{
         const due=Math.max((e.bill||0)-(e.paid||0),0);
         h+='<div class="ent">';
-        h+='<div class="ent-t"><span class="ent-c">'+escapeHtml(e.client||'—')+'</span>'
+        // Tiny serial on the entry and on each product line, so a long day is
+        // countable at a glance instead of being one undifferentiated block.
+        h+='<div class="ent-t"><span class="ent-sn">'+(ei+1)+'</span>'
+          +'<span class="ent-c">'+escapeHtml(e.client||'—')+'</span>'
           +(e.invoice?'<span class="ent-i">#'+escapeHtml(e.invoice)+'</span>':'')+'</div>';
         h+='<div class="ent-items">';
         if(e.items&&e.items.length){
-          h+=e.items.map(it=>'<div class="it"><span class="it-n">'+escapeHtml(it.product)
+          h+=e.items.map((it,ii)=>'<div class="it"><span class="it-sn">'+(ii+1)+'.</span>'
+            +'<span class="it-n">'+escapeHtml(it.product)
             +(it.gift?' <span class="gift">GIFT</span>':'')+'</span><span class="it-q">×'+qtyFmt(it.qty)
             +'</span><span class="it-a">'+tkPlain(it.amount)+'</span></div>').join('');
         } else {
-          h+='<div class="it"><span class="it-n">💵 Payment collection only</span><span class="it-q"></span><span class="it-a"></span></div>';
+          h+='<div class="it"><span class="it-sn"></span><span class="it-n">💵 Payment collection only</span><span class="it-q"></span><span class="it-a"></span></div>';
         }
         h+='</div>';
         h+='<div class="ent-f"><span>Bill '+tkPlain(e.bill)+'</span><span class="paid">Paid '+tkPlain(e.paid)+'</span>'
