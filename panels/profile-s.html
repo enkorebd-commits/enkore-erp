@@ -142,8 +142,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 #introOv.fade{opacity:0}
 /* Greeting on its own line with the NAME UNDERNEATH. A long name on one line
    ran off both edges of the phone; stacked and wrapped, it always fits. */
-#introTxt{color:#fff;text-align:center;max-width:86vw;will-change:transform;
-  transition:transform .58s cubic-bezier(.32,.72,.28,1)}
+#introTxt{color:#fff;text-align:center;max-width:86vw;will-change:opacity;
+  transform:translateZ(0);backface-visibility:hidden}
 #introTxt .ig-greet{font-size:15px;font-weight:700;letter-spacing:1.4px;
   text-transform:uppercase;opacity:.78;min-height:19px}
 #introTxt .ig-name{font-size:clamp(21px,7.2vw,32px);font-weight:900;letter-spacing:-.4px;
@@ -162,24 +162,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 #introOv::before{content:'';position:absolute;left:50%;top:50%;width:min(78vw,420px);height:min(78vw,420px);
   transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
   background:radial-gradient(circle,rgba(64,152,230,.34),rgba(64,152,230,0) 68%);
-  animation:introGlow 2.3s ease-in-out}
-@keyframes introGlow{0%{opacity:0;transform:translate(-50%,-50%) scale(.72)}
-  45%{opacity:1;transform:translate(-50%,-50%) scale(1)}
-  100%{opacity:.55;transform:translate(-50%,-50%) scale(1.06)}}
+  animation:introGlow 1.6s ease-out both}
+/* Opacity only. The old scale pulse behind the text was part of the bounce. */
+@keyframes introGlow{from{opacity:0} to{opacity:1}}
 @keyframes blink{50%{opacity:0}}
 .hdr-name.pending{opacity:0}
 .hdr-name{transition:opacity .3s ease}
 /* The flyer is a pixel-clone of the header greeting. It starts enlarged in the
    middle of the screen and animates to transform:none, which IS the header's
    real position — so the words land exactly on the heading, not near it. */
+/* One continuous ease-out, no overshoot, no secondary motion. */
 #introFly{position:fixed;z-index:901;opacity:0;margin:0;transform-origin:center center;
-  will-change:transform,opacity;
-  transition:transform .64s cubic-bezier(.32,.72,.28,1),opacity .16s ease}
+  will-change:transform,opacity;backface-visibility:hidden;
+  transition:transform .72s cubic-bezier(.25,.46,.45,.94),opacity .2s linear}
 #introFly.in{opacity:1}
-/* stacked typing block dissolves as the single header line takes its place.
-   Slower than the swap itself so the cheer line stays readable a moment longer. */
-#introTxt.merge{opacity:0;transform:scale(.97)!important;
-  transition:opacity .3s ease,transform .3s ease}
+/* Stacked typing block dissolves as the single header line takes its place.
+   Pure opacity — a scale here made the hand-off look like a bounce. */
+#introTxt.merge{opacity:0;transition:opacity .32s linear}
 
 /* ── header chips ── */
 .hdr-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
@@ -535,6 +534,14 @@ function runIntro(greetWord, name){
   const gEl=ov.querySelector('.ig-greet'), nEl=ov.querySelector('.ig-name');
   const rEl=ov.querySelector('.ig-rule'),  cEl=ov.querySelector('.ig-cheer');
 
+  // Lock the name box to its FINAL height before typing starts. A name that
+  // wraps to a second line mid-type would grow the block and shove everything
+  // up — that re-centering jolt is what read as a bounce.
+  nEl.textContent=name;
+  const nH=nEl.getBoundingClientRect().height;
+  if(nH) nEl.style.minHeight=nH+'px';
+  nEl.textContent='';
+
   const timers=[];
   const type=(el,text,total)=>new Promise(res=>{
     const step=Math.max(22,Math.min(52,total/Math.max(text.length,1)));
@@ -542,7 +549,9 @@ function runIntro(greetWord, name){
     const t=setInterval(()=>{
       i++;
       el.innerHTML=escapeHtml(text.slice(0,i))+'<span class="cur"></span>';
-      if(i>=text.length){ clearInterval(t); el.innerHTML=escapeHtml(text); res(); }
+      // Cursor stays after the last letter — removing it nudges centred text
+      // sideways, and that twitch was part of what looked jumpy.
+      if(i>=text.length){ clearInterval(t); res(); }
     },step);
     timers.push(()=>clearInterval(t));
   });
@@ -552,7 +561,9 @@ function runIntro(greetWord, name){
   const finish=()=>{
     if(done) return; done=true;
     timers.forEach(f=>f());
-    gEl.innerHTML=escapeHtml(greetWord); nEl.innerHTML=escapeHtml(name);
+    // Only fill in text if the user skipped mid-type; otherwise leave the
+    // typed line exactly as it is so nothing reflows at hand-off.
+    if(nEl.textContent.replace(/\s+$/,'')!==name){ nEl.innerHTML=escapeHtml(name); }
     rEl.classList.add('in'); cEl.classList.add('in');
 
     /* MORPH ONTO THE HEADING.
@@ -588,11 +599,12 @@ function runIntro(greetWord, name){
         ov.classList.add('fade');
       },150);
     });
-    // Header un-hides while the clone is still on the same pixels, so the
-    // handover is invisible.
-    setTimeout(()=>{ head.classList.remove('pending'); },150+620);
-    setTimeout(()=>{ if(fly.parentNode) fly.parentNode.removeChild(fly); },150+960);
-    setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); },150+700);
+    // Timings follow the 720ms flight exactly. The header un-hides the moment
+    // the clone lands, while both sit on identical pixels, so the handover is
+    // invisible; the clone is only removed once the header has fully faded in.
+    setTimeout(()=>{ head.classList.remove('pending'); },150+720);
+    setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); },150+780);
+    setTimeout(()=>{ if(fly.parentNode) fly.parentNode.removeChild(fly); },150+1080);
   };
 
   (async()=>{
