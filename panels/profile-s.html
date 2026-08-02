@@ -136,13 +136,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 #toast.err{background:#c0392b}
 /* ── daily activity button ── */
-.actbtn{width:100%;display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);padding:14px;margin-bottom:10px;cursor:pointer;text-align:left;font-family:inherit;color:var(--text)}
-.actbtn:active{transform:scale(.995)}
-.actbtn .ab-ic{width:36px;height:36px;flex-shrink:0;border-radius:10px;background:var(--bluebg);display:flex;align-items:center;justify-content:center;font-size:18px}
-.actbtn .ab-t{flex:1;min-width:0}
-.actbtn .ab-t b{display:block;font-size:14px;font-weight:900}
-.actbtn .ab-t span{display:block;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px}
-.actbtn .ab-c{font-size:22px;color:var(--muted);font-weight:900;line-height:1}
+.actbtn{position:relative;overflow:hidden;width:100%;display:flex;align-items:center;gap:12px;
+  background:linear-gradient(135deg,#0f4f8a,#1971c2 55%,#4098e6);color:#fff;border:none;
+  border-radius:var(--r);box-shadow:0 6px 18px rgba(25,113,194,.34);padding:15px 16px;
+  margin-bottom:12px;cursor:pointer;text-align:left;font-family:inherit;
+  animation:actPulse 2.6s ease-in-out infinite}
+@keyframes actPulse{0%,100%{box-shadow:0 6px 18px rgba(25,113,194,.34)}50%{box-shadow:0 6px 26px rgba(25,113,194,.62)}}
+.actbtn:active{transform:scale(.985);animation:none}
+/* sweeping shine so the button reads as new and invites the first tap */
+.actbtn::after{content:'';position:absolute;top:0;left:-60%;width:45%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.32),transparent);
+  transform:skewX(-18deg);animation:actShine 3.4s ease-in-out infinite}
+@keyframes actShine{0%{left:-60%}55%{left:130%}100%{left:130%}}
+.actbtn .ab-ic{width:42px;height:42px;flex-shrink:0;border-radius:12px;background:rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;font-size:21px}
+.actbtn .ab-t{flex:1;min-width:0;position:relative;z-index:1}
+.actbtn .ab-t b{display:flex;align-items:center;gap:7px;font-size:15.5px;font-weight:900;letter-spacing:.2px}
+.actbtn .ab-t span{display:block;font-size:11.5px;opacity:.9;font-weight:600;margin-top:3px}
+.actbtn .ab-new{font-size:8.5px;font-weight:900;letter-spacing:.6px;background:#ffd43b;color:#5c4300;
+  padding:2px 7px;border-radius:20px;text-transform:uppercase}
+.actbtn .ab-c{position:relative;z-index:1;font-size:24px;font-weight:900;line-height:1;opacity:.9}
+@media (prefers-reduced-motion:reduce){.actbtn,.actbtn::after{animation:none}}
 
 /* ── daily activity sheet ── */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:flex-end;justify-content:center}
@@ -150,7 +164,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .sheet{background:var(--bg);width:100%;max-width:560px;max-height:90vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;animation:up .22s ease}
 @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .sheet-hd{background:linear-gradient(135deg,#123a63,#1971c2);color:#fff;padding:14px 16px;border-radius:18px 18px 0 0;display:flex;align-items:flex-start;gap:10px}
-.sheet-hd .sh-t{font-size:16px;font-weight:900}
+.sheet-hd .sh-t{font-size:16px;font-weight:900;display:flex;align-items:center;gap:8px}
+.sheet-hd .sh-t svg{flex-shrink:0}
 .sheet-hd .sh-s{font-size:11.5px;opacity:.85;font-weight:600;margin-top:2px}
 .sheet-hd .sh-x{margin-left:auto;font-size:22px;line-height:1;cursor:pointer;background:none;border:none;color:#fff;padding:0 2px}
 .sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 14px 26px;flex:1}
@@ -212,7 +227,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <div class="sheet">
     <div class="sheet-hd">
       <div>
-        <div class="sh-t">📅 My Daily Activity</div>
+        <div class="sh-t" id="actTitle">My Daily Activity</div>
         <div class="sh-s" id="actSub">Loading…</div>
       </div>
       <button class="sh-x" onclick="closeAct()">&times;</button>
@@ -260,6 +275,18 @@ function fmtDate(v){
   const d=new Date(v); if(isNaN(d)) return String(v);
   return d.getDate()+' '+MOS[d.getMonth()]+', '+d.getFullYear();
 }
+// Neutral calendar glyph. Drawn inline so it never depends on the platform's
+// emoji font, which renders 📅 with a baked-in date.
+const CAL_SVG='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+  +'<rect x="3" y="5" width="18" height="16" rx="3"></rect>'
+  +'<path d="M3 10h18M8 3v4M16 3v4"></path>'
+  +'<circle cx="8.5" cy="14.5" r="1.2" fill="currentColor" stroke="none"></circle>'
+  +'<circle cx="12" cy="14.5" r="1.2" fill="currentColor" stroke="none"></circle>'
+  +'<circle cx="15.5" cy="14.5" r="1.2" fill="currentColor" stroke="none"></circle>'
+  +'<circle cx="8.5" cy="17.8" r="1.2" fill="currentColor" stroke="none"></circle>'
+  +'<circle cx="12" cy="17.8" r="1.2" fill="currentColor" stroke="none"></circle>'
+  +'</svg>';
+
 function greeting(){ const h=new Date().getHours(); if(h<12) return 'Good morning'; if(h<17) return 'Good afternoon'; if(h<21) return 'Good evening'; return 'Good night'; }
 
 function motivLine(d){
@@ -299,9 +326,12 @@ function paint(){
   let h='';
 
   // 0) DAILY ACTIVITY — opens the day-by-day feed sheet
+  // Inline SVG calendar, not the 📅 emoji — that emoji renders as a fixed
+  // "July 17" sheet on Apple devices and looked like a wrong date.
   h+='<button class="actbtn" onclick="openAct()">'
-    +'<span class="ab-ic">📅</span>'
-    +'<span class="ab-t"><b>My Daily Activity</b><span>See what you did, day by day</span></span>'
+    +'<span class="ab-ic">'+CAL_SVG+'</span>'
+    +'<span class="ab-t"><b>My Daily Activity <span class="ab-new">New</span></b>'
+    +'<span>See what you did, day by day</span></span>'
     +'<span class="ab-c">›</span></button>';
 
   // 1) ALL-TIME SALES
@@ -419,8 +449,16 @@ let ACT = { months:[], busy:false };
 function readActCache(){ try{ return JSON.parse(localStorage.getItem(ACT_KEY)||'null'); }catch(_){ return null; } }
 function writeActCache(){ try{ localStorage.setItem(ACT_KEY, JSON.stringify(ACT.months.slice(0,3))); }catch(_){} }
 
+/* Popup open/close MUST be announced to the shell (enkore-erp.html).
+   __erpOv() pushes a history entry; __erpOvClose() pops it. Without this the
+   shell's ovDepth stays 0, so Back never routes to __erpHandleBack and instead
+   leaves the panel. This is the contract every panel popup follows. */
 function openAct(){
-  document.getElementById('actOv').classList.add('open');
+  const ov=document.getElementById('actOv');
+  if(ov.classList.contains('open')) return;
+  ov.classList.add('open');
+  try{ if(parent&&parent.__erpOv) parent.__erpOv(); }catch(_){}
+  document.getElementById('actTitle').innerHTML=CAL_SVG+'<span>My Daily Activity</span>';
   document.body.style.overflow='hidden';
   if(!ACT.months.length){
     const c=readActCache();
@@ -432,7 +470,12 @@ function openAct(){
   }
 }
 function closeAct(){
-  document.getElementById('actOv').classList.remove('open');
+  const ov=document.getElementById('actOv');
+  if(!ov.classList.contains('open')) return;
+  ov.classList.remove('open');
+  // Muted automatically when Back drove the close, so the entry is never
+  // unwound twice.
+  try{ if(parent&&parent.__erpOvClose) parent.__erpOvClose(); }catch(_){}
   document.body.style.overflow='';
 }
 
