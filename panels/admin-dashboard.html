@@ -51,6 +51,72 @@
     .g-name  { font-size:20px; font-weight:800; line-height:1.2; letter-spacing:-.3px; }
     .g-quote { font-size:11px; color:rgba(255,255,255,.45); font-style:italic; margin-top:6px; line-height:1.5; max-width:300px; }
 
+    /* ══ INSIGHTS LAYER (hero · attention · trend) ══ */
+    .hero { background:linear-gradient(150deg,#0a1f30 0%,#123a58 58%,#155b8a 100%);
+      border-radius:var(--r); padding:16px; color:#fff; margin-bottom:12px;
+      box-shadow:0 6px 22px rgba(10,31,48,.3); border:1px solid rgba(41,171,226,.3); }
+    .hero-row { display:flex; align-items:center; gap:15px; }
+    .ringwrap { position:relative; width:114px; height:114px; flex-shrink:0; }
+    .ringsvg { width:114px; height:114px; transform:rotate(-90deg); }
+    .ring-bg { fill:none; stroke:rgba(255,255,255,.14); stroke-width:11; }
+    .ring-fg { fill:none; stroke-width:11; stroke-linecap:round;
+      transition:stroke-dashoffset .8s cubic-bezier(.25,.46,.45,.94); }
+    .ringtxt { position:absolute; inset:0; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; }
+    .ringv { font-size:25px; font-weight:800; letter-spacing:-1px; line-height:1; }
+    .ringv span { font-size:12px; margin-left:1px; }
+    .ringl { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+      color:rgba(255,255,255,.6); margin-top:3px; text-align:center; }
+    .hero-side { flex:1; min-width:0; }
+    .hs-k { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+      color:rgba(255,255,255,.58); margin-top:9px; }
+    .hs-k:first-child { margin-top:0; }
+    .hs-v { font-size:21px; font-weight:800; letter-spacing:-.6px; line-height:1.15; }
+    .hs-v2 { font-size:14px; font-weight:800; line-height:1.2; }
+    .hs-v2.up { color:#5fe0ad; } .hs-v2.dn { color:#ff9c9c; }
+    .hero-note { margin-top:13px; font-size:11.5px; font-weight:600; line-height:1.5;
+      background:rgba(255,255,255,.1); padding:10px 12px; border-radius:10px; }
+    .hero-note.bad { background:rgba(239,68,68,.24); }
+    .hero-foot { display:flex; gap:8px; margin-top:11px; }
+    .hero-foot .hf { flex:1; background:rgba(255,255,255,.09); border-radius:10px; padding:9px 6px; text-align:center; }
+    .hf-l { font-size:8px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:rgba(255,255,255,.55); }
+    .hf-v { font-size:13px; font-weight:800; margin-top:2px; }
+
+    .acts { display:flex; flex-direction:column; gap:8px; }
+    .act { display:flex; gap:11px; background:var(--card); border-radius:12px; box-shadow:var(--sh);
+      padding:12px 13px; border-left:4px solid var(--blue); }
+    .act.warn { border-left-color:#f59e0b; } .act.bad { border-left-color:var(--red); }
+    .act-n { flex-shrink:0; width:22px; height:22px; border-radius:50%; background:#e8f6fd; color:var(--blue-d);
+      font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+    .act.warn .act-n { background:#fff4e2; color:#b7791f; }
+    .act.bad  .act-n { background:#fee6e6; color:#c53030; }
+    .act-t { flex:1; min-width:0; }
+    .act-t b { display:block; font-size:13px; font-weight:800; line-height:1.35; }
+    .act-t span { display:block; font-size:11.5px; color:var(--sub2); font-weight:500; line-height:1.5; margin-top:3px; }
+    .all-clear { background:var(--card); border-radius:12px; box-shadow:var(--sh); padding:16px;
+      text-align:center; font-size:12.5px; font-weight:600; color:#16b07c; }
+
+    .chartcard { background:var(--card); border-radius:var(--r); box-shadow:var(--sh); padding:14px 12px 12px; }
+    .chart-hd { display:flex; align-items:baseline; justify-content:space-between; padding:0 2px 10px; }
+    .chart-t { font-size:12px; font-weight:800; }
+    .chart-s { font-size:10.5px; font-weight:700; color:var(--sub2); }
+    .chart-svg { width:100%; height:auto; display:block; overflow:visible; }
+    .chart-svg .hit { fill:transparent; cursor:pointer; }
+    .chart-legend { display:flex; gap:14px; justify-content:center; margin-top:9px;
+      font-size:10.5px; font-weight:700; color:var(--sub2); }
+    .chart-legend i { display:inline-block; width:9px; height:3px; border-radius:2px; margin-right:5px; vertical-align:2px; }
+    .chart-legend .l1 i { background:var(--blue); } .chart-legend .l2 i { background:var(--green); }
+    .chart-hint { text-align:center; font-size:10.5px; font-weight:600; color:var(--sub2); margin-top:8px; }
+    .chart-detail { margin-top:10px; background:#eef7fd; border:1px solid #d3e9f7; border-radius:11px; padding:11px 12px; }
+    .cd-hd { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+    .cd-m { font-size:13px; font-weight:800; color:#0f5680; }
+    .cd-x { font-size:9.5px; font-weight:700; color:#6c9cbc; letter-spacing:.4px; }
+    .cd-row { display:flex; gap:7px; }
+    .cd-b { flex:1; text-align:center; background:#fff; border-radius:9px; padding:8px 3px; }
+    .cd-l { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--sub2); }
+    .cd-v { font-size:12.5px; font-weight:800; margin-top:2px; }
+    .cd-note { font-size:11px; font-weight:600; color:#0f5680; margin-top:8px; text-align:center; line-height:1.45; }
+
     .section { padding:14px 14px 0; }
     .sec-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
     .sec-title { font-size:10px; font-weight:800; letter-spacing:1.2px; color:var(--sub2); text-transform:uppercase; }
@@ -333,6 +399,10 @@
 
   function buildDash(data) {
     let h = '';
+    // Insights first: what the business needs from you today, before the ledger.
+    h += '<div class="section" id="ins-hero"></div>';
+    h += '<div class="section" id="ins-acts"></div>';
+    h += '<div class="section" id="ins-chart"></div>';
     h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div><div id="ytd-container"><div class="state"><div class="spin"></div>Computing YTD...</div></div></div>';
     h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Cash in Hand</span></div><div class="cash-grid">'+
       '<div class="ccard"><div class="c-ava">MC</div><div><div class="ccard-name">Mahedi Islam Chayan</div><div class="ccard-val">'+tk(data.cash.chayan)+'</div></div></div>'+
@@ -340,9 +410,253 @@
       '</div></div>';
     document.getElementById('dash-body').innerHTML = h;
 
-    // refresh YTD and P&L tiles now that expense data is here
+    // refresh YTD, insights and P&L tiles now that expense data is here
     if (AN_ROWS.length) renderYTD();
+    renderInsights();
     if (document.getElementById('d-start').value) renderAnalytics();
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     INSIGHTS — runway hero, attention list, monthly trend.
+     Built from data already in memory: AN_ROWS (sale lines),
+     EXP_ROWS (expenses) and the Cash in Hand tab. No new sheet
+     reads, so this costs nothing extra on mobile data.
+     ═══════════════════════════════════════════════════════════ */
+  let INS_SEL = null, INS_SERIES = [];
+  const MOS3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function mKey(d){ return d.getFullYear()*12 + d.getMonth(); }
+  function mLabel(k){ return MOS3[k%12]+' '+String(Math.floor(k/12)).slice(-2); }
+  function shortTk(n){
+    n = Number(n)||0; const s = n<0?'-':''; n = Math.abs(n);
+    if (n>=1e7) return s+(n/1e7).toFixed(1).replace(/\.0$/,'')+'cr';
+    if (n>=1e5) return s+(n/1e5).toFixed(1).replace(/\.0$/,'')+'L';
+    if (n>=1e3) return s+Math.round(n/1e3)+'k';
+    return s+Math.round(n);
+  }
+  function plainTk(n){ return (Number(n)||0).toLocaleString('en-IN',{maximumFractionDigits:0})+' tk'; }
+
+  // Month-by-month P&L series from the raw rows.
+  function buildSeries() {
+    const map = {};
+    function slot(k){ if(!map[k]) map[k]={k:k,sales:0,paid:0,pmc:0,exp:0}; return map[k]; }
+    AN_ROWS.forEach(r => { const s=slot(mKey(r.d)); s.sales+=r.sales; s.paid+=r.paid; s.pmc+=r.pmc; });
+    EXP_ROWS.forEach(e => { slot(mKey(e.d)).exp += e.amt; });
+    const out = Object.keys(map).map(k=>map[k]).sort((a,b)=>a.k-b.k);
+    out.forEach(s => { s.gp = s.paid - s.pmc; s.np = s.gp - s.exp; s.due = s.sales - s.paid; });
+    return out.length > 18 ? out.slice(out.length-18) : out;
+  }
+
+  function smoothPath(p) {
+    if (p.length < 2) return '';
+    let d = 'M'+p[0].x.toFixed(1)+','+p[0].y.toFixed(1);
+    for (let i=0;i<p.length-1;i++) {
+      const p0=p[i-1]||p[i], p1=p[i], p2=p[i+1], p3=p[i+2]||p2;
+      d += ' C'+(p1.x+(p2.x-p0.x)/6).toFixed(1)+','+(p1.y+(p2.y-p0.y)/6).toFixed(1)
+        +' '+(p2.x-(p3.x-p1.x)/6).toFixed(1)+','+(p2.y-(p3.y-p1.y)/6).toFixed(1)
+        +' '+p2.x.toFixed(1)+','+p2.y.toFixed(1);
+    }
+    return d;
+  }
+  function ring(pct, col) {
+    const p = Math.max(0, Math.min(Number(pct)||0, 100)), r = 50, c = 2*Math.PI*r;
+    return '<svg class="ringsvg" viewBox="0 0 114 114">'
+      + '<circle class="ring-bg" cx="57" cy="57" r="'+r+'"></circle>'
+      + '<circle class="ring-fg" cx="57" cy="57" r="'+r+'" style="stroke:'+col
+      + ';stroke-dasharray:'+c.toFixed(1)+';stroke-dashoffset:'+(c*(1-p/100)).toFixed(1)+'"></circle></svg>';
+  }
+
+  function renderInsights() {
+    if (!AN_ROWS.length || !window._expLoaded) return;
+    const hero = document.getElementById('ins-hero');
+    const actsEl = document.getElementById('ins-acts');
+    const chartEl = document.getElementById('ins-chart');
+    if (!hero || !actsEl || !chartEl) return;
+
+    const S = buildSeries();
+    INS_SERIES = S;
+    if (INS_SEL != null && INS_SEL >= S.length) INS_SEL = null;
+    const nowK = mKey(new Date());
+    const cur = S.find(x=>x.k===nowK) || {sales:0,paid:0,pmc:0,exp:0,gp:0,np:0,due:0};
+    const prev = S.find(x=>x.k===nowK-1) || null;
+
+    const cash = (Number((window._lastCash||{}).chayan)||0) + (Number((window._lastCash||{}).anik)||0);
+
+    // Burn: average NEGATIVE net profit over the last 3 completed months.
+    const done = S.filter(x=>x.k<nowK).slice(-3);
+    const avgNp = done.length ? done.reduce((t,x)=>t+x.np,0)/done.length : (cur.np||0);
+    const burn = avgNp < 0 ? -avgNp : 0;
+    const runway = burn > 0 ? cash/burn : null;              // null = not burning
+    const runPct = runway == null ? 100 : Math.max(0, Math.min(runway/6*100, 100)); // 6 months = full ring
+    const runCol = runway == null ? '#16b07c' : (runway<2 ? '#ef4444' : runway<4 ? '#f59e0b' : '#29ABE2');
+
+    // ── HERO ──
+    let hh = '<div class="hero"><div class="hero-row">'
+      + '<div class="ringwrap">'+ring(runPct, runCol)
+      // Past a year the exact figure stops meaning anything and the digits stop
+      // fitting the ring, so it caps at 12+.
+      + '<div class="ringtxt"><div class="ringv">'
+      + (runway==null ? '∞' : (runway>=12 ? '12+' : (Math.round(runway*10)/10)))
+      + (runway==null?'':'<span>mo</span>')+'</div><div class="ringl">runway</div></div></div>'
+      + '<div class="hero-side">';
+    if (runway == null) {
+      hh += '<div class="hs-k">Status</div><div class="hs-v" style="color:#5fe0ad">PROFITABLE</div>'
+         +  '<div class="hs-k">Avg monthly net</div><div class="hs-v2 up">'+plainTk(avgNp)+'</div>';
+    } else {
+      hh += '<div class="hs-k">Cash left</div><div class="hs-v">'+shortTk(cash)+'</div>'
+         +  '<div class="hs-k">Burning per month</div><div class="hs-v2 dn">'+plainTk(burn)+'</div>';
+    }
+    hh += '<div class="hs-k">Net profit this month</div><div class="hs-v2 '+(cur.np>=0?'up':'dn')+'">'+plainTk(cur.np)+'</div>'
+      + '</div></div>';
+    if (runway != null) {
+      hh += '<div class="hero-note'+(runway<3?' bad':'')+'">'
+        + (runway<3
+            ? 'At this burn the cash runs out in about '+(Math.round(runway*10)/10)+' months. Either lift collections or cut a cost line this month.'
+            : 'About '+(Math.round(runway*10)/10)+' months of cash at the current burn. Watch it monthly.')
+        + '</div>';
+    }
+    hh += '<div class="hero-foot">'
+      + '<div class="hf"><div class="hf-l">Sales MTD</div><div class="hf-v">'+shortTk(cur.sales)+'</div></div>'
+      + '<div class="hf"><div class="hf-l">Collected</div><div class="hf-v">'+shortTk(cur.paid)+'</div></div>'
+      + '<div class="hf"><div class="hf-l">Expense</div><div class="hf-v">'+shortTk(cur.exp)+'</div></div>'
+      + '</div></div>';
+    hero.innerHTML = hh;
+
+    // ── ATTENTION LIST ──
+    const acts = [];
+    if (runway != null && runway < 3)
+      acts.push({lv:'bad', t:'Runway is '+(Math.round(runway*10)/10)+' months',
+        s:plainTk(cash)+' cash against '+plainTk(burn)+' burned a month. Under three months is the point to act, not to watch.'});
+
+    const crNow = cur.sales>0 ? cur.paid/cur.sales : null;
+    const crPrev = prev && prev.sales>0 ? prev.paid/prev.sales : null;
+    if (crNow != null && crPrev != null && crNow < crPrev - 0.05)
+      acts.push({lv:'warn', t:'Collection rate fell to '+Math.round(crNow*100)+'%',
+        s:'Down from '+Math.round(crPrev*100)+'% last month. Every point lost here is cash that stays with customers.'});
+
+    const today = new Date();
+    let aged = 0, agedRows = 0;
+    AN_ROWS.forEach(r => {
+      const due = r.sales - r.paid;
+      if (due > 0 && (today - r.d)/86400000 > 30) { aged += due; agedRows++; }
+    });
+    if (aged > 0)
+      acts.push({lv:'warn', t:plainTk(aged)+' receivable is over 30 days old',
+        s:agedRows+' invoice line'+(agedRows===1?'':'s')+' past a month. Old dues collect slower every week they age.'});
+
+    if (prev && prev.exp > 0 && cur.exp > prev.exp*1.4)
+      acts.push({lv:'warn', t:'Expenses up '+Math.round((cur.exp/prev.exp-1)*100)+'% vs last month',
+        s:plainTk(cur.exp)+' this month against '+plainTk(prev.exp)+' last month. Check what changed before it repeats.'});
+
+    // Salesmen fading against their own recent average (no targets in this sheet).
+    const bySeller = {};
+    AN_ROWS.forEach(r => {
+      const k = mKey(r.d);
+      if (!bySeller[r.seller]) bySeller[r.seller] = {};
+      bySeller[r.seller][k] = (bySeller[r.seller][k]||0) + r.sales;
+    });
+    const fading = [];
+    Object.keys(bySeller).forEach(name => {
+      if (name === '(No seller)') return;
+      const hist = [nowK-3,nowK-2,nowK-1].map(k=>bySeller[name][k]||0);
+      const base = hist.reduce((a,b)=>a+b,0)/3;
+      const now  = bySeller[name][nowK]||0;
+      if (base > 1000 && now < base*0.5) fading.push({name:name, now:now, base:base});
+    });
+    if (fading.length)
+      acts.push({lv:'warn', t:fading.length+' salesman below half their usual pace',
+        s:fading.map(f=>f.name+' at '+shortTk(f.now)+' against a '+shortTk(f.base)+' average').join(' · ')+'.'});
+
+    const cCh = Number((window._lastCash||{}).chayan)||0, cAn = Number((window._lastCash||{}).anik)||0;
+    if (cCh < 0 || cAn < 0)
+      acts.push({lv:'bad', t:'Negative cash in hand recorded',
+        s:'A negative balance means more was paid out or approved than recorded as received. Reconcile the Cash in Hand tab.'});
+
+    actsEl.innerHTML = '<div class="sec-hdr"><span class="sec-title">Needs your attention</span></div>'
+      + (acts.length
+          ? '<div class="acts">'+acts.map((a,i)=>'<div class="act '+a.lv+'"><div class="act-n">'+(i+1)+'</div>'
+              +'<div class="act-t"><b>'+a.t+'</b><span>'+a.s+'</span></div></div>').join('')+'</div>'
+          : '<div class="all-clear">Nothing urgent. Cash, collections and spend are all within range.</div>');
+
+    // ── TREND CHART ──
+    chartEl.innerHTML = '<div class="sec-hdr"><span class="sec-title">Sales &amp; profit trend</span></div>'
+      + insChart(S);
+  }
+
+  function insChart(S) {
+    if (!S.length) return '<div class="chartcard"><div class="chart-hint">No history yet.</div></div>';
+    if (S.length < 2) return '<div class="chartcard"><div class="chart-hint">One month of history so far. The trend appears from the second month.</div></div>';
+    const W=320,H=124,PL=8,PR=8,PT=14,PB=20, n=S.length;
+    const vals = S.map(s=>[s.sales, s.np]).flat();
+    const hi = Math.max(...vals, 1), lo = Math.min(...vals, 0);
+    const span = (hi-lo)||1;
+    const xAt = i => PL+(W-PL-PR)*(n===1?0.5:i/(n-1));
+    const yAt = v => PT+(H-PT-PB)*(1-((Number(v)||0)-lo)/span);
+    const pS = S.map((s,i)=>({x:xAt(i),y:yAt(s.sales)}));
+    const pN = S.map((s,i)=>({x:xAt(i),y:yAt(s.np)}));
+    const base = H-PB;
+    const zeroY = yAt(0);
+
+    let svg = '<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Monthly sales and net profit">'
+      + '<defs><linearGradient id="insFill" x1="0" y1="0" x2="0" y2="1">'
+      + '<stop offset="0%" stop-color="#29ABE2" stop-opacity=".24"/>'
+      + '<stop offset="100%" stop-color="#29ABE2" stop-opacity="0"/></linearGradient></defs>'
+      + '<line x1="'+PL+'" y1="'+zeroY.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+zeroY.toFixed(1)+'" stroke="#e3e8ef" stroke-width="1" stroke-dasharray="3 3"/>'
+      + '<path d="'+smoothPath(pS)+' L'+pS[n-1].x.toFixed(1)+','+base+' L'+pS[0].x.toFixed(1)+','+base+' Z" fill="url(#insFill)"/>'
+      + '<path d="'+smoothPath(pN)+'" fill="none" stroke="#16b07c" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round" opacity=".9"/>'
+      + '<path d="'+smoothPath(pS)+'" fill="none" stroke="#29ABE2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '<circle cx="'+pS[n-1].x.toFixed(1)+'" cy="'+pS[n-1].y.toFixed(1)+'" r="4" fill="#29ABE2" stroke="#fff" stroke-width="2"/>';
+
+    const sel = (INS_SEL!=null && INS_SEL>=0 && INS_SEL<n) ? INS_SEL : null;
+    if (sel != null) {
+      svg += '<line x1="'+pS[sel].x.toFixed(1)+'" y1="'+PT+'" x2="'+pS[sel].x.toFixed(1)+'" y2="'+base+'" stroke="#29ABE2" stroke-width="1.4" stroke-dasharray="3 3" opacity=".55"/>'
+        + '<circle cx="'+pN[sel].x.toFixed(1)+'" cy="'+pN[sel].y.toFixed(1)+'" r="4" fill="#16b07c" stroke="#fff" stroke-width="2"/>'
+        + '<circle cx="'+pS[sel].x.toFixed(1)+'" cy="'+pS[sel].y.toFixed(1)+'" r="5.5" fill="#29ABE2" stroke="#fff" stroke-width="2.4"/>';
+    }
+    const slot = (W-PL-PR)/Math.max(n-1,1);
+    for (let i=0;i<n;i++) {
+      const x = Math.max(0, xAt(i)-slot/2);
+      svg += '<rect class="hit" x="'+x.toFixed(1)+'" y="0" width="'+Math.min(slot,W-x).toFixed(1)+'" height="'+H+'" onclick="insTap('+i+')"></rect>';
+    }
+    svg += '<text x="'+PL+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#b7bdc7">'+mLabel(S[0].k)+'</text>'
+      + '<text x="'+(W-PR)+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#828791" text-anchor="end">'+mLabel(S[n-1].k)+'</text>'
+      + '<text x="'+(W-PR)+'" y="'+(PT-3)+'" font-size="9" font-weight="800" fill="#b7bdc7" text-anchor="end">peak '+shortTk(hi)+'</text>'
+      + '</svg>';
+
+    let detail = '';
+    if (sel != null) {
+      const r = S[sel], pv = sel>0 ? S[sel-1] : null;
+      const cr = r.sales>0 ? Math.round(r.paid/r.sales*100) : 0;
+      const dd = pv ? r.sales-pv.sales : null;
+      detail = '<div class="chart-detail">'
+        + '<div class="cd-hd"><span class="cd-m">'+mLabel(r.k)+'</span><span class="cd-x">tap again to close</span></div>'
+        + '<div class="cd-row">'
+        + '<div class="cd-b"><div class="cd-l">Sales</div><div class="cd-v" style="color:var(--blue-d)">'+shortTk(r.sales)+'</div></div>'
+        + '<div class="cd-b"><div class="cd-l">Collected</div><div class="cd-v" style="color:var(--green)">'+shortTk(r.paid)+'</div></div>'
+        + '<div class="cd-b"><div class="cd-l">Expense</div><div class="cd-v">'+shortTk(r.exp)+'</div></div>'
+        + '<div class="cd-b"><div class="cd-l">Net</div><div class="cd-v" style="color:'+(r.np>=0?'var(--green)':'var(--red)')+'">'+shortTk(r.np)+'</div></div>'
+        + '</div>'
+        + '<div class="cd-note">Collection rate '+cr+'% · due '+plainTk(r.due)
+        + (dd==null ? '' : (dd>=0 ? ' · '+plainTk(dd)+' more than '+mLabel(pv.k) : ' · '+plainTk(-dd)+' less than '+mLabel(pv.k)))
+        + '</div></div>';
+    }
+
+    const lastNp = S[n-1].np, prevNp = S[n-2].np, dNp = lastNp-prevNp;
+    return '<div class="chartcard" id="insChart">'
+      + '<div class="chart-hd"><span class="chart-t">Month by month</span>'
+      + '<span class="chart-s">net '+(dNp>=0?'▲ ':'▼ ')+shortTk(Math.abs(dNp))+' vs last month</span></div>'
+      + svg
+      + '<div class="chart-legend"><span class="l1"><i></i>Sales</span><span class="l2"><i></i>Net profit</span></div>'
+      + detail
+      + (sel==null ? '<div class="chart-hint">Tap any month on the graph for its details</div>' : '')
+      + '</div>';
+  }
+
+  // Tap toggles: same month closes, another month switches. Only the chart
+  // card is redrawn, so the page never jumps.
+  function insTap(i) {
+    INS_SEL = (INS_SEL===i) ? null : i;
+    const el = document.getElementById('insChart');
+    if (el) el.outerHTML = insChart(INS_SERIES);
   }
 
   // ── YTD computed live from Sale Entry rows ──
@@ -512,6 +826,7 @@
       AN_ROWS = rows;
       window._anLoaded = true;
       renderYTD();
+      renderInsights();
       renderAnalytics();
     } catch(e) {
       document.getElementById('an-state').innerHTML = '⚠️ Could not load sales data.';
