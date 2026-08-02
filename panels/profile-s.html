@@ -156,10 +156,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 #introTxt{position:relative;z-index:1;color:#fff;text-align:center;max-width:86vw}
 /* Same casing, weight, colour and letter-spacing as .hdr-name — only the size
    differs, so the journey is a pure scale with no letterform change. */
-#introTxt .ig-greet{font-size:clamp(17px,5.6vw,25px);font-weight:900;letter-spacing:.2px;
-  line-height:1.3;opacity:.88;min-height:1.3em}
 #introTxt .ig-name{font-size:clamp(23px,7.6vw,34px);font-weight:900;letter-spacing:.2px;
-  line-height:1.25;margin-top:5px;overflow-wrap:anywhere;min-height:1.25em}
+  line-height:1.25;overflow-wrap:anywhere;min-height:1.25em}
 /* transforms are applied to the inner span so we measure the TEXT, not the box */
 #introTxt .t{display:inline-block;transform-origin:top left;backface-visibility:hidden}
 #introTxt.fly .t{transition:transform .72s cubic-bezier(.25,.46,.45,.94),opacity .3s linear}
@@ -549,7 +547,7 @@ function introDue(){
   return true;
 }
 
-function runIntro(greetWord, name){
+function runIntro(name){
   _introRan=true;
   try{ localStorage.setItem(INTRO_KEY, loginToken()); }catch(_){}
 
@@ -557,10 +555,9 @@ function runIntro(greetWord, name){
   head.classList.add('pending');
 
   const ov=document.createElement('div'); ov.id='introOv';
-  // Greeting appears instantly; only the NAME types out. Typing both delayed
-  // the moment that actually matters — seeing your own name.
+  // The NAME is the whole animation. No greeting on this screen — it belongs to
+  // the header and simply appears there when the name lands.
   ov.innerHTML='<div id="introBg"></div><div id="introTxt">'
-    +'<div class="ig-greet"><span class="t">'+escapeHtml(greetWord)+'</span></div>'
     +'<div class="ig-name"><span class="t"></span></div>'
     +'<div class="ig-rule"></div>'
     +'<div class="ig-cheer">'+escapeHtml(pickCheer())+'</div>'
@@ -568,9 +565,8 @@ function runIntro(greetWord, name){
   document.body.appendChild(ov);
   const bg=ov.querySelector('#introBg');
   const tx=ov.querySelector('#introTxt');
-  const gEl=ov.querySelector('.ig-greet'), nEl=ov.querySelector('.ig-name');
-  const gS =gEl.querySelector('.t'),        nS =nEl.querySelector('.t');
-  const rEl=ov.querySelector('.ig-rule'),  cEl=ov.querySelector('.ig-cheer');
+  const nEl=ov.querySelector('.ig-name'), nS=nEl.querySelector('.t');
+  const rEl=ov.querySelector('.ig-rule'), cEl=ov.querySelector('.ig-cheer');
 
   // Lock the name box to its FINAL height before typing starts. A name that
   // wraps to a second line mid-type would grow the block and shove everything
@@ -600,32 +596,27 @@ function runIntro(greetWord, name){
     if(done) return; done=true;
     timers.forEach(f=>f());
     // Drop the cursor and fill in the full name if the user skipped mid-type.
-    gS.innerHTML=escapeHtml(greetWord);
     nS.innerHTML=escapeHtml(name);
 
     /* ONE CONTINUOUS MOVE — no clone, no crossfade.
-       Each line is mapped onto its own target inside the header: the greeting
-       onto the header's greeting span, the name onto the header's name span.
-       Scale comes from the measured WIDTH ratio, not the font size, so the
-       landing width is exact even if wrapping or letter-spacing differ.
-       transform-origin is top-left, which makes the maths a plain subtraction. */
-    const hw=head.querySelector('.hg-w'), hn=head.querySelector('.hg-n');
-    const pairs=[[gS,hw],[nS,hn]];
-    const moves=pairs.map(([el,target])=>{
-      if(!el||!target) return null;
-      const r=el.getBoundingClientRect(), t=target.getBoundingClientRect();
-      if(!r.width||!t.width) return null;
-      const s=t.width/r.width;
-      return {el, css:'translate('+(t.left-r.left).toFixed(2)+'px,'+(t.top-r.top).toFixed(2)+'px) scale('+s.toFixed(4)+')'};
-    });
+       The typed name is mapped onto the header's name span. Scale comes from
+       the measured WIDTH ratio, not the font size, so the landing width is
+       exact even if wrapping or letter-spacing differ. transform-origin is
+       top-left, which makes the maths a plain subtraction. */
+    const hn=head.querySelector('.hg-n');
+    let move=null;
+    if(hn){
+      const r=nS.getBoundingClientRect(), t=hn.getBoundingClientRect();
+      if(r.width && t.width){
+        const s=t.width/r.width;
+        move='translate('+(t.left-r.left).toFixed(2)+'px,'+(t.top-r.top).toFixed(2)+'px) scale('+s.toFixed(4)+')';
+      }
+    }
 
     requestAnimationFrame(()=>{
       tx.classList.add('fly');                 // arms the transitions
-      bg.classList.add('fade');                // backdrop dissolves, words do not
-      requestAnimationFrame(()=>{
-        gS.style.opacity='1';                  // greeting settles to header opacity
-        moves.forEach(m=>{ if(m) m.el.style.transform=m.css; });
-      });
+      bg.classList.add('fade');                // backdrop dissolves, the name does not
+      requestAnimationFrame(()=>{ if(move) nS.style.transform=move; });
     });
 
     // The words are already sitting on the header when it un-hides, so the
@@ -656,6 +647,9 @@ function runIntro(greetWord, name){
    gives a smooth curve without the overshoot a naive smoothing produces (an
    overshoot below zero would draw sales the salesman never made). */
 let _chartSel=null, _LIFE=[];
+// Each point is a DAY the salesman worked. Older payloads used {month}; this
+// falls back to it so a panel cached before the API redeploy still renders.
+function lbl(r){ return r&&(r.label||r.day||r.month)||''; }
 function smoothPath(p){
   if(p.length<2) return '';
   let d='M'+p[0].x.toFixed(1)+','+p[0].y.toFixed(1);
@@ -677,10 +671,12 @@ function shortTk(n){
 }
 function lifetimeChart(life){
   if(!Array.isArray(life)||!life.length){
-    return '<div class="chartcard"><div class="empty">Lifetime graph will appear once the Salesman API is redeployed with the monthly history.</div></div>';
+    return '<div class="chartcard" id="chartCard"><div class="empty">'
+      +'<span class="spin"></span> Loading your history…<br>'
+      +'<span style="font-size:11.5px">If it does not appear, pull down on this page to refresh.</span></div></div>';
   }
   if(life.length<2){
-    return '<div class="chartcard"><div class="empty">One month of history so far. The trend graph appears from your second month.</div></div>';
+    return '<div class="chartcard" id="chartCard"><div class="empty">One selling day recorded so far. The graph appears from your second day.</div></div>';
   }
   const W=320,H=120,PL=8,PR=8,PT=12,PB=20;
   const n=life.length;
@@ -723,8 +719,8 @@ function lifetimeChart(life){
     const x=Math.max(0, xAt(i)-slot/2);
     svg+='<rect class="hit" x="'+x.toFixed(1)+'" y="0" width="'+Math.min(slot,W-x).toFixed(1)+'" height="'+H+'" onclick="chartTap('+i+')"></rect>';
   }
-  svg+='<text x="'+PL+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#adb5bd">'+escapeHtml(life[0].month)+'</text>'
-    +'<text x="'+(W-PR)+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#868e96" text-anchor="end">'+escapeHtml(last.month)+'</text>'
+  svg+='<text x="'+PL+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#adb5bd">'+escapeHtml(lbl(life[0]))+'</text>'
+    +'<text x="'+(W-PR)+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#868e96" text-anchor="end">'+escapeHtml(lbl(last))+'</text>'
     +'<text x="'+(W-PR)+'" y="'+(PT-2)+'" font-size="9" font-weight="800" fill="#adb5bd" text-anchor="end">peak '+shortTk(peak)+'</text>'
     +'</svg>';
 
@@ -736,29 +732,30 @@ function lifetimeChart(life){
     const pv=sel>0?(Number(life[sel-1].sales)||0):null;
     const dd=pv==null?null:s-pv;
     detail='<div class="chart-detail">'
-      +'<div class="cd-hd"><span class="cd-m">'+escapeHtml(r.month)+'</span><span class="cd-x">tap again to close</span></div>'
+      +'<div class="cd-hd"><span class="cd-m">'+escapeHtml(lbl(r))+'</span><span class="cd-x">tap again to close</span></div>'
       +'<div class="cd-row">'
       +'<div class="cd-b"><div class="cd-l">Sales</div><div class="cd-v blue" style="color:var(--blue)">'+tkPlain(s)+'</div></div>'
       +'<div class="cd-b"><div class="cd-l">Collected</div><div class="cd-v" style="color:var(--grn)">'+tkPlain(col)+'</div></div>'
       +'<div class="cd-b"><div class="cd-l">Due</div><div class="cd-v" style="color:'+(due>0?'var(--red)':'var(--grn)')+'">'+tkPlain(due)+'</div></div>'
       +'</div>'
       +'<div class="cd-note">Collection rate '+rate+'%'
-      +(dd==null?'' : (dd>=0?' · '+tkPlain(dd)+' more than '+escapeHtml(life[sel-1].month)
-                            :' · '+tkPlain(-dd)+' less than '+escapeHtml(life[sel-1].month)))
-      +(s===Number(best.sales)?' · your best month so far':'')+'</div>'
+      +(dd==null?'' : (dd>=0?' · '+tkPlain(dd)+' more than '+escapeHtml(lbl(life[sel-1]))
+                            :' · '+tkPlain(-dd)+' less than '+escapeHtml(lbl(life[sel-1]))))
+      +(s===Number(best.sales)?' · your best day so far':'')+'</div>'
       +'</div>';
   }
 
   return '<div class="chartcard" id="chartCard">'
-    +'<div class="chart-hd"><span class="chart-t">Month by month</span>'
-    +'<span class="chart-s">'+(delta>=0?'▲ ':'▼ ')+tkPlain(Math.abs(delta))+' vs last month</span></div>'
+    +'<div class="chart-hd"><span class="chart-t">Every day you sold</span>'
+    +'<span class="chart-s">'+(delta>=0?'▲ ':'▼ ')+tkPlain(Math.abs(delta))+' vs last selling day</span></div>'
     +svg
     +'<div class="chart-legend"><span class="l1"><i></i>Sales</span><span class="l2"><i></i>Collected</span></div>'
     +detail
-    +(sel==null?'<div class="chart-hint">Tap any month on the graph for its details</div>':'')
+    +(sel==null?'<div class="chart-hint">Tap any day on the graph for its details</div>':'')
     +'<div class="chart-foot">'
-    +'<div class="cf"><div class="cf-l">Best month</div><div class="cf-v">'+tkPlain(best.sales)+'</div><div class="cf-l" style="margin-top:2px">'+escapeHtml(best.month)+'</div></div>'
-    +'<div class="cf"><div class="cf-l">Monthly average</div><div class="cf-v">'+tkPlain(avg)+'</div></div>'
+    +'<div class="cf"><div class="cf-l">Best day</div><div class="cf-v">'+tkPlain(best.sales)+'</div><div class="cf-l" style="margin-top:2px">'+escapeHtml(lbl(best))+'</div></div>'
+    +'<div class="cf"><div class="cf-l">Days worked</div><div class="cf-v">'+n+'</div></div>'
+    +'<div class="cf"><div class="cf-l">Average per day</div><div class="cf-v">'+tkPlain(avg)+'</div></div>'
     +'</div></div>';
 }
 
@@ -796,7 +793,7 @@ function paint(){
   const who=d.name||d.id;
   document.getElementById('hGreet').innerHTML=
     '<span class="hg-w">'+escapeHtml(greeting()+',')+'</span> <span class="hg-n">'+escapeHtml(who)+'</span>';
-  if(introDue()) runIntro(greeting()+',', who);
+  if(introDue()) runIntro(who);
   document.getElementById('motiv').innerHTML=motivLine(d,st);
   let chips='';
   if(d.rank&&d.rank!=='-') chips+='<span class="chip gold">Rank #'+escapeHtml(d.rank)+' this month</span>';
@@ -973,7 +970,7 @@ function paint(){
   h+='<div class="sec-t">Your career at Enkore</div>';
   h+='<div class="career">'
     +'<div class="career-hd"><span class="ch-t">Lifetime record</span>'
-    +'<span class="ch-s">'+(life.length?life.length+' month'+(life.length===1?'':'s'):'All time')+'</span></div>'
+    +'<span class="ch-s">'+(life.length?life.length+' day'+(life.length===1?'':'s')+' worked':'All time')+'</span></div>'
     +'<div class="tri">'
     +'<div class="box"><div class="box-l">Lifetime Sales</div><div class="box-v blue">'+tk(a.sales)+'</div></div>'
     +'<div class="box"><div class="box-l">Collected</div><div class="box-v grn">'+tk(a.collected)+'</div></div>'
