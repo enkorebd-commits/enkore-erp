@@ -294,7 +294,7 @@
   // ── CONFIG ──
   // Bump BUILD on every deploy. It is shown in the profile menu so you can see
   // at a glance whether a phone is actually running the newest files.
-  const BUILD = '2026.08.02-1';
+  const BUILD = '2026.08.02-2';
   const SHEET_ID   = '1mXI0MI9R_5_ImxiTvw8vH0EaQ38M3WlHncjZgmPLTmc';
   const ACCESS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Access`;
   const LINK_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Panels`;
@@ -634,9 +634,16 @@
   const SLIDE_EASE = 'cubic-bezier(.32,.72,.28,1)'; // iOS-style ease-out
   function frames() { if (!_frames) _frames = [document.getElementById('pf0'), document.getElementById('pf1')]; return _frames; }
   function panelIndex(file) { return currentUser ? currentUser.panels.findIndex(p => p.file === file) : 0; }
+  // home=1 tells a panel it is this user's FIRST panel (the landing screen).
+  // Only the landing panel should play a login intro animation — for a user
+  // whose first panel is something else, the intro would fire on a mid-session
+  // visit and feel random.
   function panelUrl(file, readonly) {
+    const home = homePanel();
     return 'panels/' + file + '.html?' + new URLSearchParams({
-      userId: currentUser.id, name: currentUser.name, role: currentUser.role, readonly: readonly ? '1' : '0'
+      userId: currentUser.id, name: currentUser.name, role: currentUser.role,
+      readonly: readonly ? '1' : '0',
+      home: (home && home.file === file) ? '1' : '0'
     }).toString();
   }
   function loadFrame(f, url) {
