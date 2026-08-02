@@ -135,6 +135,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:400;opacity:0;transition:.25s;max-width:90%;text-align:center}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 #toast.err{background:#c0392b}
+/* ── login greeting intro (plays once per login) ── */
+#introOv{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:linear-gradient(150deg,#0d0d0d 0%,#123a63 62%,#1971c2 100%);
+  transition:opacity .5s ease}
+#introOv.fade{opacity:0}
+#introTxt{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.3px;text-align:center;
+  line-height:1.3;white-space:nowrap;will-change:transform;
+  transition:transform .58s cubic-bezier(.32,.72,.28,1)}
+#introTxt .cur{display:inline-block;width:2.5px;height:.95em;background:#4098e6;
+  margin-left:4px;vertical-align:-2px;animation:blink .68s step-end infinite;border-radius:2px}
+@keyframes blink{50%{opacity:0}}
+.hdr-name.pending{opacity:0}
+.hdr-name{transition:opacity .35s ease}
+
 /* ── header chips ── */
 .hdr-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
 .chip{font-size:10px;font-weight:800;background:rgba(255,255,255,.16);padding:4px 10px;border-radius:20px;letter-spacing:.3px}
@@ -402,6 +416,60 @@ async function load(force){
   }
 }
 
+/* ─── LOGIN GREETING INTRO ───
+   Types the greeting in the middle of the screen, then flies it up into the
+   header. Runs ONCE per login: the shell writes a fresh erp_login_token into
+   sessionStorage on every ID + password sign-in, and this panel remembers the
+   last token it played for. A session restore or a revisit reuses the same
+   token, so the animation does not replay and never becomes annoying. */
+const INTRO_KEY='enkore_intro_token_'+USER_ID;
+let _introRan=false;
+function loginToken(){ try{ return sessionStorage.getItem('erp_login_token')||''; }catch(_){ return ''; } }
+function introDue(){
+  if(_introRan) return false;
+  const t=loginToken(); if(!t) return false;               // no token = not a fresh sign-in
+  let seen=''; try{ seen=localStorage.getItem(INTRO_KEY)||''; }catch(_){}
+  if(t===seen) return false;
+  try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches) return false; }catch(_){}
+  return true;
+}
+function runIntro(text){
+  _introRan=true;
+  try{ localStorage.setItem(INTRO_KEY, loginToken()); }catch(_){}
+
+  const head=document.getElementById('hGreet');
+  head.classList.add('pending');
+
+  const ov=document.createElement('div'); ov.id='introOv';
+  const tx=document.createElement('div'); tx.id='introTxt';
+  ov.appendChild(tx); document.body.appendChild(ov);
+
+  let i=0;
+  const step=Math.max(28, Math.min(55, 900/Math.max(text.length,1))); // ~0.9s total
+  const cur='<span class="cur"></span>';
+  const finish=()=>{
+    clearInterval(timer);
+    tx.innerHTML=escapeHtml(text);
+    // Fly the typed line to exactly where the header greeting sits.
+    const a=tx.getBoundingClientRect(), b=head.getBoundingClientRect();
+    const scale=21/26;                                     // header font / intro font
+    const dx=(b.left + (a.width*scale)/2) - (a.left + a.width/2);
+    const dy=(b.top + b.height/2) - (a.top + a.height/2);
+    requestAnimationFrame(()=>{
+      tx.style.transform='translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px) scale('+scale+')';
+      ov.classList.add('fade');
+    });
+    setTimeout(()=>{ head.classList.remove('pending'); }, 380);
+    setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); }, 640);
+  };
+  const timer=setInterval(()=>{
+    i++;
+    tx.innerHTML=escapeHtml(text.slice(0,i))+cur;
+    if(i>=text.length){ clearInterval(timer); setTimeout(finish, 320); } // brief hold
+  }, step);
+  ov.addEventListener('click', finish);                    // tap to skip
+}
+
 function paint(){
   const d=DATA;
   const c=d.commission, t=d.target, m=d.thisMonth, a=d.allTime;
@@ -423,7 +491,9 @@ function paint(){
   const st={noTarget,met,onPace,gap,perDay,dLeft,clRate};
 
   // ── header ──
-  document.getElementById('hGreet').textContent=greeting()+', '+(d.name||d.id);
+  const greetLine=greeting()+', '+(d.name||d.id);
+  document.getElementById('hGreet').textContent=greetLine;
+  if(introDue()) runIntro(greetLine);
   document.getElementById('motiv').innerHTML=motivLine(d,st);
   let chips='';
   if(d.rank&&d.rank!=='-') chips+='<span class="chip gold">Rank #'+escapeHtml(d.rank)+' this month</span>';
