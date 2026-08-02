@@ -1,4 +1,4 @@
-const CACHE_NAME = 'enkore-erp-v14';
+const CACHE_NAME = 'enkore-erp-v15';
 const STATIC_FILES = [
   '/enkore-erp',
   '/enkore-erp.html',
@@ -15,6 +15,7 @@ const STATIC_FILES = [
   '/panels/clients-due.html',
   '/panels/approval-s.html',
   '/panels/profile-s.html',
+  '/panels/cash-s.html',
 ];
 
 // Cloudflare Pages 308-redirects "/panels/x.html" → "/panels/x". A redirected
