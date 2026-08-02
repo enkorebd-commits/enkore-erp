@@ -140,11 +140,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   padding:24px;background:linear-gradient(150deg,#0d0d0d 0%,#123a63 62%,#1971c2 100%);
   transition:opacity .5s ease}
 #introOv.fade{opacity:0}
-#introTxt{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.3px;text-align:center;
-  line-height:1.3;white-space:nowrap;will-change:transform;
+/* Greeting on its own line with the NAME UNDERNEATH. A long name on one line
+   ran off both edges of the phone; stacked and wrapped, it always fits. */
+#introTxt{color:#fff;text-align:center;max-width:86vw;will-change:transform;
   transition:transform .58s cubic-bezier(.32,.72,.28,1)}
-#introTxt .cur{display:inline-block;width:2.5px;height:.95em;background:#4098e6;
-  margin-left:4px;vertical-align:-2px;animation:blink .68s step-end infinite;border-radius:2px}
+#introTxt .ig-greet{font-size:15px;font-weight:700;letter-spacing:1.4px;
+  text-transform:uppercase;opacity:.78;min-height:19px}
+#introTxt .ig-name{font-size:clamp(21px,7.2vw,32px);font-weight:900;letter-spacing:-.4px;
+  line-height:1.25;margin-top:7px;overflow-wrap:anywhere;min-height:1.25em}
+#introTxt .cur{display:inline-block;width:2.5px;height:.9em;background:#4098e6;
+  margin-left:4px;vertical-align:-1px;animation:blink .68s step-end infinite;border-radius:2px}
+/* the vibe: a rule that draws itself, then one short cheer line */
+#introTxt .ig-rule{height:2px;width:0;margin:13px auto 0;border-radius:2px;
+  background:linear-gradient(90deg,transparent,#4098e6,transparent);
+  transition:width .52s cubic-bezier(.32,.72,.28,1)}
+#introTxt .ig-rule.in{width:118px}
+#introTxt .ig-cheer{font-size:13px;font-weight:600;color:#a8d3f2;margin-top:11px;line-height:1.45;
+  opacity:0;transform:translateY(7px);transition:opacity .4s ease,transform .4s ease}
+#introTxt .ig-cheer.in{opacity:1;transform:none}
+/* one slow breath of light behind the text — felt, not noticed */
+#introOv::before{content:'';position:absolute;left:50%;top:50%;width:min(78vw,420px);height:min(78vw,420px);
+  transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(64,152,230,.34),rgba(64,152,230,0) 68%);
+  animation:introGlow 2.3s ease-in-out}
+@keyframes introGlow{0%{opacity:0;transform:translate(-50%,-50%) scale(.72)}
+  45%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:.55;transform:translate(-50%,-50%) scale(1.06)}}
 @keyframes blink{50%{opacity:0}}
 .hdr-name.pending{opacity:0}
 .hdr-name{transition:opacity .35s ease}
@@ -318,6 +339,9 @@ const API   = 'https://script.google.com/macros/s/AKfycbylAEyTwyBrejsLKA1a5-dhL5
 const PARAMS   = new URLSearchParams(location.search);
 const USER_ID  = PARAMS.get('userId') || '';
 const READONLY = PARAMS.get('readonly') === '1';
+// Shell sets home=1 only for the user's FIRST panel. The login intro plays
+// nowhere else, so a user who lands elsewhere never sees it mid-session.
+const IS_HOME  = PARAMS.get('home') === '1';
 const CACHE_KEY= 'enkore_profileS_' + USER_ID;
 const LAST_REFRESH_KEY = 'enkore_profileS_last_refresh_' + USER_ID;
 let DATA = null, _ptrBusy = false;
@@ -423,17 +447,49 @@ async function load(force){
    last token it played for. A session restore or a revisit reuses the same
    token, so the animation does not replay and never becomes annoying. */
 const INTRO_KEY='enkore_intro_token_'+USER_ID;
+const CHEER_KEY='enkore_intro_cheer_'+USER_ID;
 let _introRan=false;
+
+/* A different line every login so the moment never goes stale. Short, warm,
+   and about the work — a sales floor cheer, not a fortune cookie. */
+const CHEERS=[
+  "Let's make today count.",
+  'One good call can change the month.',
+  'Sell well. Collect better.',
+  'The board is yours today.',
+  'Numbers move when you do.',
+  'Your best month is still ahead.',
+  'Steady hands, big numbers.',
+  'Back at it. Take the lead.',
+  'Small wins stack up fast.',
+  'Every visit is a chance.',
+  'Momentum starts with you.',
+  'Make the calls. Bank the wins.',
+  'Today is a fresh page.',
+  'Show them what you sell.',
+  'Nobody works your route better.',
+  'Close one before lunch.'
+];
+function pickCheer(){
+  let last=-1; try{ last=parseInt(localStorage.getItem(CHEER_KEY),10); }catch(_){}
+  let i=Math.floor(Math.random()*CHEERS.length);
+  if(CHEERS.length>1 && i===last) i=(i+1)%CHEERS.length;   // never twice in a row
+  try{ localStorage.setItem(CHEER_KEY,String(i)); }catch(_){}
+  return CHEERS[i];
+}
+
 function loginToken(){ try{ return sessionStorage.getItem('erp_login_token')||''; }catch(_){ return ''; } }
 function introDue(){
   if(_introRan) return false;
+  if(!IS_HOME) return false;                               // only the landing panel greets
   const t=loginToken(); if(!t) return false;               // no token = not a fresh sign-in
   let seen=''; try{ seen=localStorage.getItem(INTRO_KEY)||''; }catch(_){}
   if(t===seen) return false;
   try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches) return false; }catch(_){}
   return true;
 }
-function runIntro(text){
+
+function runIntro(greetWord, name){
   _introRan=true;
   try{ localStorage.setItem(INTRO_KEY, loginToken()); }catch(_){}
 
@@ -441,33 +497,64 @@ function runIntro(text){
   head.classList.add('pending');
 
   const ov=document.createElement('div'); ov.id='introOv';
-  const tx=document.createElement('div'); tx.id='introTxt';
-  ov.appendChild(tx); document.body.appendChild(ov);
+  // Greeting appears instantly; only the NAME types out. Typing both delayed
+  // the moment that actually matters — seeing your own name.
+  ov.innerHTML='<div id="introTxt">'
+    +'<div class="ig-greet">'+escapeHtml(greetWord)+'</div>'
+    +'<div class="ig-name"></div>'
+    +'<div class="ig-rule"></div>'
+    +'<div class="ig-cheer">'+escapeHtml(pickCheer())+'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+  const tx=ov.querySelector('#introTxt');
+  const gEl=ov.querySelector('.ig-greet'), nEl=ov.querySelector('.ig-name');
+  const rEl=ov.querySelector('.ig-rule'),  cEl=ov.querySelector('.ig-cheer');
 
-  let i=0;
-  const step=Math.max(28, Math.min(55, 900/Math.max(text.length,1))); // ~0.9s total
-  const cur='<span class="cur"></span>';
+  const timers=[];
+  const type=(el,text,total)=>new Promise(res=>{
+    const step=Math.max(22,Math.min(52,total/Math.max(text.length,1)));
+    let i=0;
+    const t=setInterval(()=>{
+      i++;
+      el.innerHTML=escapeHtml(text.slice(0,i))+'<span class="cur"></span>';
+      if(i>=text.length){ clearInterval(t); el.innerHTML=escapeHtml(text); res(); }
+    },step);
+    timers.push(()=>clearInterval(t));
+  });
+  const wait=ms=>new Promise(res=>{ const t=setTimeout(res,ms); timers.push(()=>clearTimeout(t)); });
+
+  let done=false;
   const finish=()=>{
-    clearInterval(timer);
-    tx.innerHTML=escapeHtml(text);
-    // Fly the typed line to exactly where the header greeting sits.
+    if(done) return; done=true;
+    timers.forEach(f=>f());
+    gEl.innerHTML=escapeHtml(greetWord); nEl.innerHTML=escapeHtml(name);
+    rEl.classList.add('in'); cEl.classList.add('in');
+    // Fly the whole block up to where the header greeting sits, then fade.
     const a=tx.getBoundingClientRect(), b=head.getBoundingClientRect();
-    const scale=21/26;                                     // header font / intro font
-    const dx=(b.left + (a.width*scale)/2) - (a.left + a.width/2);
-    const dy=(b.top + b.height/2) - (a.top + a.height/2);
+    const scale=0.62;
+    const dx=(b.left+b.width/2)-(a.left+a.width/2);
+    const dy=(b.top +b.height/2)-(a.top +a.height/2);
     requestAnimationFrame(()=>{
       tx.style.transform='translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px) scale('+scale+')';
       ov.classList.add('fade');
     });
-    setTimeout(()=>{ head.classList.remove('pending'); }, 380);
-    setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); }, 640);
+    setTimeout(()=>{ head.classList.remove('pending'); },380);
+    setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); },660);
   };
-  const timer=setInterval(()=>{
-    i++;
-    tx.innerHTML=escapeHtml(text.slice(0,i))+cur;
-    if(i>=text.length){ clearInterval(timer); setTimeout(finish, 320); } // brief hold
-  }, step);
-  ov.addEventListener('click', finish);                    // tap to skip
+
+  (async()=>{
+    await wait(160);                                       // let the greeting land
+    if(done) return;
+    await type(nEl,name,560);
+    if(done) return;
+    rEl.classList.add('in');
+    await wait(120); if(done) return;
+    cEl.classList.add('in');
+    await wait(620); if(done) return;
+    finish();
+  })();
+
+  ov.addEventListener('click',finish);                     // tap to skip
 }
 
 function paint(){
@@ -491,9 +578,9 @@ function paint(){
   const st={noTarget,met,onPace,gap,perDay,dLeft,clRate};
 
   // ── header ──
-  const greetLine=greeting()+', '+(d.name||d.id);
-  document.getElementById('hGreet').textContent=greetLine;
-  if(introDue()) runIntro(greetLine);
+  const who=d.name||d.id;
+  document.getElementById('hGreet').textContent=greeting()+', '+who;
+  if(introDue()) runIntro(greeting(), who);
   document.getElementById('motiv').innerHTML=motivLine(d,st);
   let chips='';
   if(d.rank&&d.rank!=='-') chips+='<span class="chip gold">Rank #'+escapeHtml(d.rank)+' this month</span>';
