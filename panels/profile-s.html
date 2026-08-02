@@ -383,6 +383,25 @@ function motivLine(d,s){
   return 'You are behind pace. '+tkPlain(s.perDay)+' a day for '+s.dLeft+' day'+(s.dLeft===1?'':'s')+' closes it. Nothing else matters this month.';
 }
 
+async function load(force){
+  const cached = readCache();
+  if(cached){ DATA=cached; paint(); }
+  if(!USER_ID){ document.getElementById('body').innerHTML='<div class="state"><div class="state-icon">🔒</div><div class="state-txt">No user id. Open this from the ERP.</div></div>'; return; }
+  // Nothing to fetch: we have data, it is not past the 6 AM boundary, and this
+  // is not a manual refresh. Panel stays fixed instead of reloading every open.
+  if(!force && DATA && !refreshDue()) return;
+  try{
+    const r = await fetch(`${API}?action=getProfile&userId=${encodeURIComponent(USER_ID)}&t=${Date.now()}`).then(x=>x.json());
+    if(!r.ok) throw new Error(r.error||'load failed');
+    DATA=r; writeCache(r); markRefreshed();
+    paint();
+  }catch(e){
+    console.error(e);
+    if(!DATA) document.getElementById('body').innerHTML='<div class="state"><div class="state-icon">⚠️</div><div class="state-txt">Could not load. Pull down to retry.</div></div>';
+    else toast('Refresh failed','err');
+  }
+}
+
 function paint(){
   const d=DATA;
   const c=d.commission, t=d.target, m=d.thisMonth, a=d.allTime;
