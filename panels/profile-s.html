@@ -135,50 +135,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:400;opacity:0;transition:.25s;max-width:90%;text-align:center}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 #toast.err{background:#c0392b}
-/* ── login greeting intro (plays once per login) ── */
+/* ── login greeting intro (plays once per login) ──
+   NO clone, NO crossfade. The very same greeting and name elements travel to
+   the header and stop on it. Because they match the header's font, weight,
+   colour and letter-spacing exactly, and each is scaled by the measured WIDTH
+   ratio, they land pixel-on-pixel — nothing swaps, so nothing breaks. */
 #introOv{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;
-  padding:24px;background:linear-gradient(150deg,#0d0d0d 0%,#123a63 62%,#1971c2 100%);
-  transition:opacity .5s ease}
-#introOv.fade{opacity:0}
-/* Greeting on its own line with the NAME UNDERNEATH. A long name on one line
-   ran off both edges of the phone; stacked and wrapped, it always fits. */
-#introTxt{color:#fff;text-align:center;max-width:86vw;will-change:opacity;
-  transform:translateZ(0);backface-visibility:hidden}
-#introTxt .ig-greet{font-size:15px;font-weight:700;letter-spacing:1.4px;
-  text-transform:uppercase;opacity:.78;min-height:19px}
-#introTxt .ig-name{font-size:clamp(21px,7.2vw,32px);font-weight:900;letter-spacing:-.4px;
-  line-height:1.25;margin-top:7px;overflow-wrap:anywhere;min-height:1.25em}
+  padding:24px}
+/* backdrop is a SEPARATE layer so it can dissolve while the words stay solid */
+#introBg{position:absolute;inset:0;
+  background:linear-gradient(150deg,#0d0d0d 0%,#123a63 62%,#1971c2 100%);
+  transition:opacity .52s ease .2s}
+#introBg::after{content:'';position:absolute;left:50%;top:50%;width:min(78vw,420px);height:min(78vw,420px);
+  transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(64,152,230,.34),rgba(64,152,230,0) 68%);
+  animation:introGlow 1.6s ease-out both}
+#introBg.fade{opacity:0}
+@keyframes introGlow{from{opacity:0} to{opacity:1}}
+
+#introTxt{position:relative;z-index:1;color:#fff;text-align:center;max-width:86vw}
+/* Same casing, weight, colour and letter-spacing as .hdr-name — only the size
+   differs, so the journey is a pure scale with no letterform change. */
+#introTxt .ig-greet{font-size:clamp(17px,5.6vw,25px);font-weight:900;letter-spacing:.2px;
+  line-height:1.3;opacity:.88;min-height:1.3em}
+#introTxt .ig-name{font-size:clamp(23px,7.6vw,34px);font-weight:900;letter-spacing:.2px;
+  line-height:1.25;margin-top:5px;overflow-wrap:anywhere;min-height:1.25em}
+/* transforms are applied to the inner span so we measure the TEXT, not the box */
+#introTxt .t{display:inline-block;transform-origin:top left;backface-visibility:hidden}
+#introTxt.fly .t{transition:transform .72s cubic-bezier(.25,.46,.45,.94),opacity .3s linear}
 #introTxt .cur{display:inline-block;width:2.5px;height:.9em;background:#4098e6;
   margin-left:4px;vertical-align:-1px;animation:blink .68s step-end infinite;border-radius:2px}
 /* the vibe: a rule that draws itself, then one short cheer line */
 #introTxt .ig-rule{height:2px;width:0;margin:13px auto 0;border-radius:2px;
   background:linear-gradient(90deg,transparent,#4098e6,transparent);
-  transition:width .52s cubic-bezier(.32,.72,.28,1)}
+  transition:width .52s cubic-bezier(.32,.72,.28,1),opacity .3s ease}
 #introTxt .ig-rule.in{width:118px}
 #introTxt .ig-cheer{font-size:13px;font-weight:600;color:#a8d3f2;margin-top:11px;line-height:1.45;
   opacity:0;transform:translateY(7px);transition:opacity .4s ease,transform .4s ease}
 #introTxt .ig-cheer.in{opacity:1;transform:none}
-/* one slow breath of light behind the text — felt, not noticed */
-#introOv::before{content:'';position:absolute;left:50%;top:50%;width:min(78vw,420px);height:min(78vw,420px);
-  transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle,rgba(64,152,230,.34),rgba(64,152,230,0) 68%);
-  animation:introGlow 1.6s ease-out both}
-/* Opacity only. The old scale pulse behind the text was part of the bounce. */
-@keyframes introGlow{from{opacity:0} to{opacity:1}}
+#introTxt.fly .ig-rule,#introTxt.fly .ig-cheer{opacity:0;transition:opacity .26s ease}
 @keyframes blink{50%{opacity:0}}
 .hdr-name.pending{opacity:0}
-.hdr-name{transition:opacity .3s ease}
-/* The flyer is a pixel-clone of the header greeting. It starts enlarged in the
-   middle of the screen and animates to transform:none, which IS the header's
-   real position — so the words land exactly on the heading, not near it. */
-/* One continuous ease-out, no overshoot, no secondary motion. */
-#introFly{position:fixed;z-index:901;opacity:0;margin:0;transform-origin:center center;
-  will-change:transform,opacity;backface-visibility:hidden;
-  transition:transform .72s cubic-bezier(.25,.46,.45,.94),opacity .2s linear}
-#introFly.in{opacity:1}
-/* Stacked typing block dissolves as the single header line takes its place.
-   Pure opacity — a scale here made the hand-off look like a bounce. */
-#introTxt.merge{opacity:0;transition:opacity .32s linear}
 
 /* ── header chips ── */
 .hdr-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
@@ -238,8 +235,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .act-t b{display:block;font-size:13.5px;font-weight:900;line-height:1.35}
 .act-t span{display:block;font-size:11.5px;color:var(--muted);font-weight:600;line-height:1.5;margin-top:3px}
 
-.career{opacity:.92}
-.career-note{font-size:11.5px;color:var(--muted);font-weight:600;line-height:1.5;margin-top:10px;text-align:center}
+/* ── career card (highlighted) ── */
+.career{background:linear-gradient(150deg,#0d0d0d 0%,#16283c 55%,#1d3f63 100%);
+  border-radius:var(--r);padding:16px;margin-bottom:10px;color:#fff;
+  box-shadow:0 6px 20px rgba(13,13,13,.32);border:1px solid rgba(64,152,230,.35)}
+.career .tri .box{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.07)}
+.career .box-l{color:rgba(255,255,255,.62)}
+.career .box-v{color:#fff}
+.career .box-v.grn{color:#7fd8a4}.career .box-v.red{color:#ff9c9c}.career .box-v.blue{color:#8ccbf5}
+.career .box-v .u{color:rgba(255,255,255,.5)}
+.career-hd{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.career-hd .ch-t{font-size:13px;font-weight:900;letter-spacing:.2px}
+.career-hd .ch-s{margin-left:auto;font-size:10px;font-weight:800;letter-spacing:.6px;
+  background:rgba(64,152,230,.28);color:#bfe2fb;padding:3px 9px;border-radius:20px;text-transform:uppercase}
+.career-note{font-size:11.5px;color:rgba(255,255,255,.72);font-weight:600;line-height:1.5;
+  margin-top:12px;text-align:center;background:rgba(255,255,255,.07);padding:9px 11px;border-radius:10px}
+
+/* ── lifetime graph ── */
+.chartcard{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px 12px 12px;margin-bottom:10px}
+.chart-hd{display:flex;align-items:baseline;justify-content:space-between;padding:0 2px 10px}
+.chart-t{font-size:12px;font-weight:900}
+.chart-s{font-size:10.5px;font-weight:700;color:var(--muted)}
+.chart-svg{width:100%;height:auto;display:block;overflow:visible}
+.chart-legend{display:flex;gap:14px;justify-content:center;margin-top:9px;font-size:10.5px;font-weight:800;color:var(--muted)}
+.chart-legend i{display:inline-block;width:9px;height:3px;border-radius:2px;margin-right:5px;vertical-align:2px}
+.chart-legend .l1 i{background:var(--blue)}
+.chart-legend .l2 i{background:var(--grn2)}
+.chart-foot{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid #f1f3f5;font-size:11px}
+.chart-foot .cf{text-align:center;flex:1}
+.chart-foot .cf-l{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.chart-foot .cf-v{font-size:13px;font-weight:900;margin-top:2px}
+.chart-hint{text-align:center;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:8px}
+.chart-svg .hit{fill:transparent;cursor:pointer}
+.chart-detail{margin-top:10px;background:var(--bluebg);border:1px solid #cfe3f7;border-radius:11px;padding:11px 12px}
+.cd-hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.cd-m{font-size:13px;font-weight:900;color:#0f4f8a}
+.cd-x{font-size:10px;font-weight:800;color:#5b87b3;letter-spacing:.4px}
+.cd-row{display:flex;gap:8px}
+.cd-row .cd-b{flex:1;text-align:center;background:#fff;border-radius:9px;padding:8px 4px}
+.cd-l{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.cd-v{font-size:13.5px;font-weight:900;margin-top:2px}
+.cd-note{font-size:11px;font-weight:700;color:#0f4f8a;margin-top:8px;text-align:center;line-height:1.45}
 .empty{text-align:center;padding:18px 10px;color:var(--muted);font-size:12.5px;font-weight:600;line-height:1.5}
 
 /* ── daily activity button ── */
@@ -523,24 +559,26 @@ function runIntro(greetWord, name){
   const ov=document.createElement('div'); ov.id='introOv';
   // Greeting appears instantly; only the NAME types out. Typing both delayed
   // the moment that actually matters — seeing your own name.
-  ov.innerHTML='<div id="introTxt">'
-    +'<div class="ig-greet">'+escapeHtml(greetWord)+'</div>'
-    +'<div class="ig-name"></div>'
+  ov.innerHTML='<div id="introBg"></div><div id="introTxt">'
+    +'<div class="ig-greet"><span class="t">'+escapeHtml(greetWord)+'</span></div>'
+    +'<div class="ig-name"><span class="t"></span></div>'
     +'<div class="ig-rule"></div>'
     +'<div class="ig-cheer">'+escapeHtml(pickCheer())+'</div>'
     +'</div>';
   document.body.appendChild(ov);
+  const bg=ov.querySelector('#introBg');
   const tx=ov.querySelector('#introTxt');
   const gEl=ov.querySelector('.ig-greet'), nEl=ov.querySelector('.ig-name');
+  const gS =gEl.querySelector('.t'),        nS =nEl.querySelector('.t');
   const rEl=ov.querySelector('.ig-rule'),  cEl=ov.querySelector('.ig-cheer');
 
   // Lock the name box to its FINAL height before typing starts. A name that
   // wraps to a second line mid-type would grow the block and shove everything
   // up — that re-centering jolt is what read as a bounce.
-  nEl.textContent=name;
+  nS.textContent=name;
   const nH=nEl.getBoundingClientRect().height;
   if(nH) nEl.style.minHeight=nH+'px';
-  nEl.textContent='';
+  nS.textContent='';
 
   const timers=[];
   const type=(el,text,total)=>new Promise(res=>{
@@ -561,56 +599,45 @@ function runIntro(greetWord, name){
   const finish=()=>{
     if(done) return; done=true;
     timers.forEach(f=>f());
-    // Only fill in text if the user skipped mid-type; otherwise leave the
-    // typed line exactly as it is so nothing reflows at hand-off.
-    if(nEl.textContent.replace(/\s+$/,'')!==name){ nEl.innerHTML=escapeHtml(name); }
-    rEl.classList.add('in'); cEl.classList.add('in');
+    // Drop the cursor and fill in the full name if the user skipped mid-type.
+    gS.innerHTML=escapeHtml(greetWord);
+    nS.innerHTML=escapeHtml(name);
 
-    /* MORPH ONTO THE HEADING.
-       Rather than sliding the stacked block "towards" the header, we build a
-       clone of the header greeting — same text, same computed font, same box —
-       pin it at the header's real coordinates, then invert it out to the centre
-       of the screen and animate back to transform:none. Because the resting
-       state IS the header, the words land on the heading exactly. */
-    const cs=getComputedStyle(head);
-    const b=head.getBoundingClientRect();
-    const fly=document.createElement('div');
-    fly.id='introFly';
-    fly.textContent=greetWord+', '+name;
-    fly.style.left=b.left+'px';
-    fly.style.top=b.top+'px';
-    fly.style.maxWidth=Math.max(b.width,1)+'px';   // wraps exactly like the header
-    ['fontSize','fontWeight','fontFamily','letterSpacing','lineHeight','color']
-      .forEach(k=>{ fly.style[k]=cs[k]; });
-    document.body.appendChild(fly);
-
-    const f=fly.getBoundingClientRect();
-    // Enlarge only as far as the screen allows, so a long name never overflows.
-    const scale=Math.min(1.5, Math.max(1.0, (window.innerWidth*0.86)/Math.max(f.width,1)));
-    const dx=(window.innerWidth/2)-(f.left+f.width/2);
-    const dy=(window.innerHeight/2)-(f.top+f.height/2);
-    fly.style.transform='translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px) scale('+scale.toFixed(3)+')';
+    /* ONE CONTINUOUS MOVE — no clone, no crossfade.
+       Each line is mapped onto its own target inside the header: the greeting
+       onto the header's greeting span, the name onto the header's name span.
+       Scale comes from the measured WIDTH ratio, not the font size, so the
+       landing width is exact even if wrapping or letter-spacing differ.
+       transform-origin is top-left, which makes the maths a plain subtraction. */
+    const hw=head.querySelector('.hg-w'), hn=head.querySelector('.hg-n');
+    const pairs=[[gS,hw],[nS,hn]];
+    const moves=pairs.map(([el,target])=>{
+      if(!el||!target) return null;
+      const r=el.getBoundingClientRect(), t=target.getBoundingClientRect();
+      if(!r.width||!t.width) return null;
+      const s=t.width/r.width;
+      return {el, css:'translate('+(t.left-r.left).toFixed(2)+'px,'+(t.top-r.top).toFixed(2)+'px) scale('+s.toFixed(4)+')'};
+    });
 
     requestAnimationFrame(()=>{
-      tx.classList.add('merge');                   // two lines dissolve…
-      fly.classList.add('in');                     // …into the one header line
-      setTimeout(()=>{
-        fly.style.transform='translate(0px,0px) scale(1)';
-        ov.classList.add('fade');
-      },150);
+      tx.classList.add('fly');                 // arms the transitions
+      bg.classList.add('fade');                // backdrop dissolves, words do not
+      requestAnimationFrame(()=>{
+        gS.style.opacity='1';                  // greeting settles to header opacity
+        moves.forEach(m=>{ if(m) m.el.style.transform=m.css; });
+      });
     });
-    // Timings follow the 720ms flight exactly. The header un-hides the moment
-    // the clone lands, while both sit on identical pixels, so the handover is
-    // invisible; the clone is only removed once the header has fully faded in.
-    setTimeout(()=>{ head.classList.remove('pending'); },150+720);
-    setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); },150+780);
-    setTimeout(()=>{ if(fly.parentNode) fly.parentNode.removeChild(fly); },150+1080);
+
+    // The words are already sitting on the header when it un-hides, so the
+    // hand-off is invisible: same glyphs, same size, same pixels.
+    setTimeout(()=>{ head.classList.remove('pending'); },760);
+    setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); },790);
   };
 
   (async()=>{
-    await wait(160);                                       // let the greeting land
+    await wait(160);                                       // let the greeting settle
     if(done) return;
-    await type(nEl,name,560);
+    await type(nS,name,560);
     if(done) return;
     rEl.classList.add('in');
     await wait(120); if(done) return;
@@ -622,6 +649,125 @@ function runIntro(greetWord, name){
   })();
 
   ov.addEventListener('click',finish);                     // tap to skip
+}
+
+/* ─── LIFETIME GRAPH ───
+   Hand-drawn SVG, no library. A Catmull-Rom spline converted to cubic beziers
+   gives a smooth curve without the overshoot a naive smoothing produces (an
+   overshoot below zero would draw sales the salesman never made). */
+let _chartSel=null, _LIFE=[];
+function smoothPath(p){
+  if(p.length<2) return '';
+  let d='M'+p[0].x.toFixed(1)+','+p[0].y.toFixed(1);
+  for(let i=0;i<p.length-1;i++){
+    const p0=p[i-1]||p[i], p1=p[i], p2=p[i+1], p3=p[i+2]||p2;
+    const c1x=p1.x+(p2.x-p0.x)/6, c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6, c2y=p2.y-(p3.y-p1.y)/6;
+    d+=' C'+c1x.toFixed(1)+','+c1y.toFixed(1)+' '+c2x.toFixed(1)+','+c2y.toFixed(1)
+      +' '+p2.x.toFixed(1)+','+p2.y.toFixed(1);
+  }
+  return d;
+}
+function shortTk(n){
+  n=Number(n)||0;
+  if(n>=1e7) return (n/1e7).toFixed(1).replace(/\.0$/,'')+'cr';
+  if(n>=1e5) return (n/1e5).toFixed(1).replace(/\.0$/,'')+'L';
+  if(n>=1e3) return Math.round(n/1e3)+'k';
+  return String(Math.round(n));
+}
+function lifetimeChart(life){
+  if(!Array.isArray(life)||!life.length){
+    return '<div class="chartcard"><div class="empty">Lifetime graph will appear once the Salesman API is redeployed with the monthly history.</div></div>';
+  }
+  if(life.length<2){
+    return '<div class="chartcard"><div class="empty">One month of history so far. The trend graph appears from your second month.</div></div>';
+  }
+  const W=320,H=120,PL=8,PR=8,PT=12,PB=20;
+  const n=life.length;
+  const peak=Math.max(...life.map(r=>Math.max(Number(r.sales)||0,Number(r.collected)||0)),1);
+  const xAt=i=>PL+(W-PL-PR)*(n===1?0.5:i/(n-1));
+  const yAt=v=>PT+(H-PT-PB)*(1-(Number(v)||0)/peak);
+  const ptsS=life.map((r,i)=>({x:xAt(i),y:yAt(r.sales)}));
+  const ptsC=life.map((r,i)=>({x:xAt(i),y:yAt(r.collected)}));
+  const base=H-PB;
+  const area=smoothPath(ptsS)+' L'+ptsS[n-1].x.toFixed(1)+','+base+' L'+ptsS[0].x.toFixed(1)+','+base+' Z';
+
+  const best=life.reduce((b,r)=>((Number(r.sales)||0)>(Number(b.sales)||0)?r:b),life[0]);
+  const avg=life.reduce((s,r)=>s+(Number(r.sales)||0),0)/n;
+  const last=life[n-1], prev=life[n-2];
+  const delta=(Number(last.sales)||0)-(Number(prev.sales)||0);
+
+  let svg='<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Lifetime monthly sales">'
+    +'<defs><linearGradient id="lgFill" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="#1971c2" stop-opacity=".26"/>'
+    +'<stop offset="100%" stop-color="#1971c2" stop-opacity="0"/></linearGradient></defs>'
+    +'<line x1="'+PL+'" y1="'+base+'" x2="'+(W-PR)+'" y2="'+base+'" stroke="#e9ecef" stroke-width="1"/>'
+    +'<path d="'+area+'" fill="url(#lgFill)"/>'
+    +'<path d="'+smoothPath(ptsC)+'" fill="none" stroke="#2d8a52" stroke-width="2" '
+    +'stroke-linecap="round" stroke-dasharray="4 4" opacity=".85"/>'
+    +'<path d="'+smoothPath(ptsS)+'" fill="none" stroke="#1971c2" stroke-width="2.6" '
+    +'stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<circle cx="'+ptsS[n-1].x.toFixed(1)+'" cy="'+ptsS[n-1].y.toFixed(1)+'" r="4" fill="#1971c2" stroke="#fff" stroke-width="2"/>';
+
+  // Selected month: guide line + emphasised dots.
+  const sel=(_chartSel!=null && _chartSel>=0 && _chartSel<n) ? _chartSel : null;
+  if(sel!=null){
+    svg+='<line x1="'+ptsS[sel].x.toFixed(1)+'" y1="'+PT+'" x2="'+ptsS[sel].x.toFixed(1)+'" y2="'+base+'" '
+      +'stroke="#1971c2" stroke-width="1.4" stroke-dasharray="3 3" opacity=".55"/>'
+      +'<circle cx="'+ptsC[sel].x.toFixed(1)+'" cy="'+ptsC[sel].y.toFixed(1)+'" r="4" fill="#2d8a52" stroke="#fff" stroke-width="2"/>'
+      +'<circle cx="'+ptsS[sel].x.toFixed(1)+'" cy="'+ptsS[sel].y.toFixed(1)+'" r="5.5" fill="#1971c2" stroke="#fff" stroke-width="2.4"/>';
+  }
+  // Full-height tap targets, one per month, so a fingertip always hits one.
+  const slot=(W-PL-PR)/Math.max(n-1,1);
+  for(let i=0;i<n;i++){
+    const x=Math.max(0, xAt(i)-slot/2);
+    svg+='<rect class="hit" x="'+x.toFixed(1)+'" y="0" width="'+Math.min(slot,W-x).toFixed(1)+'" height="'+H+'" onclick="chartTap('+i+')"></rect>';
+  }
+  svg+='<text x="'+PL+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#adb5bd">'+escapeHtml(life[0].month)+'</text>'
+    +'<text x="'+(W-PR)+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#868e96" text-anchor="end">'+escapeHtml(last.month)+'</text>'
+    +'<text x="'+(W-PR)+'" y="'+(PT-2)+'" font-size="9" font-weight="800" fill="#adb5bd" text-anchor="end">peak '+shortTk(peak)+'</text>'
+    +'</svg>';
+
+  // Tapped-month readout. Tapping the same month again clears it.
+  let detail='';
+  if(sel!=null){
+    const r=life[sel], s=Number(r.sales)||0, col=Number(r.collected)||0;
+    const due=Math.max(s-col,0), rate=s>0?Math.round(col/s*100):0;
+    const pv=sel>0?(Number(life[sel-1].sales)||0):null;
+    const dd=pv==null?null:s-pv;
+    detail='<div class="chart-detail">'
+      +'<div class="cd-hd"><span class="cd-m">'+escapeHtml(r.month)+'</span><span class="cd-x">tap again to close</span></div>'
+      +'<div class="cd-row">'
+      +'<div class="cd-b"><div class="cd-l">Sales</div><div class="cd-v blue" style="color:var(--blue)">'+tkPlain(s)+'</div></div>'
+      +'<div class="cd-b"><div class="cd-l">Collected</div><div class="cd-v" style="color:var(--grn)">'+tkPlain(col)+'</div></div>'
+      +'<div class="cd-b"><div class="cd-l">Due</div><div class="cd-v" style="color:'+(due>0?'var(--red)':'var(--grn)')+'">'+tkPlain(due)+'</div></div>'
+      +'</div>'
+      +'<div class="cd-note">Collection rate '+rate+'%'
+      +(dd==null?'' : (dd>=0?' · '+tkPlain(dd)+' more than '+escapeHtml(life[sel-1].month)
+                            :' · '+tkPlain(-dd)+' less than '+escapeHtml(life[sel-1].month)))
+      +(s===Number(best.sales)?' · your best month so far':'')+'</div>'
+      +'</div>';
+  }
+
+  return '<div class="chartcard" id="chartCard">'
+    +'<div class="chart-hd"><span class="chart-t">Month by month</span>'
+    +'<span class="chart-s">'+(delta>=0?'▲ ':'▼ ')+tkPlain(Math.abs(delta))+' vs last month</span></div>'
+    +svg
+    +'<div class="chart-legend"><span class="l1"><i></i>Sales</span><span class="l2"><i></i>Collected</span></div>'
+    +detail
+    +(sel==null?'<div class="chart-hint">Tap any month on the graph for its details</div>':'')
+    +'<div class="chart-foot">'
+    +'<div class="cf"><div class="cf-l">Best month</div><div class="cf-v">'+tkPlain(best.sales)+'</div><div class="cf-l" style="margin-top:2px">'+escapeHtml(best.month)+'</div></div>'
+    +'<div class="cf"><div class="cf-l">Monthly average</div><div class="cf-v">'+tkPlain(avg)+'</div></div>'
+    +'</div></div>';
+}
+
+/* Tap toggles: same month closes it, a different month switches to it.
+   Only the chart card is re-rendered, so the page does not jump or lose scroll. */
+function chartTap(i){
+  _chartSel = (_chartSel===i) ? null : i;
+  const el=document.getElementById('chartCard');
+  if(el) el.outerHTML=lifetimeChart(_LIFE);
 }
 
 function paint(){
@@ -645,9 +791,12 @@ function paint(){
   const st={noTarget,met,onPace,gap,perDay,dLeft,clRate};
 
   // ── header ──
+  // Header greeting is split into two spans so the intro can measure exactly
+  // where the greeting ends and the name begins, and land each one there.
   const who=d.name||d.id;
-  document.getElementById('hGreet').textContent=greeting()+', '+who;
-  if(introDue()) runIntro(greeting(), who);
+  document.getElementById('hGreet').innerHTML=
+    '<span class="hg-w">'+escapeHtml(greeting()+',')+'</span> <span class="hg-n">'+escapeHtml(who)+'</span>';
+  if(introDue()) runIntro(greeting()+',', who);
   document.getElementById('motiv').innerHTML=motivLine(d,st);
   let chips='';
   if(d.rank&&d.rank!=='-') chips+='<span class="chip gold">Rank #'+escapeHtml(d.rank)+' this month</span>';
@@ -735,9 +884,41 @@ function paint(){
          :'Your collection rate is '+Math.round(clRate*100)+'%. Commission gets multiplied by this number, so a weak rate cuts your payout even after you hit target.'});
   if((d.cashInHand||0)>0) acts.push({ic:'🏦',t:'Submit '+tkPlain(d.cashInHand)+' company cash',
     s:'That much company money is with you. Open the Cash & Submit panel and hand it over.'});
-  const best=(c.rows||[]).slice().filter(x=>(x.commPct||0)>0).sort((x,y)=>(y.commPct||0)-(x.commPct||0))[0];
-  if(best) acts.push({ic:'⭐',t:'Push '+best.product,
-    s:'Your highest paying line at '+pct(best.commPct*100)+'. Every 1,000 tk of it earns you '+tkPlain(1000*best.commPct)+'.'});
+  /* PRODUCT ADVICE FROM THE WHOLE CAREER, not just this month.
+     Three questions, answered from allTime.products vs this month's rows:
+       1. What have you stopped selling that used to pay you well?
+       2. Which line pays the most per taka across your whole record?
+       3. What is your proven best seller, so you never neglect it?
+     A one-month view would recommend whatever happened to sell last week. */
+  const allP=(a.products||[]).filter(p=>(p.salesValue||0)>0);
+  const soldThisMonth={}; (c.rows||[]).forEach(r=>{ soldThisMonth[r.product]=true; });
+  const lifeTotal=allP.reduce((s,p)=>s+(p.salesValue||0),0)||1;
+
+  // 1) Dormant earner — meaningful lifetime share, nothing sold this month.
+  const dormant=allP.filter(p=>!soldThisMonth[p.name] && (p.availed||0)>0)
+                    .sort((x,y)=>(y.availed||0)-(x.availed||0))[0];
+  if(dormant){
+    const share=Math.round((dormant.salesValue/lifeTotal)*100);
+    acts.push({ic:'🔁',t:'You stopped selling '+dormant.name,
+      s:'It is '+share+'% of your lifetime sales and has paid you '+tkPlain(dormant.availed)+' in commission, but you have not sold any this month. Take it on your next round.'});
+  }
+
+  // 2) Highest paying line across the career. Excludes the dormant pick so the
+  //    same product is never listed twice with two different messages.
+  const richest=allP.filter(p=>(p.commPct||0)>0 && (!dormant || p.name!==dormant.name))
+                    .sort((x,y)=>(y.commPct||0)-(x.commPct||0))[0];
+  if(richest){
+    acts.push({ic:'⭐',t:'Push '+richest.name,
+      s:'Your highest paying line at '+pct(richest.commPct*100)+' across your whole record. Every 1,000 tk of it earns you '+tkPlain(1000*richest.commPct)
+        +(soldThisMonth[richest.name]?'. You are already moving it — push harder.':'. You have sold none this month.')});
+  }
+
+  // 3) Proven best seller — the thing your customers already say yes to.
+  const proven=allP.slice().sort((x,y)=>(y.salesValue||0)-(x.salesValue||0))[0];
+  if(proven && (!richest || proven.name!==richest.name) && (!dormant || proven.name!==dormant.name)){
+    acts.push({ic:'🏆',t:proven.name+' is your proven seller',
+      s:tkPlain(proven.salesValue)+' lifetime, '+Math.round((proven.salesValue/lifeTotal)*100)+'% of everything you have sold. Lead with it when a customer is undecided.'});
+  }
   if(acts.length){
     h+='<div class="sec-t">Do this now</div>';
     h+='<div class="acts">'+acts.map((x,i)=>'<div class="act"><div class="act-n">'+(i+1)+'</div>'
@@ -786,14 +967,23 @@ function paint(){
   h+='</div>';
 
   // ── 6. CAREER TOTALS ── last on purpose: pride, not a place to rest
+  const life=Array.isArray(d.lifetime)?d.lifetime:[];
+  _LIFE=life;
+  if(_chartSel!=null && _chartSel>=life.length) _chartSel=null;  // data shrank
   h+='<div class="sec-t">Your career at Enkore</div>';
-  h+='<div class="card career"><div class="tri">'
+  h+='<div class="career">'
+    +'<div class="career-hd"><span class="ch-t">Lifetime record</span>'
+    +'<span class="ch-s">'+(life.length?life.length+' month'+(life.length===1?'':'s'):'All time')+'</span></div>'
+    +'<div class="tri">'
     +'<div class="box"><div class="box-l">Lifetime Sales</div><div class="box-v blue">'+tk(a.sales)+'</div></div>'
     +'<div class="box"><div class="box-l">Collected</div><div class="box-v grn">'+tk(a.collected)+'</div></div>'
     +'<div class="box"><div class="box-l">Due</div><div class="box-v red">'+tk(a.due)+'</div></div>'
     +'</div>';
   if((a.due||0)>0) h+='<div class="career-note">'+tkPlain(a.due)+' of everything you have ever sold is still uncollected. Old dues count against you the same as new ones.</div>';
   h+='</div>';
+
+  // ── 6b. LIFETIME GRAPH ── month by month, so the trend is visible at a glance
+  h+=lifetimeChart(life);
 
   document.getElementById('body').innerHTML=h;
 }
