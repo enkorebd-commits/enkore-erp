@@ -294,7 +294,7 @@
   // ── CONFIG ──
   // Bump BUILD on every deploy. It is shown in the profile menu so you can see
   // at a glance whether a phone is actually running the newest files.
-  const BUILD = '2026.07.30-4';
+  const BUILD = '2026.08.02-1';
   const SHEET_ID   = '1mXI0MI9R_5_ImxiTvw8vH0EaQ38M3WlHncjZgmPLTmc';
   const ACCESS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Access`;
   const LINK_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Panels`;
@@ -506,7 +506,17 @@
     document.getElementById('um-build').textContent  = 'Build ' + BUILD;
 
     buildNav(user.panels);
-    initHome();
+
+    // Both frames are still on an UNTINTED about:blank at this point, which is
+    // pure white. Tint them first so any hiccup shows the app's grey, never a
+    // white flash that looks like a crash.
+    paintBlank(document.getElementById('pf0'));
+    paintBlank(document.getElementById('pf1'));
+
+    // #shell was display:none one line ago. Navigating an iframe in the SAME
+    // task it becomes visible is what Chrome drops. Wait for the shell to be
+    // laid out and painted before loading the first panel.
+    requestAnimationFrame(function(){ requestAnimationFrame(initHome); });
   }
 
   // ── BUILD NAV — all panels from sheet, no whitelist ──
@@ -632,22 +642,40 @@
   function loadFrame(f, url) {
     clearTimeout(f._wd);
     if (url !== 'about:blank') watchFrame(f, url, 0);
-    if (f.contentWindow) { try { f.contentWindow.location.replace(url); return; } catch(_) {} }
+
+    // FIRST navigation of a frame still sitting on its initial about:blank →
+    // assign src directly. location.replace() on a brand-new iframe that has
+    // not been laid out yet is silently DROPPED by Chrome and Android WebView,
+    // and that dropped navigation is exactly what left the very first panel
+    // white until the user tapped away and back. Assigning src on an initial
+    // about:blank document does not create a history entry either, so the
+    // no-extra-history guarantee still holds.
+    let fresh = true;
+    try { fresh = /^about:blank$/.test(f.contentWindow.location.href); } catch(_) { fresh = false; }
+    if (!fresh && f.contentWindow) { try { f.contentWindow.location.replace(url); return; } catch(_) {} }
     f.src = url;
   }
   // Watchdog: if a panel frame is still blank a few seconds after a load was
   // requested (network died, bad response swallowed), retry automatically.
   // This is what used to leave the first page white until a nav button was tapped.
+  // First check is deliberately EARLY (1.2s). Four seconds of white screen on a
+  // fresh login reads as a broken app, and the user navigates away before the
+  // old watchdog ever fired — which is why this bug kept coming back.
   function watchFrame(f, url, attempt) {
+    const delay = attempt === 0 ? 1200 : 2600;
     f._wd = setTimeout(() => {
       let stuck = false;
       try {
         const href = f.contentWindow.location.href;
-        const body = f.contentDocument && f.contentDocument.body;
-        stuck = /^about:blank$/.test(href) || !body || body.children.length === 0;
+        const doc  = f.contentDocument;
+        const body = doc && doc.body;
+        // A document still parsing is NOT stuck — retrying would kill a slow
+        // but healthy load on a weak mobile connection.
+        const loading = doc && doc.readyState === 'loading';
+        stuck = !loading && (/^about:blank$/.test(href) || !body || body.children.length === 0);
       } catch(_) {}
-      if (stuck && attempt < 2) { f.src = url; watchFrame(f, url, attempt + 1); }
-    }, 4000);
+      if (stuck && attempt < 3) { f.src = url; watchFrame(f, url, attempt + 1); }
+    }, delay);
   }
   // Paint a frame's blank document grey. A default about:blank body is WHITE,
   // and that white is what used to flash while the next panel slid in.
