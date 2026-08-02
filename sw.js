@@ -1,4 +1,4 @@
-const CACHE_NAME = 'enkore-erp-v23';
+const CACHE_NAME = 'enkore-erp-v24';
 const STATIC_FILES = [
   '/enkore-erp',
   '/enkore-erp.html',
