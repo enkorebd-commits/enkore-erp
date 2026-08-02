@@ -145,7 +145,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* backdrop is a SEPARATE layer so it can dissolve while the words stay solid */
 #introBg{position:absolute;inset:0;
   background:linear-gradient(150deg,#0d0d0d 0%,#123a63 62%,#1971c2 100%);
-  transition:opacity .52s ease .2s}
+  transition:opacity .36s ease .12s}
 #introBg::after{content:'';position:absolute;left:50%;top:50%;width:min(78vw,420px);height:min(78vw,420px);
   transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
   background:radial-gradient(circle,rgba(64,152,230,.34),rgba(64,152,230,0) 68%);
@@ -154,13 +154,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 @keyframes introGlow{from{opacity:0} to{opacity:1}}
 
 #introTxt{position:relative;z-index:1;color:#fff;text-align:center;max-width:86vw}
+/* Greeting is shown, not animated — it sits above the name and dissolves with
+   the backdrop. Only the name types and travels. */
+#introTxt .ig-greet{font-size:clamp(16px,5.2vw,23px);font-weight:800;letter-spacing:.2px;
+  line-height:1.3;opacity:.82;margin-bottom:6px}
 /* Same casing, weight, colour and letter-spacing as .hdr-name — only the size
    differs, so the journey is a pure scale with no letterform change. */
 #introTxt .ig-name{font-size:clamp(23px,7.6vw,34px);font-weight:900;letter-spacing:.2px;
   line-height:1.25;overflow-wrap:anywhere;min-height:1.25em}
 /* transforms are applied to the inner span so we measure the TEXT, not the box */
 #introTxt .t{display:inline-block;transform-origin:top left;backface-visibility:hidden}
-#introTxt.fly .t{transition:transform .72s cubic-bezier(.25,.46,.45,.94),opacity .3s linear}
+#introTxt.fly .t{transition:transform .44s cubic-bezier(.25,.46,.45,.94),opacity .3s linear}
 #introTxt .cur{display:inline-block;width:2.5px;height:.9em;background:#4098e6;
   margin-left:4px;vertical-align:-1px;animation:blink .68s step-end infinite;border-radius:2px}
 /* the vibe: a rule that draws itself, then one short cheer line */
@@ -171,7 +175,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 #introTxt .ig-cheer{font-size:13px;font-weight:600;color:#a8d3f2;margin-top:11px;line-height:1.45;
   opacity:0;transform:translateY(7px);transition:opacity .4s ease,transform .4s ease}
 #introTxt .ig-cheer.in{opacity:1;transform:none}
-#introTxt.fly .ig-rule,#introTxt.fly .ig-cheer{opacity:0;transition:opacity .26s ease}
+#introTxt.fly .ig-rule,#introTxt.fly .ig-cheer,#introTxt.fly .ig-greet{opacity:0;transition:opacity .24s ease}
 @keyframes blink{50%{opacity:0}}
 .hdr-name.pending{opacity:0}
 
@@ -547,7 +551,7 @@ function introDue(){
   return true;
 }
 
-function runIntro(name){
+function runIntro(greetWord, name){
   _introRan=true;
   try{ localStorage.setItem(INTRO_KEY, loginToken()); }catch(_){}
 
@@ -555,9 +559,10 @@ function runIntro(name){
   head.classList.add('pending');
 
   const ov=document.createElement('div'); ov.id='introOv';
-  // The NAME is the whole animation. No greeting on this screen — it belongs to
-  // the header and simply appears there when the name lands.
+  // Greeting is printed straight away. Only the NAME types and moves — that is
+  // the part worth animating.
   ov.innerHTML='<div id="introBg"></div><div id="introTxt">'
+    +'<div class="ig-greet">'+escapeHtml(greetWord)+'</div>'
     +'<div class="ig-name"><span class="t"></span></div>'
     +'<div class="ig-rule"></div>'
     +'<div class="ig-cheer">'+escapeHtml(pickCheer())+'</div>'
@@ -619,10 +624,10 @@ function runIntro(name){
       requestAnimationFrame(()=>{ if(move) nS.style.transform=move; });
     });
 
-    // The words are already sitting on the header when it un-hides, so the
+    // The name is already sitting on the header when it un-hides, so the
     // hand-off is invisible: same glyphs, same size, same pixels.
-    setTimeout(()=>{ head.classList.remove('pending'); },760);
-    setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); },790);
+    setTimeout(()=>{ head.classList.remove('pending'); },470);
+    setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); },520);
   };
 
   (async()=>{
@@ -793,7 +798,7 @@ function paint(){
   const who=d.name||d.id;
   document.getElementById('hGreet').innerHTML=
     '<span class="hg-w">'+escapeHtml(greeting()+',')+'</span> <span class="hg-n">'+escapeHtml(who)+'</span>';
-  if(introDue()) runIntro(who);
+  if(introDue()) runIntro(greeting()+',', who);
   document.getElementById('motiv').innerHTML=motivLine(d,st);
   let chips='';
   if(d.rank&&d.rank!=='-') chips+='<span class="chip gold">Rank #'+escapeHtml(d.rank)+' this month</span>';
