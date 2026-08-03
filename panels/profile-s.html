@@ -211,7 +211,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .pace.ok{background:var(--grnbg);color:#155c31}
 .pace.bad{background:var(--amberbg);color:#9a6414}
 .pace-sub{font-size:11.5px;color:var(--muted);font-weight:600;line-height:1.5;margin-top:7px;padding:0 2px}
-.tgtline{display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;color:var(--muted);margin-top:9px;padding-top:9px;border-top:1px solid #f1f3f5}
 .hero-flat{text-align:center;border-top-color:var(--muted)}
 .hf-l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
 .hf-v{font-size:30px;font-weight:900;color:var(--blue);letter-spacing:-.5px;margin-top:4px}
@@ -808,15 +807,21 @@ function paint(){
 
   let h='';
 
-  /* ORDER IS DELIBERATE.
-     1 Scoreboard  — where you stand and what today costs
-     2 The prize   — the money riding on it
-     3 Do this now — 2 to 4 concrete moves
-     4 This month  — the raw numbers + daily activity
-     5 Earners     — which product pays you most
-     6 Career      — pride, last, so it never breeds complacency */
+  /* ORDER IS DELIBERATE — the page answers six questions in the order a
+     salesman actually asks them:
+     1 Scoreboard   — where do I stand, and what does that cost me per day?
+     2 The prize    — what is the money riding on it?
+     3 Earners      — where does that money come from?
+     4 Do this now  — so what do I actually do today?
+     5 Activity     — what have I been doing?
+     6 This month   — the plain numbers behind all of it
+     7 Career       — pride, last, so it never breeds complacency
 
-  // ── 1. SCOREBOARD ──
+     NO NUMBER IS PRINTED TWICE. The scoreboard owns the derived maths
+     (target, gap, per-day, projection). The month summary owns the raw
+     figures (sales, collected, due). Days left lives in the header chip. */
+
+  // ── 1. SCOREBOARD — the calculation, stated once ──
   h+='<div class="sec-t">Your Scoreboard</div>';
   if(noTarget){
     h+='<div class="hero hero-flat">'
@@ -832,21 +837,22 @@ function paint(){
     h+='<div class="hero-side">';
     if(met){
       h+='<div class="hs-k">Status</div><div class="hs-v met">TARGET MET</div>';
-      h+='<div class="hs-k">Sold</div><div class="hs-v2">'+tkPlain(t.actual)+'</div>';
-      h+='<div class="hs-k">Beat target by</div><div class="hs-v2 grn">'+tkPlain(t.actual-t.target)+'</div>';
+      h+='<div class="hs-k">Target was</div><div class="hs-v2">'+tkPlain(t.target)+'</div>';
+      h+='<div class="hs-k">Beat it by</div><div class="hs-v2 grn">'+tkPlain(t.actual-t.target)+'</div>';
     } else {
+      h+='<div class="hs-k">Target</div><div class="hs-v2">'+tkPlain(t.target)+'</div>';
       h+='<div class="hs-k">Still to sell</div><div class="hs-v">'+tkPlain(gap)+'</div>';
-      h+='<div class="hs-k">Days left</div><div class="hs-v2">'+dLeft+'</div>';
       h+='<div class="hs-k">Needed per day</div><div class="hs-v2 hot">'+tkPlain(perDay)+'</div>';
     }
     h+='</div></div>';
     if(!met){
+      // Stated as a DIFFERENCE, not by restating today's sales — that number
+      // belongs to the month summary and is not repeated here.
       h+='<div class="pace '+(onPace?'ok':'bad')+'">'+(onPace
-        ? 'On pace. By day '+dGone+' a steady seller is at '+tkPlain(shouldBe)+'. You are at '+tkPlain(m.sales)+'.'
-        : 'Behind pace. By day '+dGone+' you should be at '+tkPlain(shouldBe)+'. You are at '+tkPlain(m.sales)+', short by '+tkPlain(shouldBe-m.sales)+'.')+'</div>';
-      h+='<div class="pace-sub">At your current speed you finish the month around <b>'+tkPlain(projected)+'</b>'
+        ? 'On pace. By day '+dGone+' of '+dTot+' a steady seller would be at '+tkPlain(shouldBe)+' — you are '+tkPlain(m.sales-shouldBe)+' ahead of that.'
+        : 'Behind pace. By day '+dGone+' of '+dTot+' a steady seller would be at '+tkPlain(shouldBe)+' — you are '+tkPlain(shouldBe-m.sales)+' short of that.')+'</div>';
+      h+='<div class="pace-sub">At your current speed the month closes around <b>'+tkPlain(projected)+'</b>'
         +(projected>=t.target?' — that clears the target. Do not slow down.':' — that misses by '+tkPlain(t.target-projected)+'. Speed has to change, not effort alone.')+'</div>';
-      h+='<div class="tgtline"><span>Target '+tkPlain(t.target)+'</span><span>Sold '+tkPlain(t.actual)+'</span></div>';
     }
     h+='</div>';
   }
@@ -871,13 +877,36 @@ function paint(){
       +'<div class="pz-s">This is what you take home the moment you cross the target, at your current collection rate.</div>'
       +'<div class="pz-warn">Miss the target and this becomes <b>0 tk</b>. Not reduced. Zero.</div>'
       +'</div>';
-    if(!noTarget && gap>0){
-      const perTk = gap>0 ? prize/gap : 0;
-      if(perTk>0) h+='<div class="tgt-note">Every 1,000 tk you sell from here is worth about <b>'+tkPlain(perTk*1000)+'</b> of that locked commission.</div>';
-    }
   }
 
-  // ── 3. DO THIS NOW ── vague motivation does nothing; named moves do
+  // ── 3. WHERE THE MONEY COMES FROM ── the evidence behind the prize above,
+  //      read before the instructions below so the advice already makes sense.
+  h+='<div class="sec-t">Where your money comes from</div>';
+  h+='<div class="card">';
+  if(c.rows&&c.rows.length){
+    h+='<table class="tbl"><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Sales</th><th class="num">%</th><th class="num">You earn</th></tr></thead><tbody>';
+    h+=c.rows.map(p=>'<tr><td class="pname">'+escapeHtml(p.product)+'</td><td class="num">'+qtyFmt(p.qty)+'</td><td class="num">'+tkPlain(p.salesValue)+'</td><td class="num">'+pct((p.commPct||0)*100)+'</td><td class="num av">'+tkPlain(p.availed)+'</td></tr>').join('');
+    const tQty=c.rows.reduce((s,p)=>s+(Number(p.qty)||0),0);
+    const tVal=c.rows.reduce((s,p)=>s+(Number(p.salesValue)||0),0);
+    const tAv =c.rows.reduce((s,p)=>s+(Number(p.availed)||0),0);
+    h+='<tr class="totrow"><td class="pname"><b>Total</b></td><td class="num"><b>'+qtyFmt(tQty)+'</b></td><td class="num"><b>'+tkPlain(tVal)+'</b></td><td class="num">—</td><td class="num av"><b>'+tkPlain(tAv)+'</b></td></tr>';
+    h+='</tbody></table>';
+    // Sanity check: the product table must reconcile with the month summary below.
+    if(Math.abs(tVal-(m.sales||0))>1){
+      h+='<div class="tgt-note">⚠️ Product sales total ('+tkPlain(tVal)+') does not match this month\'s sales ('+tkPlain(m.sales)+'). Difference '+tkPlain(Math.abs(tVal-(m.sales||0)))+' — usually a payment-only row or a sale logged without a product name.</div>';
+    }
+  } else {
+    h+='<div class="empty">Nothing sold this month yet. The first entry is the hardest — log one today.</div>';
+  }
+  // Products earning 0% because Control has no rate row. Say it plainly.
+  if(d.commissionGaps&&d.commissionGaps.length){
+    h+='<div class="tgt-note">⚠️ No commission rate set for: <b>'
+      +d.commissionGaps.map(escapeHtml).join('</b>, <b>')
+      +'</b>. These earn you 0%. Ask Operations to add them to the Control sheet.</div>';
+  }
+  h+='</div>';
+
+  // ── 4. DO THIS NOW ── vague motivation does nothing; named moves do
   const acts=[];
   if(!met && gap>0) acts.push({ic:'🎯',t:'Sell '+tkPlain(perDay)+' a day',
     s:'For the next '+dLeft+' day'+(dLeft===1?'':'s')+' to close a '+tkPlain(gap)+' gap.'});
@@ -927,8 +956,15 @@ function paint(){
       +'<div class="act-t"><b>'+escapeHtml(x.t)+'</b><span>'+x.s+'</span></div></div>').join('')+'</div>';
   }
 
-  // ── 4. THIS MONTH + daily activity ──
-  h+='<div class="sec-t">This month · '+escapeHtml(d.month||'')+'</div>';
+  // ── 5. MY DAILY ACTIVITY ── its own section, not buried under the numbers
+  h+='<div class="sec-t">My daily activity</div>';
+  h+='<button class="actbtn" onclick="openAct()">'
+    +'<span class="ab-ic">'+CAL_SVG+'</span>'
+    +'<span class="ab-t"><b>Open day-by-day log</b><span>Every sale and collection you logged, by date</span></span>'
+    +'<span class="ab-c">›</span></button>';
+
+  // ── 6. THIS MONTH SUMMARY ── the plain raw figures, stated once, nowhere else
+  h+='<div class="sec-t">This month summary</div>';
   h+='<div class="card"><div class="tri">'
     +'<div class="box"><div class="box-l">Sales</div><div class="box-v blue">'+tk(m.sales)+'</div></div>'
     +'<div class="box"><div class="box-l">Collected</div><div class="box-v grn">'+tk(m.collected)+'</div></div>'
@@ -937,38 +973,8 @@ function paint(){
   h+='<div class="gauge-wrap"><div class="gauge-top"><span>Collection rate</span><span>'+Math.round(clRate*100)+'%</span></div>'
     +'<div class="gauge"><div class="gauge-fill'+(clRate<0.6?' bad':(clRate<0.85?' warn':''))+'" style="width:'+Math.min(clRate*100,100)+'%"></div></div></div>';
   h+='</div>';
-  h+='<button class="actbtn" onclick="openAct()">'
-    +'<span class="ab-ic">'+CAL_SVG+'</span>'
-    +'<span class="ab-t"><b>My Daily Activity</b><span>See what you did, day by day</span></span>'
-    +'<span class="ab-c">›</span></button>';
 
-  // ── 5. WHERE THE MONEY COMES FROM ──
-  h+='<div class="sec-t">Where your money comes from</div>';
-  h+='<div class="card">';
-  if(c.rows&&c.rows.length){
-    h+='<table class="tbl"><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Sales</th><th class="num">%</th><th class="num">You earn</th></tr></thead><tbody>';
-    h+=c.rows.map(p=>'<tr><td class="pname">'+escapeHtml(p.product)+'</td><td class="num">'+qtyFmt(p.qty)+'</td><td class="num">'+tkPlain(p.salesValue)+'</td><td class="num">'+pct((p.commPct||0)*100)+'</td><td class="num av">'+tkPlain(p.availed)+'</td></tr>').join('');
-    const tQty=c.rows.reduce((s,p)=>s+(Number(p.qty)||0),0);
-    const tVal=c.rows.reduce((s,p)=>s+(Number(p.salesValue)||0),0);
-    const tAv =c.rows.reduce((s,p)=>s+(Number(p.availed)||0),0);
-    h+='<tr class="totrow"><td class="pname"><b>Total</b></td><td class="num"><b>'+qtyFmt(tQty)+'</b></td><td class="num"><b>'+tkPlain(tVal)+'</b></td><td class="num">—</td><td class="num av"><b>'+tkPlain(tAv)+'</b></td></tr>';
-    h+='</tbody></table>';
-    // Sanity check: the product table must reconcile with the month card above.
-    if(Math.abs(tVal-(m.sales||0))>1){
-      h+='<div class="tgt-note">⚠️ Product sales total ('+tkPlain(tVal)+') does not match this month\'s sales ('+tkPlain(m.sales)+'). Difference '+tkPlain(Math.abs(tVal-(m.sales||0)))+' — usually a payment-only row or a sale logged without a product name.</div>';
-    }
-  } else {
-    h+='<div class="empty">Nothing sold this month yet. The first entry is the hardest — log one today.</div>';
-  }
-  // Products earning 0% because Control has no rate row. Say it plainly.
-  if(d.commissionGaps&&d.commissionGaps.length){
-    h+='<div class="tgt-note">⚠️ No commission rate set for: <b>'
-      +d.commissionGaps.map(escapeHtml).join('</b>, <b>')
-      +'</b>. These earn you 0%. Ask Operations to add them to the Control sheet.</div>';
-  }
-  h+='</div>';
-
-  // ── 6. CAREER TOTALS ── last on purpose: pride, not a place to rest
+  // ── 7. CAREER TOTALS ── last on purpose: pride, not a place to rest
   const life=Array.isArray(d.lifetime)?d.lifetime:[];
   _LIFE=life;
   if(_chartSel!=null && _chartSel>=life.length) _chartSel=null;  // data shrank
