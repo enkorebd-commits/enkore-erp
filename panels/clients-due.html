@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Client Calls — Enkore</title>
+<title>Client Calls · Enkore</title>
 <style>
 :root{
   --g:#1b6b3a;--g2:#2d8a52;--gbg:#edf7f1;--red:#e03131;--redbg:#fff5f5;
@@ -75,7 +75,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .sh-name{font-size:15px;font-weight:800}
 .sh-sub{font-size:11px;opacity:.85;margin-top:2px}
 .sh-tel{display:inline-block;margin-top:6px;font-size:12px;font-weight:800;color:#fff;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:20px;text-decoration:none}
-/* highlighted summary band — visually distinct from the transactions below */
+/* highlighted summary band, visually distinct from the transactions below */
 .sheet-chips{display:flex;gap:8px;padding:14px 16px;background:var(--redbg);border-bottom:3px solid #ffd8d0;box-shadow:0 4px 10px rgba(192,57,43,.08)}
 .chip{flex:1;text-align:center;background:#fff;border-radius:10px;padding:9px 4px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .chip-l{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
@@ -151,18 +151,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 <div id="ptrIndicator"><span class="ptr-spin"></span><span id="ptrText">Pull to refresh</span></div>
 
-<div class="hdr dues" id="mainHdr">
+<div class="hdr sales" id="mainHdr">
   <div class="hdr-title" id="hdrTitle">Client Calls</div>
   <div class="ptabs">
-    <div class="ptab on" id="tabDue" onclick="switchTab('due')">💰 Due</div>
-    <div class="ptab" id="tabFollowup" onclick="switchTab('followup')">📅 Follow-up</div>
+    <div class="ptab on" id="tabFollowup" onclick="switchTab('followup')">Follow-up</div>
+    <div class="ptab" id="tabDue" onclick="switchTab('due')">Due</div>
   </div>
 </div>
 
 <div class="body">
-  <div class="sum dues" id="sumCard">
-    <div class="sum-lbl" id="sumLbl">Total Outstanding Due</div>
-    <div class="sum-amt" id="sumAmt">৳ 0</div>
+  <div class="sum sales" id="sumCard">
+    <div class="sum-lbl" id="sumLbl">Clients To Call This Week</div>
+    <div class="sum-amt" id="sumAmt">0</div>
     <div class="sum-sub" id="sumSub">—</div>
   </div>
 
@@ -207,10 +207,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
     <div class="lc-body">
       <div class="lc-redirects">
-        <button type="button" class="redirect-btn rd-blue" id="rdReorder" onclick="redirectAction('reorder', this)">🔁 Will Reorder — Add to Sales Notes</button>
-        <button type="button" class="redirect-btn rd-green" id="rdPayment" onclick="redirectAction('payment', this)">💰 Payment Collected — Record in Sales</button>
+        <button type="button" class="redirect-btn rd-blue" id="rdReorder" onclick="redirectAction('reorder')">🔁 Will Reorder → Sales Notes</button>
+        <button type="button" class="redirect-btn rd-green" id="rdPayment" onclick="redirectAction('payment')">💰 Payment Collected → Sales</button>
       </div>
-      <div class="lc-or">— or log the call —</div>
+      <div class="lc-or">or log the call</div>
       <div class="lc-lbl">What happened on this call?</div>
       <div class="outcome-grid" id="outcomeGrid"></div>
       <div class="lc-date-wrap" id="lcDateWrap">
@@ -238,7 +238,7 @@ const USER_ID   = qs.get('userId') || '';
 const USER_NAME = qs.get('name')   || '';
 const READONLY  = qs.get('readonly') === '1';
 
-let clients = [], callLogs = [], shownRows = [], activeTab = 'due', _ptrBusy = false, showIgnored = false;
+let clients = [], callLogs = [], shownRows = [], activeTab = 'followup', _ptrBusy = false, showIgnored = false;
 let lcClient = null, lcOutcome = '', lcNeedsDate = false;
 
 const DISMISS_OUTCOME   = 'Not Active — Stop Reminding';
@@ -247,8 +247,8 @@ const REACTIVATE_OUTCOME = 'Reactivate — Resume Reminders';
 const OUTCOMES = [
   {k:'Not Reachable',     date:false},
   {k:'Payment Promised',  date:true},
-  {k:DISMISS_OUTCOME,     date:false},
-  {k:REACTIVATE_OUTCOME,  date:false}
+  {k:DISMISS_OUTCOME,     date:false, label:'Not Active (Stop Reminding)'},
+  {k:REACTIVATE_OUTCOME,  date:false, label:'Reactivate (Resume Reminders)'}
 ];
 
 function tk(n){ if(n===''||n===null||n===undefined) return '৳ 0'; return '৳ '+Number(n||0).toLocaleString('en-IN'); }
@@ -521,7 +521,7 @@ function openLogCall(c){
   document.getElementById('lcHd').className='sheet-hd '+(activeTab==='due'?'':'g');
 
   document.getElementById('outcomeGrid').innerHTML=OUTCOMES.map(o=>
-    '<button type="button" class="outcome-btn" data-k="'+escapeHtml(o.k)+'" onclick="pickOutcome(\''+o.k.replace(/'/g,"\\'")+'\')">'+escapeHtml(o.k)+'</button>'
+    '<button type="button" class="outcome-btn" data-k="'+escapeHtml(o.k)+'" onclick="pickOutcome(\''+o.k.replace(/'/g,"\\'")+'\')">'+escapeHtml(o.label||o.k)+'</button>'
   ).join('');
   document.getElementById('lcDateWrap').classList.remove('show');
   document.getElementById('lcDate').value='';
@@ -542,7 +542,7 @@ async function saveCallLog(){
   if(!lcClient) return;
   if(!lcOutcome){ toast('Pick what happened on the call','err'); return; }
   if(lcNeedsDate && !document.getElementById('lcDate').value){ toast('Pick a follow-up date','err'); return; }
-  if(!CALLLOG_URL || CALLLOG_URL.indexOf('PASTE_')===0){ toast('Call Log not connected yet — ask Chayan','err'); return; }
+  if(!CALLLOG_URL || CALLLOG_URL.indexOf('PASTE_')===0){ toast('Call Log not connected yet, ask Chayan','err'); return; }
 
   const btn=document.getElementById('lcSaveBtn');
   btn.disabled=true; btn.textContent='Saving…';
@@ -580,40 +580,31 @@ function closeLogCall(){
 }
 
 // ── REDIRECT ACTIONS (Will Reorder / Payment Collected) ─────────
-// These two skip the plain log-and-save flow: they log a quick call record
-// (best effort — navigation proceeds even if this fails, since the real
-// action happens on the Sales panel) then hand off to __erpGoTo() in the
-// shell, which stashes {det, action} for sales-entry.html to pick up and
-// pre-select the client there. The shell's own overlay-closing logic (the
-// same one Back uses) closes this popup — we don't close it ourselves.
-async function redirectAction(kind, btnEl){
+// Instant by design: navigate the moment the button is tapped, no waiting
+// on the network first. The call-log write is fire-and-forget with
+// keepalive:true so it still reaches the server even though this frame
+// unloads a moment later (keepalive is exactly what that flag is for).
+// If it fails, the redirect still happens, since the real action (the
+// note or the payment) matters more than this best-effort audit trail.
+function redirectAction(kind){
   if(!lcClient) return;
   const outcome = kind==='payment' ? 'Payment Collected' : 'Will Reorder';
   const note = document.getElementById('lcNote').value.trim();
   const det = lcClient.det;
 
-  if(btnEl){ btnEl.disabled=true; btnEl.dataset.orig=btnEl.textContent; btnEl.textContent='Opening…'; }
-
-  try{
-    if(CALLLOG_URL && CALLLOG_URL.indexOf('PASTE_')!==0){
-      const submitId='cl_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
-      const params=new URLSearchParams({
-        action:'addCallLog', client:det, sellerId:USER_ID, sellerName:USER_NAME,
-        source:activeTab, outcome, note, nextDate:'', submitId
-      });
-      const res=await fetch(CALLLOG_URL+'?'+params.toString()).then(r=>r.json()).catch(()=>null);
-      if(res && res.success){
-        callLogs.push({ts:new Date().toISOString().slice(0,19).replace('T',' '), logId:res.logId||'', client:det, sellerId:USER_ID, sellerName:USER_NAME, source:activeTab, outcome, note, nextDate:''});
-        try{ sessionStorage.setItem(CACHE_KEY_CALLS, JSON.stringify(callLogs)); }catch(_){}
-      }
-    }
-  }catch(e){ console.error('redirect call log:',e); }
+  if(CALLLOG_URL && CALLLOG_URL.indexOf('PASTE_')!==0){
+    const submitId='cl_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+    const params=new URLSearchParams({
+      action:'addCallLog', client:det, sellerId:USER_ID, sellerName:USER_NAME,
+      source:activeTab, outcome, note, nextDate:'', submitId
+    });
+    try{ fetch(CALLLOG_URL+'?'+params.toString(), {keepalive:true}).catch(()=>{}); }catch(_){}
+  }
 
   if(parent && typeof parent.__erpGoTo==='function'){
     parent.__erpGoTo('sales-entry','Sales',{det:det, action:kind});
   }else{
     toast('Cannot open Sales panel from here','err');
-    if(btnEl){ btnEl.disabled=false; btnEl.textContent=btnEl.dataset.orig; }
   }
 }
 

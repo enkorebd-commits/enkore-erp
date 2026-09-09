@@ -800,7 +800,6 @@ function paint(){
   if(introDue()) runIntro(greeting()+',', who);
   document.getElementById('motiv').innerHTML=motivLine(d,st);
   let chips='';
-  if(d.rank&&d.rank!=='-') chips+='<span class="chip gold">Rank #'+escapeHtml(d.rank)+' this month</span>';
   chips+='<span class="chip">'+escapeHtml(d.month||'')+'</span>';
   chips+='<span class="chip'+(dLeft<=5?' urgent':'')+'">'+dLeft+' day'+(dLeft===1?'':'s')+' left</span>';
   document.getElementById('hChips').innerHTML=chips;
