@@ -294,7 +294,7 @@
   // ── CONFIG ──
   // Bump BUILD on every deploy. It is shown in the profile menu so you can see
   // at a glance whether a phone is actually running the newest files.
-  const BUILD = '2026.09.09-4';
+  const BUILD = '2026.09.09-6';
   const SHEET_ID   = '1mXI0MI9R_5_ImxiTvw8vH0EaQ38M3WlHncjZgmPLTmc';
   const ACCESS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Access`;
   const LINK_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Panels`;
@@ -519,7 +519,26 @@
     // This is the white-first-panel fix — done WITHOUT touching f.src, because
     // f.src would add history entries and break Back.
     void document.getElementById('content').offsetHeight;
-    requestAnimationFrame(function(){ requestAnimationFrame(initHome); });
+
+    // BACKSTOP (added 09 Sep 2026): on an installed Android app opened cold
+    // from the home-screen icon, the double rAF below can simply never fire —
+    // the WebView's compositor sometimes will not schedule a frame until the
+    // user makes a touch gesture, which is exactly why tapping another panel
+    // and back "fixed" it. If that happens, initHome() never runs and the
+    // panel stays on tinted about:blank forever — the existing watchFrame
+    // watchdog never even starts, because loadFrame() (which arms it) is
+    // never called. A plain timeout backstop guarantees initHome() runs
+    // within 400ms regardless of whether rAF cooperates. Guarded so whichever
+    // path fires first wins and the other is a no-op.
+    let _homeStarted = false;
+    const _kickHome = function(){
+      if (_homeStarted) return;
+      _homeStarted = true;
+      clearTimeout(_homeBackstop);
+      initHome();
+    };
+    const _homeBackstop = setTimeout(_kickHome, 400);
+    requestAnimationFrame(function(){ requestAnimationFrame(_kickHome); });
   }
 
   // ── BUILD NAV — all panels from sheet, no whitelist ──
