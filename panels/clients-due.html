@@ -60,6 +60,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .called-badge.stale{color:var(--muted)}
 .logcall-btn{flex-shrink:0;font-size:11px;font-weight:800;color:#fff;background:var(--blue);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;white-space:nowrap}
 .logcall-btn:active{opacity:.75}
+.row.ignored{opacity:.55}
+.ignored-link{text-align:center;font-size:12px;font-weight:800;color:var(--blue);padding:10px;cursor:pointer;background:#fff;border-radius:var(--r);box-shadow:var(--sh);margin-bottom:8px}
+.ignored-link:active{opacity:.7}
 
 /* TRANSACTIONS + LOG-CALL POPUP (shared sheet chrome) */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:flex-end;justify-content:center}
@@ -223,8 +226,11 @@ const USER_ID   = qs.get('userId') || '';
 const USER_NAME = qs.get('name')   || '';
 const READONLY  = qs.get('readonly') === '1';
 
-let clients = [], callLogs = [], shownRows = [], activeTab = 'due', _ptrBusy = false;
+let clients = [], callLogs = [], shownRows = [], activeTab = 'due', _ptrBusy = false, showIgnored = false;
 let lcClient = null, lcOutcome = '', lcNeedsDate = false;
+
+const DISMISS_OUTCOME   = 'Not Active — Stop Reminding';
+const REACTIVATE_OUTCOME = 'Reactivate — Resume Reminders';
 
 const OUTCOMES = [
   {k:'Payment Collected', date:false},
@@ -232,7 +238,9 @@ const OUTCOMES = [
   {k:'Order Placed',      date:false},
   {k:'Will Reorder',      date:true},
   {k:'Client Needs Something', date:false},
-  {k:'Not Reachable',     date:false}
+  {k:'Not Reachable',     date:false},
+  {k:DISMISS_OUTCOME,     date:false},
+  {k:REACTIVATE_OUTCOME,  date:false}
 ];
 
 function tk(n){ if(n===''||n===null||n===undefined) return '৳ 0'; return '৳ '+Number(n||0).toLocaleString('en-IN'); }
@@ -319,6 +327,7 @@ function applyCallLogs(){
     const last = lastByClient.get(c.det);
     c.lastCallDaysAgo = last ? daysAgo(last.ts) : null;
     c.lastCallOutcome = last ? last.outcome : '';
+    c.dismissed = c.lastCallOutcome === DISMISS_OUTCOME;
     const parts=[c.lastOrderDays, c.lastCallDaysAgo].filter(v=>v!=null);
     c.lastTouchDays = parts.length ? Math.min(...parts) : null;
   });
@@ -335,6 +344,11 @@ function switchTab(tab){
   render();
 }
 
+function toggleIgnored(){
+  showIgnored=!showIgnored;
+  render();
+}
+
 function render(){
   const q=(document.getElementById('search').value||'').trim().toLowerCase();
   const real=clients.filter(c=>(c.name||'').trim().toLowerCase()!=='demo');
@@ -348,26 +362,36 @@ function render(){
     document.getElementById('sumLbl').textContent='Total Outstanding Due';
     document.getElementById('sumAmt').textContent=tk(totalDue);
     document.getElementById('sumSub').textContent=rows.length+' client'+(rows.length===1?'':'s')+' with due';
-  } else {
-    rows=real.filter(c=>c.lastTouchDays!=null && c.lastTouchDays>=FOLLOWUP_THRESHOLD_DAYS);
+  }
+
+  let ignoredCount=0;
+  if(activeTab==='followup'){
+    const allFollowup=real.filter(c=>c.lastTouchDays!=null && c.lastTouchDays>=FOLLOWUP_THRESHOLD_DAYS);
+    ignoredCount=allFollowup.filter(c=>c.dismissed).length;
+    const active=allFollowup.filter(c=>!c.dismissed);
+    rows = showIgnored ? allFollowup : active;
     if(q) rows=rows.filter(c=>(c.name+' '+c.shop+' '+c.loc+' '+c.zone+' '+c.phone+' '+c.det).toLowerCase().includes(q));
     rows.sort((a,b)=>b.lastTouchDays-a.lastTouchDays);
     document.getElementById('sumLbl').textContent='Clients To Call This Week';
-    document.getElementById('sumAmt').textContent=String(rows.length);
-    const over30=rows.filter(c=>c.lastTouchDays>=30).length;
-    document.getElementById('sumSub').textContent=over30+' silent 30+ days · '+FOLLOWUP_THRESHOLD_DAYS+'-day cadence';
+    document.getElementById('sumAmt').textContent=String(active.length);
+    const over30=active.filter(c=>c.lastTouchDays>=30).length;
+    document.getElementById('sumSub').textContent=over30+' silent 30+ days · '+FOLLOWUP_THRESHOLD_DAYS+'-day cadence'+(ignoredCount?' · '+ignoredCount+' ignored':'');
   }
 
   const el=document.getElementById('list');
+  const ignoredLink = (activeTab==='followup' && ignoredCount>0)
+    ? '<div class="ignored-link" onclick="toggleIgnored()">'+(showIgnored?'▲ Hide':'👁 Show')+' '+ignoredCount+' ignored client'+(ignoredCount===1?'':'s')+'</div>'
+    : '';
   if(!rows.length){
-    el.innerHTML=activeTab==='due'
+    const emptyMsg = activeTab==='due'
       ? '<div class="state"><div class="state-icon">✅</div><div class="state-txt">No outstanding dues 🎉</div></div>'
       : '<div class="state"><div class="state-icon">✅</div><div class="state-txt">Everyone has been called this week 🎉</div></div>';
+    el.innerHTML=ignoredLink+emptyMsg;
     shownRows=[];
     return;
   }
   shownRows=rows;
-  el.innerHTML=rows.map((c,i)=>{
+  el.innerHTML=ignoredLink+rows.map((c,i)=>{
     const rank=i+1;
     const rankCls=rank<=3?('r'+rank):'';
     const sub=[c.shop,c.zone].filter(Boolean).join(' · ');
@@ -381,8 +405,10 @@ function render(){
       : '';
     const figHtml = activeTab==='due'
       ? '<div class="row-fig"><div class="fig-primary red">'+tk(c.due)+'</div><div class="fig-sec">Sales '+tk(c.sales)+'</div></div>'
-      : '<div class="row-fig"><div class="fig-primary grn">'+c.lastTouchDays+'d</div><div class="fig-sec">since contact</div></div>';
-    return '<div class="row" data-idx="'+i+'">'
+      : (c.dismissed
+        ? '<div class="row-fig"><div class="fig-primary" style="color:var(--muted)">🚫</div><div class="fig-sec">ignored</div></div>'
+        : '<div class="row-fig"><div class="fig-primary grn">'+c.lastTouchDays+'d</div><div class="fig-sec">since contact</div></div>');
+    return '<div class="row'+(c.dismissed?' ignored':'')+'" data-idx="'+i+'">'
       +'<div class="rank '+rankCls+'">'+rank+'</div>'
       +'<div class="row-main"><div class="row-name">'+escapeHtml(c.name||c.shop||'—')+'</div>'
         +(sub?'<div class="row-sub">'+escapeHtml(sub)+'</div>':'')
