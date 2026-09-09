@@ -294,7 +294,7 @@
   // ── CONFIG ──
   // Bump BUILD on every deploy. It is shown in the profile menu so you can see
   // at a glance whether a phone is actually running the newest files.
-  const BUILD = '2026.09.09-3';
+  const BUILD = '2026.09.09-4';
   const SHEET_ID   = '1mXI0MI9R_5_ImxiTvw8vH0EaQ38M3WlHncjZgmPLTmc';
   const ACCESS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Access`;
   const LINK_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Panels`;
@@ -626,6 +626,20 @@
       markProgrammatic();
       history.go(-k);                         // fires exactly ONE popstate
     });
+  };
+  // Called BY a panel to jump to another panel, optionally handing the
+  // destination panel a small "preset" payload to consume on load (e.g.
+  // Client Calls redirecting to Sales Entry with a client pre-selected).
+  // Delegates to the SAME loadPanel() a sidebar tap uses, so overlay
+  // closing and back-button history stay correct — no second nav path to
+  // keep in sync with the real one.
+  window.__erpGoTo = function(file, name, preset) {
+    try {
+      if (preset) sessionStorage.setItem('erp_goto_preset', JSON.stringify(Object.assign({ file: file, ts: Date.now() }, preset)));
+    } catch (e) {}
+    const target = currentUser && currentUser.panels ? currentUser.panels.find(function(p) { return p.file === file; }) : null;
+    if (!target) return; // user has no access to that panel — do nothing
+    loadPanel(file, name || target.name, !!target.readonly);
   };
 
   // ── PANEL SLIDE TRANSITION (two layered iframes) ──
