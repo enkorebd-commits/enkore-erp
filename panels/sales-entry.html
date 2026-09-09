@@ -638,13 +638,41 @@ const AS_URL    = 'https://script.google.com/macros/s/AKfycbzNbCaVCEC0X1NewgiyqY
 const CACHE_KEY = 'enkore_sales_data';
 
 let clients = [], mode = 'notes', selClient = null;
+
+// ── INCOMING PRESET (redirect from Client Calls) ────────────────
+// Client Calls sends the salesman here with a client already picked, via
+// __erpGoTo() in the shell (enkore-erp.html), which stashes {file,det,action}
+// in sessionStorage so it survives the iframe navigation. Consume-once —
+// cleared immediately so a later refresh never replays it. Waits for
+// loadAllData() so `clients` is populated before we look the det up.
+function consumeGotoPreset() {
+  let preset = null;
+  try {
+    const raw = sessionStorage.getItem('erp_goto_preset');
+    if (raw) { preset = JSON.parse(raw); sessionStorage.removeItem('erp_goto_preset'); }
+  } catch(_) {}
+  if (!preset || preset.file !== 'sales-entry' || !preset.det) return;
+  if (Date.now() - (preset.ts || 0) > 60000) return; // stale — ignore
+
+  const c = clients.find(x => x.det === preset.det);
+  if (!c) { toast('Client not found — pick manually', 'err'); return; }
+
+  if (preset.action === 'payment') {
+    setMode('payment');
+    pickClient(c.det);
+  } else {
+    setMode('notes');
+    pickClient(c.det);
+    openNoteDrawer();
+  }
+}
 let CURRENT_PRODUCTS = [], prodRowCount = 0;
 let histAllRows = [], histShowingAll = false;
 
 // ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   setHeaderDate();
-  loadAllData();
+  loadAllData().then(consumeGotoPreset);
   fillUserBadges();
   addProdRow();
   flushQueue();

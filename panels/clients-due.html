@@ -52,7 +52,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .row-name{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .row-loc{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.row-tel-line{margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.row-tel-line{margin-top:5px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .row-tel{display:inline-block;font-size:12px;color:var(--blue);font-weight:800;text-decoration:none;white-space:nowrap}
 .row-tel:active{opacity:.6}
 .tap-hint{font-size:9px;color:#adb5bd;margin-top:6px;font-weight:600;letter-spacing:.3px}
@@ -114,6 +114,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .outcome-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .outcome-btn{padding:12px 8px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:700;text-align:center;cursor:pointer;line-height:1.3}
 .outcome-btn.sel{border-color:var(--blue);background:var(--bluebg);color:var(--blue)}
+.lc-redirects{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.redirect-btn{width:100%;padding:13px 10px;border:none;border-radius:12px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+.redirect-btn:active{opacity:.85}
+.redirect-btn[disabled]{opacity:.6}
+.rd-blue{background:linear-gradient(135deg,#1971c2,#3b8fe0)}
+.rd-green{background:linear-gradient(135deg,#1b6b3a,#2d8a52)}
+.lc-or{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin:2px 0 10px}
 .lc-date,.lc-note{width:100%;padding:11px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:10px;outline:none;background:#fff;color:var(--text);font-family:inherit}
 .lc-note{resize:vertical;min-height:64px}
 .lc-date-wrap{display:none}
@@ -199,6 +206,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <button class="sh-x" onclick="closeLogCall()">×</button>
     </div>
     <div class="lc-body">
+      <div class="lc-redirects">
+        <button type="button" class="redirect-btn rd-blue" id="rdReorder" onclick="redirectAction('reorder', this)">🔁 Will Reorder — Add to Sales Notes</button>
+        <button type="button" class="redirect-btn rd-green" id="rdPayment" onclick="redirectAction('payment', this)">💰 Payment Collected — Record in Sales</button>
+      </div>
+      <div class="lc-or">— or log the call —</div>
       <div class="lc-lbl">What happened on this call?</div>
       <div class="outcome-grid" id="outcomeGrid"></div>
       <div class="lc-date-wrap" id="lcDateWrap">
@@ -233,12 +245,8 @@ const DISMISS_OUTCOME   = 'Not Active — Stop Reminding';
 const REACTIVATE_OUTCOME = 'Reactivate — Resume Reminders';
 
 const OUTCOMES = [
-  {k:'Payment Collected', date:false},
-  {k:'Payment Promised',  date:true},
-  {k:'Order Placed',      date:false},
-  {k:'Will Reorder',      date:true},
-  {k:'Client Needs Something', date:false},
   {k:'Not Reachable',     date:false},
+  {k:'Payment Promised',  date:true},
   {k:DISMISS_OUTCOME,     date:false},
   {k:REACTIVATE_OUTCOME,  date:false}
 ];
@@ -569,6 +577,44 @@ function closeLogCall(){
   ovClose('logOv');
   document.body.style.overflow='';
   lcClient=null;
+}
+
+// ── REDIRECT ACTIONS (Will Reorder / Payment Collected) ─────────
+// These two skip the plain log-and-save flow: they log a quick call record
+// (best effort — navigation proceeds even if this fails, since the real
+// action happens on the Sales panel) then hand off to __erpGoTo() in the
+// shell, which stashes {det, action} for sales-entry.html to pick up and
+// pre-select the client there. The shell's own overlay-closing logic (the
+// same one Back uses) closes this popup — we don't close it ourselves.
+async function redirectAction(kind, btnEl){
+  if(!lcClient) return;
+  const outcome = kind==='payment' ? 'Payment Collected' : 'Will Reorder';
+  const note = document.getElementById('lcNote').value.trim();
+  const det = lcClient.det;
+
+  if(btnEl){ btnEl.disabled=true; btnEl.dataset.orig=btnEl.textContent; btnEl.textContent='Opening…'; }
+
+  try{
+    if(CALLLOG_URL && CALLLOG_URL.indexOf('PASTE_')!==0){
+      const submitId='cl_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+      const params=new URLSearchParams({
+        action:'addCallLog', client:det, sellerId:USER_ID, sellerName:USER_NAME,
+        source:activeTab, outcome, note, nextDate:'', submitId
+      });
+      const res=await fetch(CALLLOG_URL+'?'+params.toString()).then(r=>r.json()).catch(()=>null);
+      if(res && res.success){
+        callLogs.push({ts:new Date().toISOString().slice(0,19).replace('T',' '), logId:res.logId||'', client:det, sellerId:USER_ID, sellerName:USER_NAME, source:activeTab, outcome, note, nextDate:''});
+        try{ sessionStorage.setItem(CACHE_KEY_CALLS, JSON.stringify(callLogs)); }catch(_){}
+      }
+    }
+  }catch(e){ console.error('redirect call log:',e); }
+
+  if(parent && typeof parent.__erpGoTo==='function'){
+    parent.__erpGoTo('sales-entry','Sales',{det:det, action:kind});
+  }else{
+    toast('Cannot open Sales panel from here','err');
+    if(btnEl){ btnEl.disabled=false; btnEl.textContent=btnEl.dataset.orig; }
+  }
 }
 
 // ── SHELL POPUP REGISTRATION ──
