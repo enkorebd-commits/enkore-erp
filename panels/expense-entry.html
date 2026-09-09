@@ -373,7 +373,8 @@ function renderList() {
     '<div class="row" data-i="' + ITEMS.indexOf(it) + '">' +
       '<div class="l"><div class="d">' + esc(it.description || it.category) +
         '<span class="' + tagCls(it.nature) + '">' + esc(it.nature) + '</span></div>' +
-        '<div class="m">' + esc(it.date) + ' · ' + esc(it.spendBy || '—') + ' · ' + esc(it.category) + '</div></div>' +
+        '<div class="m">' + esc(it.date) + ' · ' + esc(it.spendBy || '—') + ' · ' + esc(it.category) +
+          (it._pending ? ' · ' + (it._pending === 'queued' ? 'queued (offline)' : 'syncing…') : '') + '</div></div>' +
       '<div class="v">' + money(it.amount) + '</div>' +
     '</div>').join('');
   box.querySelectorAll('.row').forEach(r => {
@@ -506,31 +507,51 @@ function buildQS() {
   }).toString() };
 }
 
-$('btnGo').onclick = async () => {
+$('btnGo').onclick = () => {
   if (USER.ro) return;
   const b = buildQS();
   if (b.err) return toast(b.err, true);
   const btn = $('btnGo');
-  btn.disabled = true; btn.textContent = 'Saving…';
+  btn.disabled = true;
+  setTimeout(() => { btn.disabled = USER.ro; }, 600);
+
+  // optimistic UI: show it as saved immediately, write to the sheet in the background
+  const cap = (lastNat === 'CapEx' || lastNat === 'Pre-operative');
+  const optimistic = {
+    sl: '', date: $('fDate').value, category: $('fCat').value,
+    nature: lastNat || '', description: $('fDesc').value.trim(),
+    spendBy: $('fSpend').value, unitPrice: $('fPrice').value || '',
+    qty: $('fQty').value || '', amount: parseFloat($('fAmt').value) || 0,
+    comment: $('fCom').value.trim(), _pending: true
+  };
+  ITEMS.unshift(optimistic);
+  renderList();
+  toast(cap
+    ? 'Saved as an ASSET (' + lastNat + '), depreciated over ' + ($('fLife').value || '?') + ' years'
+    : 'Expense saved' + (lastNat ? ' as ' + lastNat : ''));
+
+  ['fDesc','fPrice','fQty','fAmt','fCom'].forEach(id => $(id).value = '');
+  $('fCat').value = '';
+  applyNature('');
+  $('natChip').textContent = '—';
+  $('lifeWrap').classList.remove('show');
+
+  syncExpense(b.qs, optimistic);
+};
+
+async function syncExpense(qs, optimistic) {
   try {
-    const js = await fetch(AS_URL + '?' + b.qs).then(r => r.json());
+    const js = await fetch(AS_URL + '?' + qs).then(r => r.json());
     if (!(js.success || js.ok)) throw new Error(js.error || 'Server error');
-    toast(js.capitalised
-      ? 'Saved as an ASSET (' + js.nature + '), depreciated over ' + js.usefulLife + ' years'
-      : 'Expense saved as ' + (js.nature || 'expense'));
-    ['fDesc','fPrice','fQty','fAmt','fCom'].forEach(id => $(id).value = '');
-    $('fCat').value = '';
-    applyNature('');
-    $('natChip').textContent = '—';
-    $('lifeWrap').classList.remove('show');
-    refresh(false);
+    refresh(false);   // pulls the real row from the sheet, replaces the optimistic one
   } catch (e) {
-    const q = readQ(); q.push({ qs: b.qs, t: Date.now() }); writeQ(q);
+    optimistic._pending = 'queued';
+    renderList();
+    const q = readQ(); q.push({ qs, t: Date.now() }); writeQ(q);
+    showQ();
     toast('Offline — queued, will sync', true);
   }
-  btn.disabled = USER.ro; btn.textContent = USER.ro ? 'Read only' : 'Save Expense';
-  showQ();
-};
+}
 
 /* -------------------------------- boot -------------------------------- */
 $('fDate').value = new Date().toISOString().slice(0, 10);

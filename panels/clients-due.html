@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Clients Due — Enkore</title>
+<title>Client Calls — Enkore</title>
 <style>
 :root{
   --g:#1b6b3a;--g2:#2d8a52;--gbg:#edf7f1;--red:#e03131;--redbg:#fff5f5;
@@ -17,7 +17,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .hdr{color:#fff;padding:12px 16px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2);transition:background .3s}
 .hdr.dues{background:#c0392b}
 .hdr.sales{background:var(--g)}
-.hdr-title{font-size:16px;font-weight:800;letter-spacing:.3px;padding-bottom:12px}
+.hdr-title{font-size:16px;font-weight:800;letter-spacing:.3px;padding-bottom:10px}
+
+/* PAGE TABS (Due / Follow-up) */
+.ptabs{display:flex;gap:8px;padding-bottom:12px}
+.ptab{flex:1;text-align:center;padding:9px 6px;border-radius:10px;font-size:12px;font-weight:800;background:rgba(255,255,255,.16);color:#fff;cursor:pointer;transition:.15s;white-space:nowrap}
+.ptab.on{background:#fff;color:var(--text)}
+.hdr.dues .ptab.on{color:#c0392b}
+.hdr.sales .ptab.on{color:var(--g)}
 
 .body{padding:14px;max-width:560px;margin:0 auto}
 
@@ -45,17 +52,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .row-name{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .row-loc{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.row-tel-line{margin-top:5px}
+.row-tel-line{margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .row-tel{display:inline-block;font-size:12px;color:var(--blue);font-weight:800;text-decoration:none;white-space:nowrap}
 .row-tel:active{opacity:.6}
 .tap-hint{font-size:9px;color:#adb5bd;margin-top:6px;font-weight:600;letter-spacing:.3px}
+.called-badge{font-size:10px;color:var(--g);font-weight:800;margin-top:4px}
+.called-badge.stale{color:var(--muted)}
+.logcall-btn{flex-shrink:0;font-size:11px;font-weight:800;color:#fff;background:var(--blue);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+.logcall-btn:active{opacity:.75}
 
-/* TRANSACTIONS POPUP */
+/* TRANSACTIONS + LOG-CALL POPUP (shared sheet chrome) */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:flex-end;justify-content:center}
 .ov.open{display:flex}
 .sheet{background:var(--bg);width:100%;max-width:560px;max-height:88vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;animation:up .22s ease}
 @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .sheet-hd{background:#c0392b;color:#fff;padding:14px 16px;border-radius:18px 18px 0 0;display:flex;align-items:flex-start;gap:10px;position:sticky;top:0}
+.sheet-hd.g{background:var(--g)}
 .sheet-hd .sh-x{margin-left:auto;font-size:22px;line-height:1;cursor:pointer;opacity:.9;background:none;border:none;color:#fff;padding:0 2px}
 .sh-name{font-size:15px;font-weight:800}
 .sh-sub{font-size:11px;opacity:.85;margin-top:2px}
@@ -92,6 +104,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .fig-sec{font-size:10px;color:var(--muted);margin-top:2px;font-weight:600}
 .fig-sec.red{color:var(--red)}
 
+/* LOG CALL FORM */
+.lc-body{padding:14px 16px 22px}
+.lc-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:14px 0 8px}
+.lc-lbl:first-child{margin-top:0}
+.outcome-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.outcome-btn{padding:12px 8px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:700;text-align:center;cursor:pointer;line-height:1.3}
+.outcome-btn.sel{border-color:var(--blue);background:var(--bluebg);color:var(--blue)}
+.lc-date,.lc-note{width:100%;padding:11px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:10px;outline:none;background:#fff;color:var(--text);font-family:inherit}
+.lc-note{resize:vertical;min-height:64px}
+.lc-date-wrap{display:none}
+.lc-date-wrap.show{display:block}
+.lc-save{width:100%;margin-top:16px;padding:13px;border:none;border-radius:12px;background:var(--blue);color:#fff;font-size:14px;font-weight:800;cursor:pointer}
+.lc-save:active{opacity:.85}
+.lc-save[disabled]{opacity:.5}
+
 /* STATES */
 .state{text-align:center;padding:48px 20px;color:var(--muted)}
 .state-icon{font-size:34px;margin-bottom:8px}
@@ -115,7 +142,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div id="ptrIndicator"><span class="ptr-spin"></span><span id="ptrText">Pull to refresh</span></div>
 
 <div class="hdr dues" id="mainHdr">
-  <div class="hdr-title">Clients Due Board</div>
+  <div class="hdr-title" id="hdrTitle">Client Calls</div>
+  <div class="ptabs">
+    <div class="ptab on" id="tabDue" onclick="switchTab('due')">💰 Due</div>
+    <div class="ptab" id="tabFollowup" onclick="switchTab('followup')">📅 Follow-up</div>
+  </div>
 </div>
 
 <div class="body">
@@ -153,12 +184,56 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
 </div>
 
+<!-- LOG CALL POPUP -->
+<div class="ov" id="logOv">
+  <div class="sheet">
+    <div class="sheet-hd g" id="lcHd">
+      <div>
+        <div class="sh-name" id="lcName">—</div>
+        <div class="sh-sub" id="lcSub"></div>
+        <a class="sh-tel" id="lcTel" style="display:none"></a>
+      </div>
+      <button class="sh-x" onclick="closeLogCall()">×</button>
+    </div>
+    <div class="lc-body">
+      <div class="lc-lbl">What happened on this call?</div>
+      <div class="outcome-grid" id="outcomeGrid"></div>
+      <div class="lc-date-wrap" id="lcDateWrap">
+        <div class="lc-lbl">Date to follow up / expect payment</div>
+        <input type="date" class="lc-date" id="lcDate">
+      </div>
+      <div class="lc-lbl">Note (optional)</div>
+      <textarea class="lc-note" id="lcNote" placeholder="What did the client say? Anything they need?"></textarea>
+      <button class="lc-save" id="lcSaveBtn" onclick="saveCallLog()">Save Call Log</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
-const SHEET_ID  = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
-const CACHE_KEY = 'enkore_clientsdue_data';
-let clients = [], shownRows = [], _ptrBusy = false;
+const SHEET_ID    = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
+const CALLLOG_URL = 'https://script.google.com/macros/s/AKfycbyxQ2hJUMj_Tio094BaSqKMRAw4SzpD2ZMMlyyaB05qj7ZvPylXuyI7pDKzXXKvarFgRg/exec';
+const CACHE_KEY       = 'enkore_clientsdue_data';
+const CACHE_KEY_CALLS = 'enkore_clientsdue_calllog';
+const FOLLOWUP_THRESHOLD_DAYS = 7; // call every client at least this often
+
+const qs = new URLSearchParams(location.search);
+const USER_ID   = qs.get('userId') || '';
+const USER_NAME = qs.get('name')   || '';
+const READONLY  = qs.get('readonly') === '1';
+
+let clients = [], callLogs = [], shownRows = [], activeTab = 'due', _ptrBusy = false;
+let lcClient = null, lcOutcome = '', lcNeedsDate = false;
+
+const OUTCOMES = [
+  {k:'Payment Collected', date:false},
+  {k:'Payment Promised',  date:true},
+  {k:'Order Placed',      date:false},
+  {k:'Will Reorder',      date:true},
+  {k:'Client Needs Something', date:false},
+  {k:'Not Reachable',     date:false}
+];
 
 function tk(n){ if(n===''||n===null||n===undefined) return '৳ 0'; return '৳ '+Number(n||0).toLocaleString('en-IN'); }
 function parseGviz(txt){ try{ const m=txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/); return m?JSON.parse(m[1]):null; }catch(_){ return null; } }
@@ -177,15 +252,14 @@ function fmtGvizDate(cell){
   return {display,ts};
 }
 function toast(msg, type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='show'+(type==='err'?' err':''); clearTimeout(window._tt); window._tt=setTimeout(()=>t.className='',2200); }
+function daysAgo(tsMs){ if(!tsMs) return null; return Math.max(0, Math.floor((Date.now()-tsMs)/86400000)); }
 
-// ── DATA ─────────────────────────────────────────────────────
+// ── DATA: CLIENTS ────────────────────────────────────────────
 async function loadClients(){
-  // 1) instant paint from cache
   try{
     const c=sessionStorage.getItem(CACHE_KEY);
     if(c){ clients=JSON.parse(c)||[]; render(); }
   }catch(_){}
-  // 2) revalidate from sheet (stale-while-revalidate)
   try{
     const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Clients%20Info&t=${Date.now()}`;
     const txt=await fetch(url).then(r=>r.text());
@@ -200,8 +274,10 @@ async function loadClients(){
       sales: Number(r.c[8]?.v)||0,
       paid:  Number(r.c[9]?.v)||0,
       due:   Number(r.c[10]?.v)||0,
+      lastOrderDays: (r.c[11]?.v!=null && r.c[11]?.v!=='') ? Number(r.c[11].v) : null,
     }));
     try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify(clients)); }catch(_){}
+    applyCallLogs();
     render();
   }catch(e){
     console.error('clients load:', e);
@@ -211,29 +287,83 @@ async function loadClients(){
   }
 }
 
-// ── RENDER (dues only) ───────────────────────────────────────
+// ── DATA: CALL LOG ───────────────────────────────────────────
+async function loadCallLog(){
+  if(!CALLLOG_URL || CALLLOG_URL.indexOf('PASTE_')===0) return; // not deployed yet
+  try{
+    const c=sessionStorage.getItem(CACHE_KEY_CALLS);
+    if(c){ callLogs=JSON.parse(c)||[]; applyCallLogs(); render(); }
+  }catch(_){}
+  try{
+    const res=await fetch(`${CALLLOG_URL}?action=getCallLog&t=${Date.now()}`).then(r=>r.json());
+    if(res && res.success){
+      callLogs=res.logs||[];
+      try{ sessionStorage.setItem(CACHE_KEY_CALLS, JSON.stringify(callLogs)); }catch(_){}
+      applyCallLogs();
+      render();
+    }
+  }catch(e){ console.error('call log load:', e); }
+}
+
+// Merge call-log "last touch" info onto each client, in place.
+function applyCallLogs(){
+  if(!clients.length) return;
+  const lastByClient = new Map(); // det -> {ts, outcome}
+  callLogs.forEach(l=>{
+    const t = Date.parse((l.ts||'').replace(' ','T'));
+    if(!t) return;
+    const prev = lastByClient.get(l.client);
+    if(!prev || t>prev.ts) lastByClient.set(l.client, {ts:t, outcome:l.outcome});
+  });
+  clients.forEach(c=>{
+    const last = lastByClient.get(c.det);
+    c.lastCallDaysAgo = last ? daysAgo(last.ts) : null;
+    c.lastCallOutcome = last ? last.outcome : '';
+    const parts=[c.lastOrderDays, c.lastCallDaysAgo].filter(v=>v!=null);
+    c.lastTouchDays = parts.length ? Math.min(...parts) : null;
+  });
+}
+
+// ── RENDER ───────────────────────────────────────────────────
+function switchTab(tab){
+  if(activeTab===tab) return;
+  activeTab=tab;
+  document.getElementById('tabDue').classList.toggle('on', tab==='due');
+  document.getElementById('tabFollowup').classList.toggle('on', tab==='followup');
+  document.getElementById('mainHdr').className='hdr '+(tab==='due'?'dues':'sales');
+  document.getElementById('sumCard').className='sum '+(tab==='due'?'dues':'sales');
+  render();
+}
+
 function render(){
   const q=(document.getElementById('search').value||'').trim().toLowerCase();
-  // Hide demo/test clients (name is literally "demo"); keep only clients with due > 0.
   const real=clients.filter(c=>(c.name||'').trim().toLowerCase()!=='demo');
-  let rows=real.filter(c=>c.due>0);
+  let rows;
 
-  // search — matches name, shop, location, zone, mobile, full detail (like Sales panel)
-  if(q) rows=rows.filter(c=>(c.name+' '+c.shop+' '+c.loc+' '+c.zone+' '+c.phone+' '+c.det).toLowerCase().includes(q));
+  if(activeTab==='due'){
+    rows=real.filter(c=>c.due>0);
+    if(q) rows=rows.filter(c=>(c.name+' '+c.shop+' '+c.loc+' '+c.zone+' '+c.phone+' '+c.det).toLowerCase().includes(q));
+    rows.sort((a,b)=>b.due-a.due);
+    const totalDue=real.reduce((s,c)=>s+(c.due>0?c.due:0),0);
+    document.getElementById('sumLbl').textContent='Total Outstanding Due';
+    document.getElementById('sumAmt').textContent=tk(totalDue);
+    document.getElementById('sumSub').textContent=rows.length+' client'+(rows.length===1?'':'s')+' with due';
+  } else {
+    rows=real.filter(c=>c.lastTouchDays!=null && c.lastTouchDays>=FOLLOWUP_THRESHOLD_DAYS);
+    if(q) rows=rows.filter(c=>(c.name+' '+c.shop+' '+c.loc+' '+c.zone+' '+c.phone+' '+c.det).toLowerCase().includes(q));
+    rows.sort((a,b)=>b.lastTouchDays-a.lastTouchDays);
+    document.getElementById('sumLbl').textContent='Clients To Call This Week';
+    document.getElementById('sumAmt').textContent=String(rows.length);
+    const over30=rows.filter(c=>c.lastTouchDays>=30).length;
+    document.getElementById('sumSub').textContent=over30+' silent 30+ days · '+FOLLOWUP_THRESHOLD_DAYS+'-day cadence';
+  }
 
-  // sort: highest due first
-  rows.sort((a,b)=>b.due-a.due);
-
-  // summary
-  const totalDue=real.reduce((s,c)=>s+(c.due>0?c.due:0),0);
-  const cnt=real.filter(c=>c.due>0).length;
-  document.getElementById('sumAmt').textContent=tk(totalDue);
-  document.getElementById('sumSub').textContent=cnt+' client'+(cnt===1?'':'s')+' with due';
-
-  // list
   const el=document.getElementById('list');
   if(!rows.length){
-    el.innerHTML='<div class="state"><div class="state-icon">✅</div><div class="state-txt">No outstanding dues 🎉</div></div>';
+    el.innerHTML=activeTab==='due'
+      ? '<div class="state"><div class="state-icon">✅</div><div class="state-txt">No outstanding dues 🎉</div></div>'
+      : '<div class="state"><div class="state-icon">✅</div><div class="state-txt">Everyone has been called this week 🎉</div></div>';
+    shownRows=[];
     return;
   }
   shownRows=rows;
@@ -243,23 +373,30 @@ function render(){
     const sub=[c.shop,c.zone].filter(Boolean).join(' · ');
     const loc=c.loc||c.zone||'';
     const telLine=c.phone
-      ? '<div class="row-tel-line"><a class="row-tel" href="tel:'+c.phone.replace(/[^0-9+]/g,'')+'" onclick="event.stopPropagation()">📞 '+escapeHtml(c.phone)+'</a></div>'
+      ? '<a class="row-tel" href="tel:'+c.phone.replace(/[^0-9+]/g,'')+'" onclick="event.stopPropagation()">📞 '+escapeHtml(c.phone)+'</a>'
+      : '<span></span>';
+    const logBtn = READONLY ? '' : '<button class="logcall-btn" onclick="event.stopPropagation();openLogCallByIdx('+i+')">📝 Log Call</button>';
+    const calledBadge = c.lastCallDaysAgo!=null
+      ? '<div class="called-badge'+(c.lastCallDaysAgo>=FOLLOWUP_THRESHOLD_DAYS?' stale':'')+'">✓ Called '+c.lastCallDaysAgo+'d ago'+(c.lastCallOutcome?' · '+escapeHtml(c.lastCallOutcome):'')+'</div>'
       : '';
+    const figHtml = activeTab==='due'
+      ? '<div class="row-fig"><div class="fig-primary red">'+tk(c.due)+'</div><div class="fig-sec">Sales '+tk(c.sales)+'</div></div>'
+      : '<div class="row-fig"><div class="fig-primary grn">'+c.lastTouchDays+'d</div><div class="fig-sec">since contact</div></div>';
     return '<div class="row" data-idx="'+i+'">'
       +'<div class="rank '+rankCls+'">'+rank+'</div>'
       +'<div class="row-main"><div class="row-name">'+escapeHtml(c.name||c.shop||'—')+'</div>'
         +(sub?'<div class="row-sub">'+escapeHtml(sub)+'</div>':'')
         +(loc?'<div class="row-loc">📍 '+escapeHtml(loc)+'</div>':'')
-        +telLine
+        +'<div class="row-tel-line">'+telLine+logBtn+'</div>'
+        +calledBadge
       +'</div>'
-      +'<div class="row-fig"><div class="fig-primary red">'+tk(c.due)+'</div><div class="fig-sec">Sales '+tk(c.sales)+'</div></div>'
+      +figHtml
       +'</div>';
   }).join('');
 }
 
 // ── TRANSACTIONS POPUP ───────────────────────────────────────
 function groupTxns(rows){
-  // rows in sheet (chronological) order; group by Invoice No, else by date.
   const groups=[], seen=new Map();
   rows.forEach(r=>{
     const key=r.invoiceNo?('inv_'+r.invoiceNo):(r.dateDisplay||String(r.dateTs));
@@ -274,7 +411,7 @@ function groupTxns(rows){
     if(r.paid) g.totalPaid+=r.paid;
     if(r.due!==undefined) g.due=r.due;
   });
-  return groups.reverse(); // newest first
+  return groups.reverse();
 }
 
 async function openHistory(c){
@@ -337,9 +474,78 @@ function closeHistory(){
   document.body.style.overflow='';
 }
 
+// ── LOG CALL POPUP ───────────────────────────────────────────
+function openLogCallByIdx(i){ const c=shownRows[i]; if(c) openLogCall(c); }
+
+function openLogCall(c){
+  lcClient=c; lcOutcome=''; lcNeedsDate=false;
+  document.getElementById('lcName').textContent=c.name||c.shop||'—';
+  document.getElementById('lcSub').textContent=[c.shop,c.loc,c.zone].filter(Boolean).join(', ')||'—';
+  const tel=document.getElementById('lcTel');
+  if(c.phone){ tel.style.display='inline-block'; tel.textContent='📞 '+c.phone; tel.href='tel:'+c.phone.replace(/[^0-9+]/g,''); }
+  else tel.style.display='none';
+  document.getElementById('lcHd').className='sheet-hd '+(activeTab==='due'?'':'g');
+
+  document.getElementById('outcomeGrid').innerHTML=OUTCOMES.map(o=>
+    '<button type="button" class="outcome-btn" data-k="'+escapeHtml(o.k)+'" onclick="pickOutcome(\''+o.k.replace(/'/g,"\\'")+'\')">'+escapeHtml(o.k)+'</button>'
+  ).join('');
+  document.getElementById('lcDateWrap').classList.remove('show');
+  document.getElementById('lcDate').value='';
+  document.getElementById('lcNote').value='';
+  ovOpen('logOv');
+  document.body.style.overflow='hidden';
+}
+
+function pickOutcome(k){
+  lcOutcome=k;
+  const meta=OUTCOMES.find(o=>o.k===k);
+  lcNeedsDate=!!(meta&&meta.date);
+  document.querySelectorAll('#outcomeGrid .outcome-btn').forEach(b=>b.classList.toggle('sel', b.dataset.k===k));
+  document.getElementById('lcDateWrap').classList.toggle('show', lcNeedsDate);
+}
+
+async function saveCallLog(){
+  if(!lcClient) return;
+  if(!lcOutcome){ toast('Pick what happened on the call','err'); return; }
+  if(lcNeedsDate && !document.getElementById('lcDate').value){ toast('Pick a follow-up date','err'); return; }
+  if(!CALLLOG_URL || CALLLOG_URL.indexOf('PASTE_')===0){ toast('Call Log not connected yet — ask Chayan','err'); return; }
+
+  const btn=document.getElementById('lcSaveBtn');
+  btn.disabled=true; btn.textContent='Saving…';
+
+  const note=document.getElementById('lcNote').value.trim();
+  const nextDate=document.getElementById('lcDate').value||'';
+  const submitId='cl_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+
+  const params=new URLSearchParams({
+    action:'addCallLog', client:lcClient.det, sellerId:USER_ID, sellerName:USER_NAME,
+    source:activeTab, outcome:lcOutcome, note, nextDate, submitId
+  });
+
+  try{
+    const res=await fetch(CALLLOG_URL+'?'+params.toString()).then(r=>r.json());
+    if(!res || !res.success) throw new Error((res&&res.error)||'save failed');
+    callLogs.push({ts:new Date().toISOString().slice(0,19).replace('T',' '), logId:res.logId||'', client:lcClient.det, sellerId:USER_ID, sellerName:USER_NAME, source:activeTab, outcome:lcOutcome, note, nextDate});
+    try{ sessionStorage.setItem(CACHE_KEY_CALLS, JSON.stringify(callLogs)); }catch(_){}
+    applyCallLogs();
+    toast('✅ Call logged');
+    closeLogCall();
+    render();
+  }catch(e){
+    console.error('save call log:',e);
+    toast('Could not save. Check internet and try again.','err');
+  }finally{
+    btn.disabled=false; btn.textContent='Save Call Log';
+  }
+}
+
+function closeLogCall(){
+  ovClose('logOv');
+  document.body.style.overflow='';
+  lcClient=null;
+}
+
 // ── SHELL POPUP REGISTRATION ──
-// Each popup takes ONE history entry from the shell so Back closes it instead
-// of leaving the panel. Both helpers are idempotent.
 function ovOpen(id){
   const el=document.getElementById(id);
   if(!el||el.classList.contains('open')) return;
@@ -360,8 +566,8 @@ async function forceRefresh(){
   const ind=document.getElementById('ptrIndicator');
   ind.classList.add('ptr-loading');
   document.getElementById('ptrText').textContent='Refreshing…';
-  try{ sessionStorage.removeItem(CACHE_KEY); }catch(_){}
-  try{ await loadClients(); toast('✅ Refreshed'); }
+  try{ sessionStorage.removeItem(CACHE_KEY); sessionStorage.removeItem(CACHE_KEY_CALLS); }catch(_){}
+  try{ await Promise.all([loadClients(), loadCallLog()]); toast('✅ Refreshed'); }
   catch(e){ toast('Refresh failed','err'); }
   finally{
     _ptrBusy=false;
@@ -401,22 +607,25 @@ function initPullToRefresh(){
 // ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', ()=>{
   loadClients();
+  loadCallLog();
   initPullToRefresh();
-  // Tap a client card → open its transactions (ignore taps on the phone link).
   document.getElementById('list').addEventListener('click', e=>{
-    if(e.target.closest('.row-tel')) return;
+    if(e.target.closest('.row-tel')||e.target.closest('.logcall-btn')) return;
     const row=e.target.closest('.row'); if(!row) return;
     const c=shownRows[+row.dataset.idx]; if(c) openHistory(c);
   });
-  // Tap dark backdrop to close the popup.
   document.getElementById('txnOv').addEventListener('click', e=>{
     if(e.target.id==='txnOv') closeHistory();
+  });
+  document.getElementById('logOv').addEventListener('click', e=>{
+    if(e.target.id==='logOv') closeLogCall();
   });
 });
 
 // ── SHELL BACK-BUTTON HOOK ──
-// Back closes the transactions sheet first instead of leaving the panel.
 window.__erpHandleBack = function() {
+  const lo = document.getElementById('logOv');
+  if (lo && lo.classList.contains('open')) { closeLogCall(); return true; }
   const ov = document.getElementById('txnOv');
   if (ov && ov.classList.contains('open')) { closeHistory(); return true; }
   return false;
