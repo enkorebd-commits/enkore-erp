@@ -1,0 +1,13 @@
+# Everything Claude/Chayan keep local-only — never upload this folder to GitHub.
+Not For GitHub/
+
+# OS / editor noise
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+*~
+
+# Local backups
+*.bak
+*.bak-*
