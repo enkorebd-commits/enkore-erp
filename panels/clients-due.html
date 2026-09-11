@@ -61,6 +61,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .icon-btn.tel-ic{background:var(--bluebg);color:var(--blue);font-size:15px}
 .icon-btn.wa-ic{background:#25D366}
 .icon-btn.wa-ic svg{width:16px;height:16px}
+.icon-btn.edit-ic{background:#eef1f5;color:#5b6472;font-size:13px}
 .tap-hint{font-size:9px;color:#adb5bd;margin-top:6px;font-weight:600;letter-spacing:.3px}
 .called-badge{font-size:10px;color:var(--g);font-weight:800;margin-top:4px}
 .called-badge.stale{color:var(--muted)}
@@ -81,6 +82,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .sh-name{font-size:15px;font-weight:800}
 .sh-sub{font-size:11px;opacity:.85;margin-top:2px}
 .sh-tel{display:inline-block;margin-top:6px;font-size:12px;font-weight:800;color:#fff;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:20px;text-decoration:none}
+.sheet-hd .tel-icons{margin-top:8px;min-height:1px}
 /* highlighted summary band, visually distinct from the transactions below */
 .sheet-chips{display:flex;gap:8px;padding:14px 16px;background:var(--redbg);border-bottom:3px solid #ffd8d0;box-shadow:0 4px 10px rgba(192,57,43,.08)}
 .chip{flex:1;text-align:center;background:#fff;border-radius:10px;padding:9px 4px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
@@ -127,7 +129,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .rd-blue{background:linear-gradient(135deg,#1971c2,#3b8fe0)}
 .rd-green{background:linear-gradient(135deg,#1b6b3a,#2d8a52)}
 .lc-or{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin:2px 0 10px}
-.lc-date,.lc-note{width:100%;padding:11px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:10px;outline:none;background:#fff;color:var(--text);font-family:inherit}
+.lc-date,.lc-note,.ep-input{width:100%;padding:11px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:10px;outline:none;background:#fff;color:var(--text);font-family:inherit}
 .lc-note{resize:vertical;min-height:64px}
 .lc-date-wrap{display:none}
 .lc-date-wrap.show{display:block}
@@ -186,7 +188,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div>
         <div class="sh-name" id="shName">—</div>
         <div class="sh-sub" id="shSub"></div>
-        <a class="sh-tel" id="shTel" style="display:none"></a>
+        <div class="tel-icons" id="shTelIcons"></div>
       </div>
       <button class="sh-x" onclick="closeHistory()">×</button>
     </div>
@@ -207,7 +209,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div>
         <div class="sh-name" id="lcName">—</div>
         <div class="sh-sub" id="lcSub"></div>
-        <a class="sh-tel" id="lcTel" style="display:none"></a>
+        <div class="tel-icons" id="lcTelIcons"></div>
       </div>
       <button class="sh-x" onclick="closeLogCall()">×</button>
     </div>
@@ -230,11 +232,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
 </div>
 
+<div class="ov" id="epOv">
+  <div class="sheet">
+    <div class="sheet-hd g">
+      <div>
+        <div class="sh-name">✏️ Edit Mobile Number</div>
+        <div class="sh-sub" id="epSub"></div>
+      </div>
+      <button class="sh-x" onclick="closeEditPhone()">×</button>
+    </div>
+    <div class="lc-body">
+      <div class="lc-lbl">Mobile Number</div>
+      <input type="tel" class="ep-input" id="epPhone" placeholder="01XXXXXXXXX">
+      <button class="lc-save" id="epSaveBtn" onclick="saveEditPhone()">Update Number</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
 const SHEET_ID    = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
 const CALLLOG_URL = 'https://script.google.com/macros/s/AKfycbyxQ2hJUMj_Tio094BaSqKMRAw4SzpD2ZMMlyyaB05qj7ZvPylXuyI7pDKzXXKvarFgRg/exec';
+// Sales Panel Apps Script — same one panels/sales-entry.html uses. Only needed here
+// for updateClientPhone (the edit-number button); reads still come from gviz below.
+const AS_URL       = 'https://script.google.com/macros/s/AKfycbzNbCaVCEC0X1NewgiyqYnkaTD-BYl5_SaejXj5bBDo6UvtJKq7AC_zF3aMMv067E16ZQ/exec';
 const CACHE_KEY       = 'enkore_clientsdue_data';
 const CACHE_KEY_CALLS = 'enkore_clientsdue_calllog';
 let FOLLOWUP_THRESHOLD_DAYS = 7; // fallback only — overwritten by Remind!B1 via getCallLog()
@@ -246,6 +268,7 @@ const READONLY  = qs.get('readonly') === '1';
 
 let clients = [], callLogs = [], shownRows = [], activeTab = 'followup', _ptrBusy = false, showIgnored = false;
 let lcClient = null, lcOutcome = '', lcNeedsDate = false;
+let hClient = null; // client currently shown in the Transaction History popup
 
 const DISMISS_OUTCOME   = 'Not Active — Stop Reminding';
 const REACTIVATE_OUTCOME = 'Reactivate — Resume Reminders';
@@ -265,6 +288,22 @@ function toWaNumber(phone){
   if(d.startsWith('880')) return d;
   if(d.startsWith('0')) return '880'+d.slice(1);
   return d;
+}
+
+const WA_SVG = '<svg viewBox="0 0 24 24" fill="white"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.85.5 3.58 1.36 5.08L2 22l5.25-1.38a9.87 9.87 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.8 14.07c-.24.68-1.4 1.32-1.93 1.4-.5.08-1.13.11-1.82-.11-.42-.13-.96-.31-1.65-.6-2.9-1.25-4.79-4.17-4.93-4.36-.14-.19-1.18-1.57-1.18-3 0-1.42.75-2.12 1.02-2.41.27-.29.58-.36.78-.36.19 0 .39 0 .56.01.18.01.42-.07.66.5.24.58.83 2 .9 2.14.07.15.12.32.02.51-.09.19-.14.31-.28.48-.14.17-.29.37-.42.5-.14.14-.28.29-.12.57.16.28.7 1.16 1.51 1.88 1.04.93 1.92 1.22 2.19 1.36.28.14.44.12.6-.07.16-.19.68-.79.87-1.06.18-.27.36-.22.6-.13.24.09 1.53.72 1.79.85.27.14.44.2.51.32.06.11.06.65-.18 1.32z"/></svg>';
+
+// Shared call+WhatsApp(+optional edit) icon row. Used in the row list (call+WhatsApp
+// only, no edit there) and inside the Log Call / Transaction History popups (call+
+// WhatsApp+edit, editOnclick is a JS statement string run on tap, e.g. "openEditPhoneFromLog()").
+function telIconsHtml(c, editOnclick){
+  const tel = c.phone
+    ? '<a class="icon-btn tel-ic" href="tel:'+c.phone.replace(/[^0-9+]/g,'')+'" onclick="event.stopPropagation()" aria-label="Call">📞</a>'
+      +'<a class="icon-btn wa-ic" href="https://wa.me/'+toWaNumber(c.phone)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" aria-label="WhatsApp">'+WA_SVG+'</a>'
+    : '';
+  const edit = editOnclick
+    ? '<button type="button" class="icon-btn edit-ic" onclick="event.stopPropagation();'+editOnclick+'" aria-label="Edit number">✏️</button>'
+    : '';
+  return tel + edit;
 }
 function parseGviz(txt){ try{ const m=txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/); return m?JSON.parse(m[1]):null; }catch(_){ return null; } }
 function ordinal(n){ const s=['th','st','nd','rd'],v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
@@ -425,10 +464,7 @@ function render(){
     const sub=[c.shop,c.zone].filter(Boolean).join(' · ');
     const loc=c.loc||c.zone||'';
     const telLine=c.phone
-      ? '<div class="tel-icons">'
-        +'<a class="icon-btn tel-ic" href="tel:'+c.phone.replace(/[^0-9+]/g,'')+'" onclick="event.stopPropagation()" aria-label="Call">📞</a>'
-        +'<a class="icon-btn wa-ic" href="https://wa.me/'+toWaNumber(c.phone)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="white"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.85.5 3.58 1.36 5.08L2 22l5.25-1.38a9.87 9.87 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.8 14.07c-.24.68-1.4 1.32-1.93 1.4-.5.08-1.13.11-1.82-.11-.42-.13-.96-.31-1.65-.6-2.9-1.25-4.79-4.17-4.93-4.36-.14-.19-1.18-1.57-1.18-3 0-1.42.75-2.12 1.02-2.41.27-.29.58-.36.78-.36.19 0 .39 0 .56.01.18.01.42-.07.66.5.24.58.83 2 .9 2.14.07.15.12.32.02.51-.09.19-.14.31-.28.48-.14.17-.29.37-.42.5-.14.14-.28.29-.12.57.16.28.7 1.16 1.51 1.88 1.04.93 1.92 1.22 2.19 1.36.28.14.44.12.6-.07.16-.19.68-.79.87-1.06.18-.27.36-.22.6-.13.24.09 1.53.72 1.79.85.27.14.44.2.51.32.06.11.06.65-.18 1.32z"/></svg></a>'
-        +'</div>'
+      ? '<div class="tel-icons">'+telIconsHtml(c, null)+'</div>'
       : '<span></span>';
     const logBtn = READONLY ? '' : '<button class="logcall-btn" onclick="event.stopPropagation();openLogCallByIdx('+i+')">📝 Log Call</button>';
     const calledBadge = c.lastCallDaysAgo!=null
@@ -472,11 +508,10 @@ function groupTxns(rows){
 }
 
 async function openHistory(c){
+  hClient=c;
   document.getElementById('shName').textContent=c.name||c.shop||'—';
   document.getElementById('shSub').textContent=[c.shop,c.loc,c.zone].filter(Boolean).join(', ')||'—';
-  const tel=document.getElementById('shTel');
-  if(c.phone){ tel.style.display='inline-block'; tel.textContent='📞 '+c.phone; tel.href='tel:'+c.phone.replace(/[^0-9+]/g,''); }
-  else tel.style.display='none';
+  document.getElementById('shTelIcons').innerHTML=telIconsHtml(c, 'openEditPhoneFromHistory()');
   document.getElementById('shSales').textContent=tk(c.sales);
   document.getElementById('shPaid').textContent =tk(c.paid);
   document.getElementById('shDue').textContent  =tk(c.due);
@@ -529,6 +564,7 @@ function renderTxns(groups){
 function closeHistory(){
   ovClose('txnOv');
   document.body.style.overflow='';
+  hClient = null;
 }
 
 // ── LOG CALL POPUP ───────────────────────────────────────────
@@ -538,9 +574,7 @@ function openLogCall(c){
   lcClient=c; lcOutcome=''; lcNeedsDate=false;
   document.getElementById('lcName').textContent=c.name||c.shop||'—';
   document.getElementById('lcSub').textContent=[c.shop,c.loc,c.zone].filter(Boolean).join(', ')||'—';
-  const tel=document.getElementById('lcTel');
-  if(c.phone){ tel.style.display='inline-block'; tel.textContent='📞 '+c.phone; tel.href='tel:'+c.phone.replace(/[^0-9+]/g,''); }
-  else tel.style.display='none';
+  document.getElementById('lcTelIcons').innerHTML=telIconsHtml(c, 'openEditPhoneFromLog()');
   document.getElementById('lcHd').className='sheet-hd '+(activeTab==='due'?'':'g');
 
   document.getElementById('outcomeGrid').innerHTML=OUTCOMES.map(o=>
@@ -645,6 +679,86 @@ function closeLogCall(){
   ovClose('logOv');
   document.body.style.overflow='';
   lcClient=null;
+}
+
+// ── EDIT CLIENT PHONE ───────────────────────────────────────
+// Scope: phone number only, same rule and same backend action as the
+// Sales panel's edit button (Not For GitHub/Sales Panel Apps Script/Code.gs,
+// updateClientPhone). Name/Shop/Location/Zone stay locked, they make up
+// "det", the join key used across Sale Entry, Sales Notes and Call Log.
+let epClient = null, _epSubmitting = false;
+
+// Reached from inside the Log Call and Transaction History popups (the icon row
+// there now matches the row list: call, WhatsApp, edit), not from the row list itself.
+function openEditPhoneFromLog(){ if(lcClient) openEditPhone(lcClient); }
+function openEditPhoneFromHistory(){ if(hClient) openEditPhone(hClient); }
+
+function openEditPhone(c){
+  epClient = c;
+  document.getElementById('epSub').textContent = [c.name, c.shop].filter(Boolean).join(' · ') || '—';
+  document.getElementById('epPhone').value = c.phone || '';
+  _epSubmitting = false;
+  ovOpen('epOv');
+  document.body.style.overflow='hidden';
+}
+
+function closeEditPhone(){
+  ovClose('epOv');
+  epClient = null;
+  // epOv can be nested on top of the Log Call or Transaction History popup
+  // (opened via their own edit icon), don't release the scroll lock while
+  // that parent popup is still open underneath.
+  const logOpen = document.getElementById('logOv').classList.contains('open');
+  const histOpen = document.getElementById('txnOv').classList.contains('open');
+  if(!logOpen && !histOpen) document.body.style.overflow='';
+}
+
+// Re-paints the call/WhatsApp/edit icon row inside whichever popup(s) the
+// just-edited client is currently shown in, so the tel:/wa.me links don't
+// keep pointing at the old number after a save.
+function refreshOpenPopupIcons(det){
+  if(lcClient && lcClient.det===det) document.getElementById('lcTelIcons').innerHTML=telIconsHtml(lcClient,'openEditPhoneFromLog()');
+  if(hClient && hClient.det===det) document.getElementById('shTelIcons').innerHTML=telIconsHtml(hClient,'openEditPhoneFromHistory()');
+}
+
+async function saveEditPhone(){
+  if(_epSubmitting) return;
+  if(!epClient) return;
+  const phone = document.getElementById('epPhone').value.trim();
+  if(!phone){ toast('Enter mobile number','err'); return; }
+  if(!AS_URL || AS_URL.indexOf('PASTE_')===0){ toast('Sales panel not connected, ask Chayan','err'); return; }
+  _epSubmitting = true;
+
+  const det = epClient.det;
+  const oldPhone = epClient.phone || '';
+  const idx = clients.findIndex(c=>c.det===det);
+
+  // ── INSTANT UX: update locally and close right now ──
+  epClient.phone = phone;
+  if(idx>=0) clients[idx].phone = phone;
+  try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify(clients)); }catch(_){}
+  toast('✅ Number updated!','ok');
+  closeEditPhone();
+  refreshOpenPopupIcons(det);
+  render();
+  _epSubmitting = false;
+
+  // ── BACKGROUND: save to sheet ──
+  try{
+    const submitId='up_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+    const qs=new URLSearchParams({action:'updateClientPhone', det, phone, submitId}).toString();
+    const js=await fetch(`${AS_URL}?${qs}`).then(r=>r.json());
+    if(!js || !js.success){
+      if(idx>=0) clients[idx].phone = oldPhone;
+      try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify(clients)); }catch(_){}
+      refreshOpenPopupIcons(det);
+      render();
+      toast('❌ Could not update, check connection','err');
+    }
+  }catch(e){
+    console.error('Background phone update:', e);
+    toast('⚠️ Sheet save failed, retry by reopening the app','err');
+  }
 }
 
 // ── REDIRECT ACTIONS (Will Reorder / Payment Collected) ─────────
@@ -757,6 +871,8 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
 // ── SHELL BACK-BUTTON HOOK ──
 window.__erpHandleBack = function() {
+  const ep = document.getElementById('epOv');
+  if (ep && ep.classList.contains('open')) { closeEditPhone(); return true; }
   const lo = document.getElementById('logOv');
   if (lo && lo.classList.contains('open')) { closeLogCall(); return true; }
   const ov = document.getElementById('txnOv');
