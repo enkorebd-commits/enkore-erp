@@ -231,7 +231,7 @@ const SHEET_ID    = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
 const CALLLOG_URL = 'https://script.google.com/macros/s/AKfycbyxQ2hJUMj_Tio094BaSqKMRAw4SzpD2ZMMlyyaB05qj7ZvPylXuyI7pDKzXXKvarFgRg/exec';
 const CACHE_KEY       = 'enkore_clientsdue_data';
 const CACHE_KEY_CALLS = 'enkore_clientsdue_calllog';
-const FOLLOWUP_THRESHOLD_DAYS = 7; // call every client at least this often
+let FOLLOWUP_THRESHOLD_DAYS = 7; // fallback only — overwritten by Remind!B1 via getCallLog()
 
 const qs = new URLSearchParams(location.search);
 const USER_ID   = qs.get('userId') || '';
@@ -308,13 +308,19 @@ async function loadCallLog(){
   if(!CALLLOG_URL || CALLLOG_URL.indexOf('PASTE_')===0) return; // not deployed yet
   try{
     const c=sessionStorage.getItem(CACHE_KEY_CALLS);
-    if(c){ callLogs=JSON.parse(c)||[]; applyCallLogs(); render(); }
+    if(c){
+      const cached=JSON.parse(c);
+      callLogs = Array.isArray(cached) ? cached : (cached.logs||[]); // back-compat with the old bare-array cache shape
+      if(cached && !Array.isArray(cached) && cached.remindDayGap>0) FOLLOWUP_THRESHOLD_DAYS=cached.remindDayGap;
+      applyCallLogs(); render();
+    }
   }catch(_){}
   try{
     const res=await fetch(`${CALLLOG_URL}?action=getCallLog&t=${Date.now()}`).then(r=>r.json());
     if(res && res.success){
       callLogs=res.logs||[];
-      try{ sessionStorage.setItem(CACHE_KEY_CALLS, JSON.stringify(callLogs)); }catch(_){}
+      if(res.remindDayGap>0) FOLLOWUP_THRESHOLD_DAYS=res.remindDayGap; // live from Remind!B1 — old deploys just omit this field, fallback stays
+      try{ sessionStorage.setItem(CACHE_KEY_CALLS, JSON.stringify({logs:callLogs, remindDayGap:FOLLOWUP_THRESHOLD_DAYS})); }catch(_){}
       applyCallLogs();
       render();
     }
@@ -538,39 +544,84 @@ function pickOutcome(k){
   document.getElementById('lcDateWrap').classList.toggle('show', lcNeedsDate);
 }
 
-async function saveCallLog(){
+function saveCallLog(){
   if(!lcClient) return;
   if(!lcOutcome){ toast('Pick what happened on the call','err'); return; }
   if(lcNeedsDate && !document.getElementById('lcDate').value){ toast('Pick a follow-up date','err'); return; }
   if(!CALLLOG_URL || CALLLOG_URL.indexOf('PASTE_')===0){ toast('Call Log not connected yet, ask Chayan','err'); return; }
 
-  const btn=document.getElementById('lcSaveBtn');
-  btn.disabled=true; btn.textContent='Saving…';
-
   const note=document.getElementById('lcNote').value.trim();
   const nextDate=document.getElementById('lcDate').value||'';
   const submitId='cl_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+  const det=lcClient.det, outcome=lcOutcome, source=activeTab;
 
   const params=new URLSearchParams({
-    action:'addCallLog', client:lcClient.det, sellerId:USER_ID, sellerName:USER_NAME,
-    source:activeTab, outcome:lcOutcome, note, nextDate, submitId
+    action:'addCallLog', client:det, sellerId:USER_ID, sellerName:USER_NAME,
+    source, outcome, note, nextDate, submitId
   });
 
+  // Optimistic: the screen updates the instant you tap Save. The sheet
+  // write happens in the background (syncCallLog) and, if it fails, gets
+  // queued and retried automatically — same pattern as the offline queues
+  // already used on the Sales panel.
+  callLogs.push({ts:new Date().toISOString().slice(0,19).replace('T',' '), logId:'pending_'+submitId, client:det, sellerId:USER_ID, sellerName:USER_NAME, source, outcome, note, nextDate});
+  try{ sessionStorage.setItem(CACHE_KEY_CALLS, JSON.stringify({logs:callLogs, remindDayGap:FOLLOWUP_THRESHOLD_DAYS})); }catch(_){}
+  applyCallLogs();
+  toast('✅ Call logged');
+  closeLogCall();
+  render();
+
+  syncCallLog(params.toString());
+}
+
+async function syncCallLog(qs){
   try{
-    const res=await fetch(CALLLOG_URL+'?'+params.toString()).then(r=>r.json());
+    const res=await fetch(CALLLOG_URL+'?'+qs, {keepalive:true}).then(r=>r.json());
     if(!res || !res.success) throw new Error((res&&res.error)||'save failed');
-    callLogs.push({ts:new Date().toISOString().slice(0,19).replace('T',' '), logId:res.logId||'', client:lcClient.det, sellerId:USER_ID, sellerName:USER_NAME, source:activeTab, outcome:lcOutcome, note, nextDate});
-    try{ sessionStorage.setItem(CACHE_KEY_CALLS, JSON.stringify(callLogs)); }catch(_){}
-    applyCallLogs();
-    toast('✅ Call logged');
-    closeLogCall();
-    render();
   }catch(e){
-    console.error('save call log:',e);
-    toast('Could not save. Check internet and try again.','err');
-  }finally{
-    btn.disabled=false; btn.textContent='Save Call Log';
+    console.error('call log sync failed, queued for retry:', e);
+    queueCallLog(qs);
   }
+}
+
+// ── CALL LOG RETRY QUEUE (offline / weak signal) ─────────────────
+// Mirrors the sale-entry / note-status retry queues in sales-entry.html:
+// a failed write is never just lost, it's kept in localStorage and retried
+// on the next load or the next 'online' event.
+const CALLLOG_QUEUE_KEY = 'enkore_pending_calllog';
+
+function queueCallLog(qs){
+  try{
+    const q=JSON.parse(localStorage.getItem(CALLLOG_QUEUE_KEY)||'[]');
+    if(!q.some(e=>e.qs===qs)){
+      q.push({qs, savedAt:Date.now()});
+      localStorage.setItem(CALLLOG_QUEUE_KEY, JSON.stringify(q));
+    }
+  }catch(_){}
+}
+
+function dequeueCallLog(qs){
+  try{
+    const q=JSON.parse(localStorage.getItem(CALLLOG_QUEUE_KEY)||'[]');
+    localStorage.setItem(CALLLOG_QUEUE_KEY, JSON.stringify(q.filter(e=>e.qs!==qs)));
+  }catch(_){}
+}
+
+async function flushCallLogQueue(){
+  if(!CALLLOG_URL || CALLLOG_URL.indexOf('PASTE_')===0) return;
+  try{
+    const q=JSON.parse(localStorage.getItem(CALLLOG_QUEUE_KEY)||'[]');
+    if(!q.length) return;
+    let synced=0;
+    for(const entry of [...q]){
+      try{
+        const js=await fetch(`${CALLLOG_URL}?${entry.qs}`).then(r=>r.json());
+        if(js && js.success){ dequeueCallLog(entry.qs); synced++; }
+        else break; // server error — stop, don't retry yet
+      }catch(_){ break; } // still offline — stop
+    }
+    if(synced>0) toast(`✅ ${synced} call log entry/entries synced`,'ok');
+  }catch(_){}
 }
 
 function closeLogCall(){
@@ -671,6 +722,8 @@ function initPullToRefresh(){
 window.addEventListener('DOMContentLoaded', ()=>{
   loadClients();
   loadCallLog();
+  flushCallLogQueue();
+  window.addEventListener('online', ()=>{ flushCallLogQueue(); });
   initPullToRefresh();
   document.getElementById('list').addEventListener('click', e=>{
     if(e.target.closest('.row-tel')||e.target.closest('.logcall-btn')) return;
