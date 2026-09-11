@@ -50,7 +50,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* CLIENT STATUS */
 .cs-status{display:none;background:linear-gradient(135deg,#1b6b3a,#2d8a52);color:#fff;border-radius:var(--r);padding:14px;margin-bottom:10px}
 .cs-status.show{display:block}
+.cs-status-name-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .cs-status-name{font-size:15px;font-weight:800;margin-bottom:2px}
+.cs-edit-btn{background:rgba(255,255,255,.18);border:none;color:#fff;width:26px;height:26px;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;padding:0}
+.cs-edit-btn:active{background:rgba(255,255,255,.35)}
 .cs-status-sub{font-size:12px;opacity:.8;margin-bottom:12px}
 /* Tap-to-call phone inside the client card. Horizontal padding only — the pill
    never changes the line height, so the card keeps its exact original size. */
@@ -387,7 +390,10 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 
   <!-- Client Status -->
   <div class="cs-status" id="csStatus">
-    <div class="cs-status-name" id="sName"></div>
+    <div class="cs-status-name-row">
+      <div class="cs-status-name" id="sName"></div>
+      <button class="cs-edit-btn" id="csEditBtn" onclick="openEditPhone()" title="Edit mobile number">✏️</button>
+    </div>
     <div class="cs-status-sub" id="sSub"></div>
     <div class="stats">
       <div class="stat"><div class="stat-v" id="sDue">৳0</div><div class="stat-l">Running Due</div></div>
@@ -561,6 +567,27 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
         </div>
       </div>
       <button class="nc-save-btn" id="ncSaveBtn" onclick="submitNewClient()">💾 Save New Client</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Phone Drawer -->
+<div class="overlay" id="epOverlay">
+  <div class="drawer nc-drawer">
+    <div class="handle"></div>
+    <div class="d-hdr">
+      <div class="d-hdr-left">
+        <div class="d-title">✏️ Edit Mobile Number</div>
+        <div class="d-sub" id="epSub"></div>
+      </div>
+      <button class="d-close" onclick="closeEditPhone()">×</button>
+    </div>
+    <div class="nc-d-body">
+      <div class="nc-fg">
+        <div class="nc-lbl">Mobile Number <span class="req">*</span></div>
+        <input type="tel" class="nc-fi" id="epPhone" placeholder="01XXXXXXXXX">
+      </div>
+      <button class="nc-save-btn" id="epSaveBtn" onclick="saveEditPhone()">💾 Update Number</button>
     </div>
   </div>
 </div>
@@ -1284,6 +1311,78 @@ function closeNewClient() {
   ov.style.height = ''; ov.style.top = '';
   const dr = ov.querySelector('.drawer'); if (dr) dr.style.maxHeight = '';
   window._unlockBodyScroll();
+}
+
+// ── EDIT CLIENT PHONE ───────────────────────────────────────
+// Scope: phone number only. Name/Shop/Location/Zone stay locked because
+// they make up "det" (the join key used across Sale Entry, Sales Notes
+// and Call Log) — editing them would orphan that client's history.
+let _epSubmitting = false;
+
+function openEditPhone() {
+  if (!selClient) return;
+  document.getElementById('epSub').textContent = [selClient.name, selClient.shop].filter(Boolean).join(' · ');
+  document.getElementById('epPhone').value = selClient.phone || '';
+  _epSubmitting = false;
+  closeDd();
+  window._lockBodyScroll();
+  ovOpen('epOverlay');
+}
+
+function closeEditPhone() {
+  const ov = document.getElementById('epOverlay');
+  ovClose('epOverlay');
+  ov.style.height = ''; ov.style.top = '';
+  const dr = ov.querySelector('.drawer'); if (dr) dr.style.maxHeight = '';
+  window._unlockBodyScroll();
+}
+
+async function saveEditPhone() {
+  if (_epSubmitting) return;
+  if (!selClient) return;
+  const phone = document.getElementById('epPhone').value.trim();
+  if (!phone) { toast('Enter mobile number', 'err'); return; }
+  _epSubmitting = true;
+
+  const det      = selClient.det;
+  const oldPhone = selClient.phone || '';
+  const idx      = clients.findIndex(c => c.det === det);
+
+  // ── INSTANT UX: update locally and close right now ──
+  selClient.phone = phone;
+  if (idx >= 0) clients[idx].phone = phone;
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}');
+    cached.clientList = clients;
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+  } catch(_) {}
+  showStatus(selClient);
+  closeEditPhone();
+  toast('✅ Number updated!', 'ok');
+  _epSubmitting = false;
+
+  // ── BACKGROUND: save to sheet ──
+  try {
+    const submitId = 'up_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    const qs = Object.entries({ action: 'updateClientPhone', det, phone, submitId })
+      .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+    const js = await fetch(`${AS_URL}?${qs}`).then(r => r.json());
+
+    if (!js.success) {
+      // Revert — but only if the same client is still on screen
+      if (idx >= 0) clients[idx].phone = oldPhone;
+      try {
+        const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}');
+        cached.clientList = clients;
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+      } catch(_) {}
+      if (selClient && selClient.det === det) { selClient.phone = oldPhone; showStatus(selClient); }
+      toast('❌ Could not update — check connection', 'err');
+    }
+  } catch(e) {
+    console.error('Background phone update:', e);
+    toast('⚠️ Sheet save failed — retry by reopening the app', 'err');
+  }
 }
 
 let _ncSubmitting = false; // guard against double-tap
