@@ -9,6 +9,7 @@
   --g:#1b6b3a;--g2:#2d8a52;--gbg:#edf7f1;--red:#e03131;--redbg:#fff5f5;
   --orange:#e67e22;--blue:#1971c2;--bluebg:#e7f1fb;--text:#1a1a2e;--muted:#868e96;
   --border:#dee2e6;--bg:#f3f4f6;--card:#fff;--r:12px;--sh:0 2px 8px rgba(0,0,0,.08);
+  --ink:#12181f;--ib:#1e9dd6;--ib-dk:#0f6d9c;--ig:#f4f7fa;--ig2:#e8eef3;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior:none}
@@ -162,6 +163,113 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:400;opacity:0;transition:.25s;max-width:90%;text-align:center}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 #toast.err{background:#c0392b}
+
+/* ── TRANSACTION HISTORY — same detailed layout as the Sales panel's
+   Previous Transactions view (product lines with rate, per-line discount,
+   and a View Invoice button per invoice), so a client's history looks
+   identical no matter which panel it's opened from. Chip class names are
+   prefixed txn- to avoid clashing with this file's own .chip (used by the
+   summary row above). */
+.h-item{background:#f8f9fa;border-radius:10px;padding:11px;margin-bottom:8px;border-left:3px solid var(--g)}
+.h-item.pay{border-left-color:var(--blue)}
+.h-top{display:flex;justify-content:space-between;margin-bottom:8px}
+.h-date{font-size:11px;color:var(--muted);font-weight:700}
+.h-seller{font-size:10px;color:var(--muted)}
+.h-prod-line{font-size:12px;color:var(--text);display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #e9ecef}
+.h-prod-line:last-child{border-bottom:none}
+.h-prod-name{flex:1;padding-right:8px}
+.h-prod-amt{font-weight:700;white-space:nowrap;color:var(--g)}
+.h-prod-list{margin-bottom:8px}
+.h-payment-line{font-size:12px;color:var(--blue);font-weight:700;padding:4px 0;margin-bottom:4px}
+.h-amts{display:flex;gap:6px}
+.txn-chip{flex:1;text-align:center;padding:5px 3px;border-radius:6px}
+.txn-chip-lbl{font-size:9px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px}
+.txn-chip-val{font-weight:800;font-size:12px}
+.txn-chip-b{background:#e7f5ff;color:var(--blue)}
+.txn-chip-p{background:#ebfbee;color:var(--g)}
+.txn-chip-d{background:#fff5f5;color:var(--red)}
+.h-note{font-size:11px;color:var(--muted);margin-top:7px;padding-top:6px;border-top:1px solid #eee}
+.h-inv-btn{margin-top:8px;width:100%;padding:9px;background:var(--g);border:1.5px solid var(--g);color:#fff;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.2px;display:flex;align-items:center;justify-content:center;gap:6px}
+.h-inv-btn svg{width:14px;height:14px;flex-shrink:0}
+.h-inv-btn:active{background:var(--g2)}
+
+/* Send-all-invoices button, top of the Transaction History popup */
+.send-all-inv-btn{width:calc(100% - 32px);padding:10px;margin:12px 16px 2px;background:#25D366;border:none;color:#fff;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+.send-all-inv-btn svg{width:16px;height:16px;flex-shrink:0}
+.send-all-inv-btn:active{background:#1fb257}
+.send-all-inv-btn:disabled{opacity:.6;cursor:default}
+
+/* ── INVOICE OVERLAY — ported from the Sales panel, toolbar fixed at top,
+   only .inv-scroll pans/zooms. Sits above every other popup (z-index 900,
+   the highest .ov-family popup here is 502) since it can be reached from
+   Client Calls' own Transaction History popup. */
+.inv-overlay{display:none;position:fixed;inset:0;background:#525659;z-index:900;flex-direction:column}
+.inv-overlay.open{display:flex}
+.inv-toolbar{flex-shrink:0;z-index:2;background:#323639;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.inv-toolbar-title{color:#fff;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inv-toolbar-btns{display:flex;gap:8px;flex-shrink:0}
+.inv-print-btn{background:var(--g);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
+.inv-share-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
+.inv-close-btn{background:#4a4e51;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
+.inv-toolbar-btns button:disabled{opacity:.55;cursor:not-allowed}
+
+.inv-scroll{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;background:#525659}
+
+.inv-page{background:#fff;width:210mm;min-height:297mm;box-sizing:border-box;margin:16px auto;padding:0 0 14mm;font-family:Arial,Helvetica,sans-serif;color:var(--ink);font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);position:relative;overflow:hidden}
+.inv-topbar{height:7px;background:linear-gradient(90deg,var(--ib),var(--ib-dk));margin-bottom:14mm}
+.inv-body{padding:0 14mm}
+.inv-hr{border:none;border-top:2px solid var(--ink);margin:10px 0 14px}
+.inv-hr-thin{border:none;border-top:1px solid #ccc;margin:14px 0}
+.inv-header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.inv-logo{display:block;height:22px;width:auto;flex-shrink:0;border-radius:4px}
+.inv-title{font-size:24px;font-weight:900;letter-spacing:1.5px;margin-bottom:4px;color:var(--ink)}
+.inv-title-accent{width:44px;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--ib),var(--ib-dk));margin-bottom:9px}
+.inv-co-name{font-size:17px;font-weight:800}
+.inv-co-line{font-size:11px;color:#555;line-height:1.5}
+.inv-co-contact{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#555;margin-top:2px}
+.inv-co-contact span{display:inline-flex;align-items:center;gap:4px}
+.inv-co-contact svg{flex-shrink:0}
+.inv-2col{display:flex;justify-content:space-between;gap:16px;margin-top:16px}
+.inv-info-card{background:var(--ig);border-left:3px solid var(--ib);border-radius:0 8px 8px 0;padding:10px 14px;flex:1}
+.inv-block-lbl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;color:var(--ib-dk)}
+.inv-row{font-size:12px;line-height:1.7}
+.inv-row b{display:inline-block;min-width:70px;color:#333}
+.inv-table{width:100%;border-collapse:collapse;margin-top:18px;font-size:12px;border-radius:8px;overflow:hidden}
+.inv-table th{background:var(--ib);color:#fff;padding:var(--tpad,8px) 10px;text-align:left;font-size:var(--tsize,11px);text-transform:uppercase;letter-spacing:.3px}
+.inv-table td{padding:var(--tpad,8px) 10px;border-bottom:1px solid #e9ecef;font-size:var(--tsize,12px)}
+.inv-table tbody tr:nth-child(even){background:var(--ig)}
+.inv-table tr{page-break-inside:avoid}
+.inv-table th:last-child,.inv-table td:last-child{text-align:right}
+.inv-table th:nth-child(3),.inv-table td:nth-child(3),
+.inv-table th:nth-child(4),.inv-table td:nth-child(4),
+.inv-table th:nth-child(5),.inv-table td:nth-child(5){text-align:right}
+.inv-amounts{width:240px;margin-left:auto;background:var(--ig);border-radius:8px;padding:12px 14px;border:1px solid var(--ig2)}
+.inv-amt-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0}
+.inv-amt-row.tot{font-weight:900;font-size:14px;color:#fff;background:var(--ib);border-radius:6px;padding:7px 10px;margin:6px -14px}
+.inv-amt-row.due{color:#e03131;font-weight:800}
+.inv-words{font-size:11px;font-style:italic;color:#333;margin-top:4px}
+.inv-sign{margin-top:36px;display:flex;justify-content:flex-end;page-break-inside:avoid}
+.inv-sign-box{width:220px;text-align:center}
+.inv-sign-for{text-align:right;font-size:12px;color:#333;margin-bottom:2px}
+.inv-signature-img{display:block;margin:2px auto 0;height:68px;width:auto;max-width:210px;object-fit:contain}
+.inv-sign-line{border-top:1.5px solid var(--ink);margin-top:2px;padding-top:5px;font-size:11px;color:#444}
+.inv-footer-tag{text-align:center;margin-top:30px;padding-top:10px;border-top:1px solid var(--ig2)}
+.inv-footer-slogan{font-size:10.5px;color:var(--ib-dk);font-weight:700;letter-spacing:.3px}
+.inv-footer-web{font-size:10px;color:#8a97a3;font-weight:600;margin-top:2px}
+
+@media print{
+  body *{visibility:hidden}
+  .inv-overlay,.inv-overlay *{visibility:visible}
+  .inv-overlay{position:absolute;inset:0;background:#fff;display:block}
+  .inv-toolbar{display:none}
+  .inv-scroll{overflow:visible;height:auto}
+  .inv-page{box-shadow:none;margin:0;width:210mm;min-height:297mm}
+}
+
+/* Off-screen page used only to render each invoice for the "Send All
+   Invoices" batch PDF build — never shown to the user, the visible
+   invOverlay/#invPage is reserved for the one-at-a-time View Invoice flow. */
+#invBatchPage{position:fixed;left:-9999px;top:0}
 </style>
 </head>
 <body>
@@ -206,6 +314,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="chip"><div class="chip-l">Paid</div><div class="chip-v" id="shPaid">৳ 0</div></div>
       <div class="chip"><div class="chip-l">Running Due</div><div class="chip-v red" id="shDue">৳ 0</div></div>
     </div>
+    <button type="button" class="send-all-inv-btn" id="sendAllInvBtn" onclick="sendAllInvoicesWA()">
+      <svg viewBox="0 0 24 24" fill="#fff"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.78 14.06c-.24.68-1.4 1.3-1.93 1.35-.5.05-1 .25-3.36-.7-2.84-1.14-4.66-4-4.8-4.19-.14-.19-1.15-1.53-1.15-2.92s.72-2.07.98-2.35c.25-.28.55-.35.73-.35h.53c.17 0 .4-.03.62.48.24.56.8 1.95.87 2.09.07.14.12.31.02.5-.09.19-.14.31-.28.48-.14.17-.29.37-.42.5-.14.14-.28.29-.12.57.17.28.75 1.24 1.6 2.01 1.1 1 2.03 1.31 2.31 1.45.28.14.44.12.6-.07.17-.19.71-.83.9-1.11.19-.28.38-.23.63-.14.26.09 1.64.77 1.92.91.28.14.47.21.53.33.07.12.07.68-.17 1.36z"/></svg>
+      Send All Invoices via WhatsApp
+    </button>
     <div class="sheet-sec">🧾 Detailed Transactions</div>
     <div class="sheet-body" id="shBody"></div>
   </div>
@@ -259,7 +371,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
 </div>
 
+<!-- Invoice Overlay — ported from Sales panel, shown when a transaction's
+     "View Invoice" button is tapped, or built silently one at a time in the
+     background for "Send All Invoices via WhatsApp" (see #invBatchPage). -->
+<div class="inv-overlay" id="invOverlay">
+  <div class="inv-toolbar">
+    <div class="inv-toolbar-title" id="invToolbarTitle">Invoice</div>
+    <div class="inv-toolbar-btns">
+      <button class="inv-share-btn" id="invShareBtn" onclick="shareInvoicePDF()">📤 Share</button>
+      <button class="inv-print-btn" onclick="printInvoice()">🖨️ Print / Save</button>
+      <button class="inv-close-btn" onclick="closeInvoice()">Close</button>
+    </div>
+  </div>
+  <div class="inv-scroll" id="invScroll">
+    <div class="inv-page" id="invPage"></div>
+  </div>
+</div>
+<div class="inv-page" id="invBatchPage"></div>
+
 <div id="toast"></div>
+
+<!-- Used only to turn invoices into real, shareable PDF files -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
 const SHEET_ID    = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
@@ -503,17 +637,21 @@ function render(){
 
 // ── TRANSACTIONS POPUP ───────────────────────────────────────
 function groupTxns(rows){
+  // Grouping key: Invoice No when the row has one (one invoice = one number,
+  // matches Sales panel exactly). Falls back to Date for payment-only rows
+  // or pre-backfill legacy rows with no Invoice No yet.
   const groups=[], seen=new Map();
   rows.forEach(r=>{
     const key=r.invoiceNo?('inv_'+r.invoiceNo):(r.dateDisplay||String(r.dateTs));
     if(!seen.has(key)){
-      const g={dateDisplay:r.dateDisplay,dateTs:r.dateTs,invoiceNo:r.invoiceNo||'',seller:'',products:[],totalBill:0,totalPaid:0,due:undefined,comment:''};
+      const g={dateDisplay:r.dateDisplay,dateTs:r.dateTs,invoiceNo:r.invoiceNo||'',seller:'',products:[],totalBill:0,totalPaid:0,due:undefined,prevDue:undefined,comment:''};
       seen.set(key,g); groups.push(g);
     }
     const g=seen.get(key);
     if(r.seller)  g.seller=r.seller;
     if(r.comment) g.comment=r.comment;
-    if(r.prod){ g.products.push({name:r.prod,qty:r.qty,final:r.final||r.bill}); g.totalBill+=(r.final||r.bill||0); }
+    if(g.prevDue===undefined && r.prevDue!==undefined) g.prevDue=r.prevDue; // first row of the group
+    if(r.prod){ g.products.push({name:r.prod,rate:r.rate,qty:r.qty,discount:r.disc||0,final:r.final||r.bill}); g.totalBill+=(r.final||r.bill||0); }
     if(r.paid) g.totalPaid+=r.paid;
     if(r.due!==undefined) g.due=r.due;
   });
@@ -540,8 +678,8 @@ async function openHistory(c){
       const di=fmtGvizDate(r.c[0]);
       return {
         dateDisplay:di.display, dateTs:di.ts,
-        prod:r.c[3]?.v||'', bill:r.c[7]?.v||0, final:r.c[9]?.v||0,
-        qty:r.c[6]?.v||0, paid:r.c[12]?.v||0, due:r.c[13]?.v,
+        prod:r.c[3]?.v||'', rate:r.c[5]?.v||0, bill:r.c[7]?.v||0, disc:r.c[8]?.v||0, final:r.c[9]?.v||0,
+        prevDue:r.c[10]?.v, qty:r.c[6]?.v||0, paid:r.c[12]?.v||0, due:r.c[13]?.v,
         comment:r.c[14]?.v||'', seller:r.c[15]?.v||'', invoiceNo:r.c[23]?.v||''
       };
     });
@@ -552,25 +690,39 @@ async function openHistory(c){
   }
 }
 
+// Same detailed item layout as the Sales panel's Previous Transactions
+// view (per-product rate/qty line, a View Invoice button per invoice) so
+// history looks identical whichever panel it is opened from.
 function renderTxns(groups){
   const el=document.getElementById('shBody');
+  window._histGroups=groups; // keep for openInvoice()/sendAllInvoicesWA() lookup
   if(!groups.length){ el.innerHTML='<div class="sheet-empty">No transactions yet.</div>'; return; }
-  el.innerHTML=groups.map(g=>{
-    const isPay=g.products.length===0;
-    const prodLine=isPay
-      ? '<span class="txn-pay-tag">💳 Payment / Collection</span>'
-      : g.products.map(p=>'<div class="txn-prod-item">• '+escapeHtml(p.name)+' <b>×'+p.qty+'</b></div>').join('');
-    const dueVal=g.due!==undefined?g.due:'';
-    return '<div class="txn'+(isPay?' pay':'')+'">'
-      +'<div class="txn-top"><span class="txn-date">'+escapeHtml(g.dateDisplay||'—')+(g.invoiceNo?' · #'+escapeHtml(g.invoiceNo):'')+'</span><span class="txn-seller">'+escapeHtml(g.seller||'')+'</span></div>'
-      +'<div class="txn-prod">'+prodLine+'</div>'
-      +'<div class="txn-amts">'
-        +(isPay?'':'<div class="amt"><div class="amt-l">Bill</div><div class="amt-v">'+tk(g.totalBill)+'</div></div>')
-        +'<div class="amt"><div class="amt-l">Paid</div><div class="amt-v grn">'+tk(g.totalPaid)+'</div></div>'
-        +'<div class="amt"><div class="amt-l">Due</div><div class="amt-v red">'+tk(dueVal)+'</div></div>'
+  const invIcon='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/></svg>';
+  el.innerHTML=groups.map((g,idx)=>{
+    const isPayOnly=g.products.length===0;
+    const prodLines=g.products.map(p=>
+      '<div class="h-prod-line">'
+        +'<span class="h-prod-name">'+escapeHtml(p.name)+'<br><span style="font-size:10px;color:var(--muted);font-weight:400">'+p.qty+' pcs × ৳'+Number(p.rate||0).toLocaleString('en-IN')+'</span></span>'
+        +'<span class="h-prod-amt">'+tk(p.final)+'</span>'
       +'</div>'
-      +(g.comment?'<div class="txn-cmt">📝 '+escapeHtml(g.comment)+'</div>':'')
-      +'</div>';
+    ).join('');
+    const payLine = g.totalPaid && isPayOnly
+      ? '<div class="h-payment-line">💳 Payment Collection</div>'
+      : (g.totalPaid && !isPayOnly ? '<div class="h-payment-line">💳 + Payment: '+tk(g.totalPaid)+'</div>' : '');
+    const invBtn = !g.invoiceNo ? '' :
+      '<button class="h-inv-btn" onclick="openInvoice('+idx+')">'+invIcon+' View Invoice #'+escapeHtml(g.invoiceNo)+'</button>';
+    return '<div class="h-item'+(isPayOnly?' pay':'')+'">'
+      +'<div class="h-top"><span class="h-date">'+escapeHtml(g.dateDisplay||'—')+'</span><span class="h-seller">'+escapeHtml(g.seller||'')+'</span></div>'
+      +(g.products.length?'<div class="h-prod-list">'+prodLines+'</div>':'')
+      +payLine
+      +'<div class="h-amts">'
+        +'<div class="txn-chip txn-chip-b"><div class="txn-chip-lbl">Bill</div><div class="txn-chip-val">'+tk(g.totalBill)+'</div></div>'
+        +'<div class="txn-chip txn-chip-p"><div class="txn-chip-lbl">Paid</div><div class="txn-chip-val">'+tk(g.totalPaid)+'</div></div>'
+        +'<div class="txn-chip txn-chip-d"><div class="txn-chip-lbl">Due</div><div class="txn-chip-val">'+tk(g.due)+'</div></div>'
+      +'</div>'
+      +(g.comment?'<div class="h-note">💬 '+escapeHtml(g.comment)+'</div>':'')
+      +invBtn
+    +'</div>';
   }).join('');
 }
 
@@ -583,6 +735,383 @@ function closeHistory(){
   const logOpen = document.getElementById('logOv').classList.contains('open');
   if(!logOpen) document.body.style.overflow='';
 }
+// ── INVOICE (ported from Sales panel, byte-identical layout) ──────────
+// A client's invoice must look the same everywhere it's opened from, so
+// this is the exact same template, PDF build, and share flow as the Sales
+// panel's Previous Transactions -> View Invoice -> Share, just reading
+// from hClient/window._histGroups instead of selClient/window._histGroups.
+const COMPANY = {
+  name:  'Enkore Automotive Ltd.',
+  addr:  'Dholpur, Bishmile, Savar, Dhaka',
+  phone: '+880 1844-287840',
+  email: 'enkorebd@gmail.com',
+  web:   'enkorebd.com',
+  logo:      '../assets/invoice-logo.png',
+  signature: '../assets/invoice-signature.png'
+};
+
+function numToWordsTaka(num) {
+  num = Math.round(Number(num) || 0);
+  if (num === 0) return 'Zero Taka Only';
+  const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten',
+    'Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  function twoDigit(n) {
+    if (n < 20) return ones[n];
+    return tens[Math.floor(n/10)] + (n%10 ? ' ' + ones[n%10] : '');
+  }
+  function threeDigit(n) {
+    if (n < 100) return twoDigit(n);
+    return ones[Math.floor(n/100)] + ' Hundred' + (n%100 ? ' ' + twoDigit(n%100) : '');
+  }
+  let crore = Math.floor(num / 10000000); num %= 10000000;
+  let lakh  = Math.floor(num / 100000);    num %= 100000;
+  let thou  = Math.floor(num / 1000);      num %= 1000;
+  let rest  = num;
+  let parts = [];
+  if (crore) parts.push(threeDigit(crore) + ' Crore');
+  if (lakh)  parts.push(threeDigit(lakh)  + ' Lakh');
+  if (thou)  parts.push(threeDigit(thou)  + ' Thousand');
+  if (rest)  parts.push(threeDigit(rest));
+  return parts.join(' ') + ' Taka Only';
+}
+
+// Builds the invoice page HTML for one transaction group `g` and client `c`.
+// Shared by openInvoice() (single, on-screen) and buildInvoicePdfForGroup()
+// (batch, off-screen) so both produce byte-identical invoices.
+function buildInvoiceHtml(g, c) {
+  const hasProducts = g.products.length > 0;
+  const subTotal   = g.totalBill;
+  const discPct    = 0;
+  const discAmt    = 0;
+  const total      = subTotal - discAmt;
+  const received   = g.totalPaid;
+  const dueNow     = Math.max(0, total - received);
+  const currentDue = g.due !== undefined ? g.due : dueNow;
+  const prevDue    = g.prevDue !== undefined ? g.prevDue : Math.max(0, currentDue - dueNow);
+
+  const itemRows = g.products.map((p, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${escapeHtml(p.name)}</td>
+      <td>${p.qty}</td>
+      <td>৳${Number(p.rate).toLocaleString('en-IN')}</td>
+      <td>৳${Number(p.discount||0).toLocaleString('en-IN')}</td>
+      <td>৳${Number(p.final).toLocaleString('en-IN')}</td>
+    </tr>`).join('');
+
+  const itemTableHtml = hasProducts ? `
+    <table class="inv-table">
+      <thead><tr><th>#</th><th>Item Name</th><th>Qty</th><th>Price/Unit</th><th>Discount</th><th>Amount</th></tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>` : '';
+
+  return `
+    <div class="inv-topbar"></div>
+    <div class="inv-body">
+    <div class="inv-header-top">
+      <div>
+        <div class="inv-title">INVOICE</div>
+        <div class="inv-title-accent"></div>
+        <div class="inv-co-name">${escapeHtml(COMPANY.name)}</div>
+        <div class="inv-co-line">${escapeHtml(COMPANY.addr)}</div>
+        <div class="inv-co-contact">
+          <span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1e9dd6" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${escapeHtml(COMPANY.phone)}</span>
+          <span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1e9dd6" stroke-width="2.5"><path d="M4 4h16v16H4z" opacity="0"/><path d="M22 6 12 13 2 6"/><path d="M2 6h20v12H2z"/></svg>${escapeHtml(COMPANY.email)}</span>
+          <span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1e9dd6" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20M12 2a15.3 15.3 0 0 0 0 20"/></svg>${escapeHtml(COMPANY.web)}</span>
+        </div>
+      </div>
+      <img src="${COMPANY.logo}" alt="ENKORE" class="inv-logo">
+    </div>
+    <div class="inv-2col">
+      <div class="inv-info-card">
+        <div class="inv-block-lbl">Bill To</div>
+        <div class="inv-row"><b>Name:</b> ${escapeHtml(c.name || '')}</div>
+        <div class="inv-row"><b>Address:</b> ${escapeHtml([c.shop, c.loc, c.zone].filter(Boolean).join(', '))}</div>
+        <div class="inv-row"><b>Contact:</b> ${escapeHtml(c.phone || '')}</div>
+      </div>
+      <div class="inv-info-card">
+        <div class="inv-block-lbl">Invoice Details</div>
+        <div class="inv-row"><b>Invoice No:</b> ${g.invoiceNo}</div>
+        <div class="inv-row"><b>Date:</b> ${escapeHtml(g.dateDisplay)}</div>
+      </div>
+    </div>
+
+    ${itemTableHtml}
+
+    <div class="inv-2col" style="margin-top:14px">
+      <div style="flex:1">
+        <div class="inv-block-lbl">Invoice Amount in Words</div>
+        <div class="inv-words">${numToWordsTaka(hasProducts ? total : received)}</div>
+      </div>
+      <div class="inv-amounts">
+        <div class="inv-amt-row"><span>Sub Total:</span><span>৳${subTotal.toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row"><span>Discount%:</span><span>${discPct}%</span></div>
+        <div class="inv-amt-row"><span>Discount:</span><span>৳${discAmt.toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row tot"><span>Total:</span><span>৳${total.toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row"><span>Received:</span><span>৳${received.toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row due"><span>Due:</span><span>৳${dueNow.toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row"><span>Previous Due:</span><span>৳${Number(prevDue).toLocaleString('en-IN')}</span></div>
+        <div class="inv-amt-row due"><span>Current Due:</span><span>৳${Number(currentDue).toLocaleString('en-IN')}</span></div>
+      </div>
+    </div>
+
+    <div class="inv-sign">
+      <div class="inv-sign-box">
+        <div class="inv-sign-for">For: ${escapeHtml(COMPANY.name)}</div>
+        <img src="${COMPANY.signature}" alt="Signature" class="inv-signature-img">
+        <div class="inv-sign-line">Authorized Signatory</div>
+      </div>
+    </div>
+
+    <div class="inv-footer-tag">
+      <div class="inv-footer-slogan">Care that keeps you moving</div>
+      <div class="inv-footer-web">${escapeHtml(COMPANY.web)}</div>
+    </div>
+    </div>
+  `;
+}
+
+function openInvoice(idx) {
+  const g = (window._histGroups || [])[idx];
+  if (!g) { toast('Invoice data not found', 'err'); return; }
+  if (!g.invoiceNo) { toast('This transaction has no Invoice No yet', 'err'); return; }
+  const c = hClient || {};
+
+  document.getElementById('invPage').innerHTML = buildInvoiceHtml(g, c);
+  document.getElementById('invToolbarTitle').textContent = `Invoice #${g.invoiceNo}, ${c.name || ''}`;
+  window._invFileBase = `ENKORE_Invoice_${g.invoiceNo}`;
+  window._invInvoiceNo = g.invoiceNo;
+  window._invPdfReady = null;
+  ovOpen('invOverlay');
+  enableInvoiceZoom();
+  requestAnimationFrame(() => {
+    autoFitInvoicePage(document.getElementById('invPage'));
+    fitInvoiceToScreen();
+    window._invPdfReady = buildInvoicePDF().catch(e => { console.error('Pre-build PDF failed:', e); return null; });
+  });
+  window.addEventListener('resize', fitInvoiceToScreen);
+}
+
+function closeInvoice() {
+  ovClose('invOverlay');
+  disableInvoiceZoom();
+  window.removeEventListener('resize', fitInvoiceToScreen);
+}
+
+// ── PINCH-ZOOM: loosened only while the invoice is open ──────────
+const DEFAULT_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+const ZOOM_VIEWPORT     = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes';
+function enableInvoiceZoom()  { document.querySelector('meta[name=viewport]')?.setAttribute('content', ZOOM_VIEWPORT); }
+function disableInvoiceZoom() { document.querySelector('meta[name=viewport]')?.setAttribute('content', DEFAULT_VIEWPORT); }
+
+function autoFitInvoicePage(page) {
+  if (!page) return;
+  page.style.setProperty('--tsize', '12px');
+  page.style.setProperty('--tpad', '7px');
+
+  const rect = page.getBoundingClientRect();
+  if (!rect.width) return;
+  const pxPerMM = rect.width / 210;
+  const maxHeightPx = pxPerMM * 297;
+
+  let tsize = 12, tpad = 7;
+  const minSize = 8.5, minPad = 3;
+  let guard = 0;
+
+  while (page.scrollHeight > maxHeightPx && (tsize > minSize || tpad > minPad) && guard < 40) {
+    if (tpad > minPad)  tpad -= 0.5;
+    else if (tsize > minSize) tsize -= 0.25;
+    page.style.setProperty('--tpad',  tpad  + 'px');
+    page.style.setProperty('--tsize', tsize + 'px');
+    guard++;
+  }
+}
+
+function fitInvoiceToScreen() {
+  const scroll = document.getElementById('invScroll');
+  const page   = document.getElementById('invPage');
+  if (!scroll || !page || !document.getElementById('invOverlay').classList.contains('open')) return;
+
+  page.style.zoom = 1;
+  const availW = scroll.clientWidth  - 16;
+  const availH = scroll.clientHeight - 16;
+  const trueW  = page.offsetWidth;
+  const trueH  = page.offsetHeight;
+  if (!trueW || !trueH) return;
+
+  const fit = Math.min(availW / trueW, availH / trueH, 1);
+  page.style.zoom = fit;
+  window._invFitZoom = fit;
+}
+
+function printInvoice() {
+  const page = document.getElementById('invPage');
+  const fitZoom = window._invFitZoom || 1;
+  page.style.zoom = 1;
+  autoFitInvoicePage(page);
+  const oldTitle = document.title;
+  document.title = window._invFileBase || document.title;
+  const restoreAfterPrint = () => {
+    document.title = oldTitle;
+    page.style.zoom = fitZoom;
+    window.removeEventListener('afterprint', restoreAfterPrint);
+  };
+  window.addEventListener('afterprint', restoreAfterPrint);
+  setTimeout(() => window.print(), 30);
+}
+
+// ── REAL PDF FILE — for direct WhatsApp / Messenger / any app share ──
+function waitForInvoiceImages(page) {
+  const imgs = Array.from(page.querySelectorAll('img'));
+  return Promise.all(imgs.map(img => {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    return new Promise(res => {
+      img.addEventListener('load', res, { once: true });
+      img.addEventListener('error', res, { once: true });
+      setTimeout(res, 3000);
+    });
+  }));
+}
+
+// Renders `page` (already filled with buildInvoiceHtml output) to a real A4
+// PDF blob. Used both for the single on-screen invoice (#invPage) and for
+// each invoice in the "Send All" batch (#invBatchPage).
+async function renderPageToPdf(page, invoiceNo, fileBase) {
+  await waitForInvoiceImages(page);
+  await new Promise(r => requestAnimationFrame(r));
+  const canvas = await html2canvas(page, { scale: 1.25, useCORS: true, backgroundColor: '#ffffff' });
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const docTitle = `ENKORE Invoice ${invoiceNo || ''}`.trim();
+  doc.setProperties({ title: docTitle, subject: 'Invoice', creator: 'Enkore Automotive Ltd.' });
+
+  const pageW = 210, pageH = 297;
+  const imgH  = (canvas.height * pageW) / canvas.width;
+  const imgData = canvas.toDataURL('image/jpeg', 0.88);
+
+  if (imgH <= pageH) {
+    doc.addImage(imgData, 'JPEG', 0, 0, pageW, imgH);
+  } else {
+    let renderedMM = 0;
+    while (renderedMM < imgH) {
+      if (renderedMM > 0) doc.addPage();
+      doc.addImage(imgData, 'JPEG', 0, -renderedMM, pageW, imgH);
+      renderedMM += pageH;
+    }
+  }
+  const filename = (fileBase || 'ENKORE Invoice') + '.pdf';
+  return { blob: doc.output('blob'), filename };
+}
+
+async function buildInvoicePDF() {
+  const page = document.getElementById('invPage');
+  const fitZoom = window._invFitZoom || 1;
+  page.style.zoom = 1;
+  const built = await renderPageToPdf(page, window._invInvoiceNo, window._invFileBase);
+  page.style.zoom = fitZoom;
+  return built;
+}
+
+async function shareInvoicePDF() {
+  const btn = document.getElementById('invShareBtn');
+  const original = btn.innerHTML;
+
+  let built = window._invPdfReady ? await window._invPdfReady : null;
+  if (!built) {
+    btn.disabled = true; btn.innerHTML = '⏳ Preparing…';
+    built = await buildInvoicePDF().catch(() => null);
+    btn.disabled = false; btn.innerHTML = original;
+  }
+  if (!built) { toast('Could not prepare PDF', 'err'); return; }
+
+  try {
+    const { blob, filename } = built;
+    const file = new File([blob], filename, { type: 'application/pdf' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: filename });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      toast(`Saved as ${filename}, share it from your Files/Downloads app`, 'ok');
+    }
+  } catch (e) {
+    if (e?.name !== 'AbortError') {
+      console.error('Share PDF failed:', e);
+      toast('Could not prepare PDF', 'err');
+    }
+  } finally {
+    btn.disabled = false; btn.innerHTML = original;
+  }
+}
+
+// ── SEND ALL INVOICES VIA WHATSAPP ────────────────────────────────
+// Builds one PDF per invoice this client has (off-screen, via
+// #invBatchPage so the visible invoice viewer isn't disturbed), then hands
+// all of them to the phone's native share sheet in one go. WhatsApp itself
+// has no API for Claude/the ERP to push a message straight into a chat —
+// this is the same OS share-sheet handoff the single "Share" button uses,
+// just bundled for every invoice at once. Sir still picks WhatsApp and the
+// contact on the share sheet, same one tap as sharing a single invoice.
+async function buildInvoicePdfForGroup(g, c) {
+  const page = document.getElementById('invBatchPage');
+  page.innerHTML = buildInvoiceHtml(g, c);
+  page.style.setProperty('--tsize', '12px');
+  page.style.setProperty('--tpad', '7px');
+  await new Promise(r => requestAnimationFrame(r));
+  autoFitInvoicePage(page);
+  return renderPageToPdf(page, g.invoiceNo, `ENKORE_Invoice_${g.invoiceNo}`);
+}
+
+async function sendAllInvoicesWA() {
+  if (!hClient) return;
+  const groups = (window._histGroups || []).filter(g => g.invoiceNo);
+  if (!groups.length) { toast('No invoices found for this client', 'err'); return; }
+
+  const btn = document.getElementById('sendAllInvBtn');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+
+  try {
+    const files = [];
+    for (let i = 0; i < groups.length; i++) {
+      btn.innerHTML = `⏳ Preparing invoice ${i+1} of ${groups.length}…`;
+      const { blob, filename } = await buildInvoicePdfForGroup(groups[i], hClient);
+      files.push(new File([blob], filename, { type: 'application/pdf' }));
+    }
+    document.getElementById('invBatchPage').innerHTML = '';
+
+    if (navigator.canShare && navigator.canShare({ files })) {
+      await navigator.share({ files, title: `${hClient.name || 'Client'} Invoices` });
+    } else {
+      files.forEach(f => {
+        const url = URL.createObjectURL(f);
+        const a = document.createElement('a');
+        a.href = url; a.download = f.name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      });
+      toast(`Saved ${files.length} invoice(s) to Downloads, attach them in WhatsApp`, 'ok');
+    }
+  } catch (e) {
+    if (e?.name !== 'AbortError') {
+      console.error('Send all invoices failed:', e);
+      toast('Could not prepare invoices', 'err');
+    }
+  } finally {
+    btn.disabled = false; btn.innerHTML = original;
+  }
+}
+
 
 // ── LOG CALL POPUP ───────────────────────────────────────────
 function openLogCall(c){
@@ -897,10 +1426,12 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
 // ── SHELL BACK-BUTTON HOOK ──
 window.__erpHandleBack = function() {
-  // Closest-first: Log Call -> Transaction History -> Edit Number can all be
-  // open at once (each opened from inside the last, staying open
+  // Closest-first: Invoice -> Edit Number -> Transaction History -> Log Call
+  // can all be open at once (each opened from inside the last, staying open
   // underneath), so Back/X on any one of them must only close that single
   // topmost popup and reveal whichever one is still open beneath it.
+  const inv = document.getElementById('invOverlay');
+  if (inv && inv.classList.contains('open')) { closeInvoice(); return true; }
   const ep = document.getElementById('epOv');
   if (ep && ep.classList.contains('open')) { closeEditPhone(); return true; }
   const ov = document.getElementById('txnOv');
