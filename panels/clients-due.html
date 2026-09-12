@@ -58,7 +58,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .tel-icons{display:flex;align-items:center;gap:8px}
 .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;text-decoration:none;flex-shrink:0}
 .icon-btn:active{opacity:.7}
-.icon-btn.tel-ic{background:var(--blue);color:#fff;font-size:15px}
+.icon-btn.tel-ic{background:var(--blue)}
+.icon-btn.tel-ic svg{width:16px;height:16px}
 .icon-btn.wa-ic{background:#25D366}
 .icon-btn.wa-ic svg{width:16px;height:16px}
 .icon-btn.edit-ic{background:#eef1f5;color:#5b6472;font-size:13px}
@@ -292,13 +293,17 @@ function toWaNumber(phone){
 }
 
 const WA_SVG = '<svg viewBox="0 0 24 24" fill="white"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.85.5 3.58 1.36 5.08L2 22l5.25-1.38a9.87 9.87 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.8 14.07c-.24.68-1.4 1.32-1.93 1.4-.5.08-1.13.11-1.82-.11-.42-.13-.96-.31-1.65-.6-2.9-1.25-4.79-4.17-4.93-4.36-.14-.19-1.18-1.57-1.18-3 0-1.42.75-2.12 1.02-2.41.27-.29.58-.36.78-.36.19 0 .39 0 .56.01.18.01.42-.07.66.5.24.58.83 2 .9 2.14.07.15.12.32.02.51-.09.19-.14.31-.28.48-.14.17-.29.37-.42.5-.14.14-.28.29-.12.57.16.28.7 1.16 1.51 1.88 1.04.93 1.92 1.22 2.19 1.36.28.14.44.12.6-.07.16-.19.68-.79.87-1.06.18-.27.36-.22.6-.13.24.09 1.53.72 1.79.85.27.14.44.2.51.32.06.11.06.65-.18 1.32z"/></svg>';
+// Plain white call icon, an emoji glyph (📞) is full-color and ignores CSS
+// color, it stayed pink no matter what the background was. An SVG can
+// actually be made white to match the solid blue background.
+const TEL_SVG = '<svg viewBox="0 0 24 24" fill="white"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>';
 
 // Shared call+WhatsApp(+optional edit) icon row. Used in the row list (call+WhatsApp
 // only, no edit there) and inside the Log Call / Transaction History popups (call+
 // WhatsApp+edit, editOnclick is a JS statement string run on tap, e.g. "openEditPhoneFromLog()").
 function telIconsHtml(c, editOnclick){
   const tel = c.phone
-    ? '<a class="icon-btn tel-ic" href="tel:'+c.phone.replace(/[^0-9+]/g,'')+'" onclick="event.stopPropagation()" aria-label="Call">📞</a>'
+    ? '<a class="icon-btn tel-ic" href="tel:'+c.phone.replace(/[^0-9+]/g,'')+'" onclick="event.stopPropagation()" aria-label="Call">'+TEL_SVG+'</a>'
       +'<a class="icon-btn wa-ic" href="https://wa.me/'+toWaNumber(c.phone)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" aria-label="WhatsApp">'+WA_SVG+'</a>'
     : '';
   const edit = editOnclick
@@ -563,12 +568,8 @@ function renderTxns(groups){
 
 function closeHistory(){
   ovClose('txnOv');
+  document.body.style.overflow='';
   hClient = null;
-  // txnOv can be nested on top of the Log Call popup (opened via its
-  // Transaction History button), don't release the scroll lock while
-  // logOv is still open underneath.
-  const logOpen = document.getElementById('logOv').classList.contains('open');
-  if(!logOpen) document.body.style.overflow='';
 }
 
 // ── LOG CALL POPUP ───────────────────────────────────────────
@@ -684,9 +685,17 @@ function closeLogCall(){
 }
 
 // Reached from the "📋 Transaction History" button at the top of the Log
-// Call popup. Opens on top of it (stacked overlays, logOv stays open
-// underneath) rather than replacing it, same nesting pattern as epOv.
-function openHistoryFromLog(){ if(lcClient) openHistory(lcClient); }
+// Call popup. Closes Log Call FIRST, then opens History as its own popup
+// (replace, not stack). Both .ov popups share the same z-index (500) and
+// stack purely by DOM order, txnOv is defined before logOv in the markup,
+// so stacking them would put History BEHIND Log Call, invisible. Simplest
+// correct fix: only one of these two is ever open at a time.
+function openHistoryFromLog(){
+  if(!lcClient) return;
+  const c = lcClient;
+  closeLogCall();
+  openHistory(c);
+}
 
 // ── EDIT CLIENT PHONE ───────────────────────────────────────
 // Scope: phone number only, same rule and same backend action as the
@@ -882,9 +891,10 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
 // ── SHELL BACK-BUTTON HOOK ──
 window.__erpHandleBack = function() {
-  // Closest-first: epOv can nest on top of txnOv, which can itself nest on
-  // top of logOv (Log Call -> Transaction History -> Edit Number). Check in
-  // that stacking order so Back only ever closes the topmost popup.
+  // epOv can nest on top of whichever of txnOv/logOv is currently open
+  // (edit-number opened from either popup's icon row), those two are never
+  // both open at once. Check epOv first so Back only ever closes the
+  // topmost popup.
   const ep = document.getElementById('epOv');
   if (ep && ep.classList.contains('open')) { closeEditPhone(); return true; }
   const ov = document.getElementById('txnOv');
