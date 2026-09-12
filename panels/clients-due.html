@@ -72,6 +72,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 /* TRANSACTIONS + LOG-CALL POPUP (shared sheet chrome) */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:flex-end;justify-content:center}
+/* Popups can nest: Log Call -> Transaction History -> Edit Number, each one
+   opened from inside the last, staying open underneath rather than closing
+   it. Explicit per-popup z-index (instead of relying on DOM order, which is
+   what caused History to render invisibly BEHIND Log Call before) keeps the
+   nested one always on top regardless of where it sits in the HTML. */
+#logOv{z-index:500}
+#txnOv{z-index:501}
+#epOv{z-index:502}
 .ov.open{display:flex}
 .sheet{background:var(--bg);width:100%;max-width:560px;max-height:88vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;animation:up .22s ease}
 @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
@@ -568,8 +576,12 @@ function renderTxns(groups){
 
 function closeHistory(){
   ovClose('txnOv');
-  document.body.style.overflow='';
   hClient = null;
+  // txnOv can be nested on top of the Log Call popup (opened via its
+  // Transaction History button), don't release the scroll lock while
+  // logOv is still open underneath, it needs to stay locked.
+  const logOpen = document.getElementById('logOv').classList.contains('open');
+  if(!logOpen) document.body.style.overflow='';
 }
 
 // ── LOG CALL POPUP ───────────────────────────────────────────
@@ -685,17 +697,11 @@ function closeLogCall(){
 }
 
 // Reached from the "📋 Transaction History" button at the top of the Log
-// Call popup. Closes Log Call FIRST, then opens History as its own popup
-// (replace, not stack). Both .ov popups share the same z-index (500) and
-// stack purely by DOM order, txnOv is defined before logOv in the markup,
-// so stacking them would put History BEHIND Log Call, invisible. Simplest
-// correct fix: only one of these two is ever open at a time.
-function openHistoryFromLog(){
-  if(!lcClient) return;
-  const c = lcClient;
-  closeLogCall();
-  openHistory(c);
-}
+// Call popup. Opens ON TOP of Log Call, logOv stays open underneath so
+// closing History (X or Back) returns to it, closing Log Call after that
+// returns to the client list, a proper 3-step navigation stack. Visibility
+// is guaranteed by the explicit #txnOv/#logOv z-index above, not DOM order.
+function openHistoryFromLog(){ if(lcClient) openHistory(lcClient); }
 
 // ── EDIT CLIENT PHONE ───────────────────────────────────────
 // Scope: phone number only, same rule and same backend action as the
@@ -891,10 +897,10 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
 // ── SHELL BACK-BUTTON HOOK ──
 window.__erpHandleBack = function() {
-  // epOv can nest on top of whichever of txnOv/logOv is currently open
-  // (edit-number opened from either popup's icon row), those two are never
-  // both open at once. Check epOv first so Back only ever closes the
-  // topmost popup.
+  // Closest-first: Log Call -> Transaction History -> Edit Number can all be
+  // open at once (each opened from inside the last, staying open
+  // underneath), so Back/X on any one of them must only close that single
+  // topmost popup and reveal whichever one is still open beneath it.
   const ep = document.getElementById('epOv');
   if (ep && ep.classList.contains('open')) { closeEditPhone(); return true; }
   const ov = document.getElementById('txnOv');
