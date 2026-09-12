@@ -58,15 +58,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .tel-icons{display:flex;align-items:center;gap:8px}
 .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;text-decoration:none;flex-shrink:0}
 .icon-btn:active{opacity:.7}
-.icon-btn.tel-ic{background:var(--bluebg);color:var(--blue);font-size:15px}
+.icon-btn.tel-ic{background:var(--blue);color:#fff;font-size:15px}
 .icon-btn.wa-ic{background:#25D366}
 .icon-btn.wa-ic svg{width:16px;height:16px}
 .icon-btn.edit-ic{background:#eef1f5;color:#5b6472;font-size:13px}
 .tap-hint{font-size:9px;color:#adb5bd;margin-top:6px;font-weight:600;letter-spacing:.3px}
 .called-badge{font-size:10px;color:var(--g);font-weight:800;margin-top:4px}
 .called-badge.stale{color:var(--muted)}
-.logcall-btn{flex-shrink:0;font-size:11px;font-weight:800;color:#fff;background:var(--blue);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;white-space:nowrap}
-.logcall-btn:active{opacity:.75}
 .row.ignored{opacity:.55}
 .ignored-link{text-align:center;font-size:12px;font-weight:800;color:var(--blue);padding:10px;cursor:pointer;background:#fff;border-radius:var(--r);box-shadow:var(--sh);margin-bottom:8px}
 .ignored-link:active{opacity:.7}
@@ -122,6 +120,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .outcome-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .outcome-btn{padding:12px 8px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:700;text-align:center;cursor:pointer;line-height:1.3}
 .outcome-btn.sel{border-color:var(--blue);background:var(--bluebg);color:var(--blue)}
+.lc-history-btn{width:100%;padding:11px;margin-bottom:14px;border:1.5px solid var(--border);border-radius:10px;background:#fff;color:var(--text);font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.lc-history-btn:active{background:#f3f4f6}
 .lc-redirects{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
 .redirect-btn{width:100%;padding:13px 10px;border:none;border-radius:12px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,.15)}
 .redirect-btn:active{opacity:.85}
@@ -214,6 +214,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <button class="sh-x" onclick="closeLogCall()">×</button>
     </div>
     <div class="lc-body">
+      <button type="button" class="lc-history-btn" onclick="openHistoryFromLog()">📋 Transaction History</button>
       <div class="lc-redirects">
         <button type="button" class="redirect-btn rd-blue" id="rdReorder" onclick="redirectAction('reorder')">🔁 Will Reorder → Sales Notes</button>
         <button type="button" class="redirect-btn rd-green" id="rdPayment" onclick="redirectAction('payment')">💰 Payment Collected → Sales</button>
@@ -466,7 +467,6 @@ function render(){
     const telLine=c.phone
       ? '<div class="tel-icons">'+telIconsHtml(c, null)+'</div>'
       : '<span></span>';
-    const logBtn = READONLY ? '' : '<button class="logcall-btn" onclick="event.stopPropagation();openLogCallByIdx('+i+')">📝 Log Call</button>';
     const calledBadge = c.lastCallDaysAgo!=null
       ? '<div class="called-badge'+(c.lastCallDaysAgo>=FOLLOWUP_THRESHOLD_DAYS?' stale':'')+'">✓ Called '+c.lastCallDaysAgo+'d ago'+(c.lastCallOutcome?' · '+escapeHtml(c.lastCallOutcome):'')+'</div>'
       : '';
@@ -480,7 +480,7 @@ function render(){
       +'<div class="row-main"><div class="row-name">'+escapeHtml(c.name||c.shop||'—')+'</div>'
         +(sub?'<div class="row-sub">'+escapeHtml(sub)+'</div>':'')
         +(loc?'<div class="row-loc">📍 '+escapeHtml(loc)+'</div>':'')
-        +'<div class="row-tel-line">'+telLine+logBtn+'</div>'
+        +'<div class="row-tel-line">'+telLine+'</div>'
         +calledBadge
       +'</div>'
       +figHtml
@@ -563,13 +563,15 @@ function renderTxns(groups){
 
 function closeHistory(){
   ovClose('txnOv');
-  document.body.style.overflow='';
   hClient = null;
+  // txnOv can be nested on top of the Log Call popup (opened via its
+  // Transaction History button), don't release the scroll lock while
+  // logOv is still open underneath.
+  const logOpen = document.getElementById('logOv').classList.contains('open');
+  if(!logOpen) document.body.style.overflow='';
 }
 
 // ── LOG CALL POPUP ───────────────────────────────────────────
-function openLogCallByIdx(i){ const c=shownRows[i]; if(c) openLogCall(c); }
-
 function openLogCall(c){
   lcClient=c; lcOutcome=''; lcNeedsDate=false;
   document.getElementById('lcName').textContent=c.name||c.shop||'—';
@@ -680,6 +682,11 @@ function closeLogCall(){
   document.body.style.overflow='';
   lcClient=null;
 }
+
+// Reached from the "📋 Transaction History" button at the top of the Log
+// Call popup. Opens on top of it (stacked overlays, logOv stays open
+// underneath) rather than replacing it, same nesting pattern as epOv.
+function openHistoryFromLog(){ if(lcClient) openHistory(lcClient); }
 
 // ── EDIT CLIENT PHONE ───────────────────────────────────────
 // Scope: phone number only, same rule and same backend action as the
@@ -857,9 +864,13 @@ window.addEventListener('DOMContentLoaded', ()=>{
   window.addEventListener('online', ()=>{ flushCallLogQueue(); });
   initPullToRefresh();
   document.getElementById('list').addEventListener('click', e=>{
-    if(e.target.closest('.icon-btn')||e.target.closest('.logcall-btn')) return;
+    if(e.target.closest('.icon-btn')) return;
     const row=e.target.closest('.row'); if(!row) return;
-    const c=shownRows[+row.dataset.idx]; if(c) openHistory(c);
+    const c=shownRows[+row.dataset.idx]; if(!c) return;
+    // Tapping the card opens Log Call (all actions live there now, including
+    // Transaction History via its own button). Read-only viewers can't log
+    // calls, so their tap just opens History directly instead.
+    if(READONLY) openHistory(c); else openLogCall(c);
   });
   document.getElementById('txnOv').addEventListener('click', e=>{
     if(e.target.id==='txnOv') closeHistory();
@@ -871,12 +882,15 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
 // ── SHELL BACK-BUTTON HOOK ──
 window.__erpHandleBack = function() {
+  // Closest-first: epOv can nest on top of txnOv, which can itself nest on
+  // top of logOv (Log Call -> Transaction History -> Edit Number). Check in
+  // that stacking order so Back only ever closes the topmost popup.
   const ep = document.getElementById('epOv');
   if (ep && ep.classList.contains('open')) { closeEditPhone(); return true; }
-  const lo = document.getElementById('logOv');
-  if (lo && lo.classList.contains('open')) { closeLogCall(); return true; }
   const ov = document.getElementById('txnOv');
   if (ov && ov.classList.contains('open')) { closeHistory(); return true; }
+  const lo = document.getElementById('logOv');
+  if (lo && lo.classList.contains('open')) { closeLogCall(); return true; }
   return false;
 };
 </script>
