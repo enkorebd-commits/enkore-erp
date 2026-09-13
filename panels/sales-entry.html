@@ -283,24 +283,57 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .h-inv-btn svg{width:14px;height:14px;flex-shrink:0}
 .h-inv-btn:active{background:var(--g2)}
 
-/* INVOICE OVERLAY — toolbar fixed at top, only .inv-scroll pans/zooms */
+/* ── INVOICE VIEWER CHROME ───────────────────────────────────────
+   Title bar on top (invoice number in full, client underneath), the page
+   in the middle, the action bar pinned to the bottom. Neither bar can be
+   scrolled or zoomed away: the stage swallows the pinch/pan gestures
+   itself (touch-action:none) and only the page is transformed, so the
+   browser never zooms the ERP shell out from under the buttons. */
 .inv-overlay{display:none;position:fixed;inset:0;background:#525659;z-index:900;flex-direction:column}
 .inv-overlay.open{display:flex}
-.inv-toolbar{flex-shrink:0;z-index:2;background:#323639;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.inv-toolbar-title{color:#fff;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.inv-toolbar-btns{display:flex;gap:8px;flex-shrink:0}
-.inv-print-btn{background:var(--g);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
-.inv-share-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
-.inv-close-btn{background:#4a4e51;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
-.inv-toolbar-btns button:disabled{opacity:.55;cursor:not-allowed}
-/* Only this area scrolls/pans — drag to move, pinch to zoom in on the page */
-.inv-scroll{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;background:#525659}
+
+.inv-titlebar{flex-shrink:0;z-index:3;background:#1f2427;padding:11px 15px;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+.inv-t-no{color:#fff;font-size:16px;font-weight:900;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inv-t-sub{color:#9fb0bb;font-size:12.5px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Pinch/pan stage. touch-action:none stops the browser from taking the
+   gesture and zooming the whole shell. */
+.inv-stage{flex:1;min-height:0;position:relative;overflow:hidden;background:#525659;touch-action:none;-webkit-user-select:none;user-select:none}
+.inv-stage>.inv-page{position:absolute;top:0;left:0;margin:0;transform-origin:0 0;will-change:transform}
+
+/* The page stays hidden until it has been auto-fitted AND scaled to the
+   screen. Revealing it earlier is what made the invoice flash at full A4
+   zoom for a moment every time it was opened. */
+.inv-overlay.inv-prep .inv-stage>.inv-page{visibility:hidden}
+.inv-loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;gap:9px;color:#dbe4ea;font-size:13.5px;font-weight:700;pointer-events:none}
+.inv-overlay.inv-prep .inv-loading{display:flex}
+.inv-spin{width:16px;height:16px;border:2.5px solid rgba(255,255,255,.25);border-top-color:#1e9dd6;border-radius:50%;animation:invspin .7s linear infinite}
+@keyframes invspin{to{transform:rotate(360deg)}}
+
+/* Action bar — Print, Share, Close. Share is the big one. */
+.inv-actionbar{flex-shrink:0;z-index:3;background:#1f2427;display:flex;gap:9px;padding:10px 12px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -3px 14px rgba(0,0,0,.35)}
+.inv-btn{border:none;border-radius:11px;color:#fff;font-weight:800;letter-spacing:.2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;min-height:48px;padding:12px 6px;font-size:14.5px}
+.inv-btn svg{width:17px;height:17px;flex-shrink:0}
+.inv-btn:active{transform:scale(.97)}
+.inv-btn:disabled{opacity:.55;cursor:not-allowed}
+.inv-btn-print{flex:1;background:#343b40}
+.inv-btn-share{flex:2.2;background:var(--ib,#1e9dd6);font-size:16.5px;box-shadow:0 3px 12px rgba(30,157,214,.42)}
+.inv-btn-share svg{width:19px;height:19px}
+.inv-btn-close{flex:1;background:#343b40}
+
+/* Off-screen twins of the page. #invPdfPage renders the PDF for the Share
+   button and #invBatchPage for "Send All Invoices"; they are separate so a
+   batch can never overwrite a single invoice's build mid-capture. Rendering
+   the PDF from the VISIBLE page is what used to flash it at full A4 size a
+   second after opening — that is why these exist. */
+#invPdfPage,#invBatchPage{position:fixed;left:-9999px;top:0;pointer-events:none}
+
 /* Brand palette, sampled straight from the actual logo file */
 :root{--ink:#12181f;--ib:#1e9dd6;--ib-dk:#0f6d9c;--ig:#f4f7fa;--ig2:#e8eef3}
 
-/* A4 page, screen preview and print use the identical mm-based box so what
-   you see before printing is exactly what comes out — true WYSIWYG.
-   JS sets style.zoom on this element to fit the whole page on screen first. */
+/* A4 page. Screen preview, the shared PDF and print all use this identical
+   mm-based box, so what sir sees is exactly what comes out — true WYSIWYG.
+   The viewer scales this element with a transform to fit the screen. */
 .inv-page{background:#fff;width:210mm;min-height:297mm;box-sizing:border-box;margin:16px auto;padding:0 0 10mm;display:flex;flex-direction:column;font-family:Arial,Helvetica,sans-serif;color:var(--ink);font-size:16px;box-shadow:0 4px 20px rgba(0,0,0,.3);position:relative;overflow:hidden}
 .inv-topbar{height:9px;background:linear-gradient(90deg,var(--ib),var(--ib-dk));margin-bottom:var(--gap1,10mm)}
 .inv-body{padding:0 12mm;flex:1 0 auto;display:flex;flex-direction:column}
@@ -350,15 +383,18 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   body *{visibility:hidden}
   .inv-overlay,.inv-overlay *{visibility:visible}
   .inv-overlay{position:absolute;inset:0;background:#fff;display:block}
-  .inv-toolbar{display:none}
-  .inv-scroll{overflow:visible;height:auto}
-  /* Fixed height, not min-height: at exactly 297mm the browser's own
-     mm -> px rounding pushed a hairline of the page onto a second sheet.
-     296mm + overflow:hidden makes Print / Save as PDF one page, always. */
+  .inv-titlebar,.inv-actionbar,.inv-loading{display:none!important}
+  .inv-stage{overflow:visible!important;height:auto!important;position:static!important;background:#fff}
+  /* Undo the viewer's on-screen zoom/offset (inline styles, so !important)
+     and print at true A4. Fixed height, not min-height: at exactly 297mm
+     the browser's own mm -> px rounding pushed a hairline onto a second
+     sheet. 296mm + overflow:hidden makes Print / Save as PDF one page. */
+  .inv-stage>.inv-page{position:static!important;transform:none!important;zoom:1!important;margin:0!important}
   .inv-page{box-shadow:none;margin:0;width:210mm;height:296mm;min-height:0;overflow:hidden;break-after:avoid;page-break-after:avoid}
-  /* Off-screen batch page (Client Calls only) must never print. */
-  #invBatchPage{display:none}
+  /* Off-screen render targets must never print. */
+  #invPdfPage,#invBatchPage{display:none!important}
 }
+
 </style>
 </head>
 <body>
@@ -500,20 +536,31 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   </div>
 </div>
 
-<!-- Invoice Overlay -->
 <div class="inv-overlay" id="invOverlay">
-  <div class="inv-toolbar">
-    <div class="inv-toolbar-title" id="invToolbarTitle">Invoice</div>
-    <div class="inv-toolbar-btns">
-      <button class="inv-share-btn" id="invShareBtn" onclick="shareInvoicePDF()">📤 Share</button>
-      <button class="inv-print-btn" onclick="printInvoice()">🖨️ Print / Save</button>
-      <button class="inv-close-btn" onclick="closeInvoice()">Close</button>
-    </div>
+  <div class="inv-titlebar">
+    <div class="inv-t-no"  id="invTitleNo">Invoice</div>
+    <div class="inv-t-sub" id="invTitleSub"></div>
   </div>
-  <div class="inv-scroll" id="invScroll">
+  <div class="inv-stage" id="invScroll">
     <div class="inv-page" id="invPage"></div>
+    <div class="inv-loading"><span class="inv-spin"></span>Preparing invoice…</div>
+  </div>
+  <div class="inv-actionbar">
+    <button class="inv-btn inv-btn-print" onclick="printInvoice()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Print
+    </button>
+    <button class="inv-btn inv-btn-share" id="invShareBtn" onclick="shareInvoicePDF()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>Share
+    </button>
+    <button class="inv-btn inv-btn-close" onclick="closeInvoice()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Close
+    </button>
   </div>
 </div>
+
+<!-- Off-screen render targets for the PDF builds — never shown. -->
+<div class="inv-page" id="invPdfPage"></div>
+<div class="inv-page" id="invBatchPage"></div>
 
 <!-- New Client Drawer -->
 <div class="overlay" id="ncOverlay">
@@ -1696,15 +1743,18 @@ function numToWordsTaka(num) {
   return parts.join(' ') + ' Taka Only';
 }
 
-function openInvoice(idx) {
-  const g = (window._histGroups || [])[idx];
-  if (!g) { toast('Invoice data not found', 'err'); return; }
-  if (!g.invoiceNo) { toast('This transaction has no Invoice No yet', 'err'); return; }
+// The client whose invoice is on screen. The two panels track the
+// selected client under different names; everything below this line is
+// identical in sales-entry.html and clients-due.html.
+function invClient() { return selClient || {}; }
 
-  const c = selClient || {};
+// Builds the invoice page HTML for one transaction group `g` and client `c`.
+// Shared by openInvoice() (single, on-screen) and buildInvoicePdfForGroup()
+// (batch, off-screen) so both produce byte-identical invoices.
+function buildInvoiceHtml(g, c) {
   const hasProducts = g.products.length > 0;
   const subTotal   = g.totalBill;
-  const discPct    = 0;   // invoice-level discount not tracked separately in ERP
+  const discPct    = 0;
   const discAmt    = 0;
   const total      = subTotal - discAmt;
   const received   = g.totalPaid;
@@ -1722,14 +1772,13 @@ function openInvoice(idx) {
       <td>৳${Number(p.final).toLocaleString('en-IN')}</td>
     </tr>`).join('');
 
-  // Payment-only transaction — no products, so no item table at all.
   const itemTableHtml = hasProducts ? `
     <table class="inv-table">
       <thead><tr><th>#</th><th>Item Name</th><th>Qty</th><th>Price/Unit</th><th>Discount</th><th>Amount</th></tr></thead>
       <tbody>${itemRows}</tbody>
     </table>` : '';
 
-  const html = `
+  return `
     <div class="inv-topbar"></div>
     <div class="inv-body">
     <div class="inv-header-top">
@@ -1793,47 +1842,60 @@ function openInvoice(idx) {
     </div>
     </div>
   `;
+}
 
-  document.getElementById('invPage').innerHTML = html;
-  document.getElementById('invToolbarTitle').textContent = `Invoice #${g.invoiceNo} — ${c.name || ''}`;
-  // Android's share pipeline builds a content:// URI from this name.
-  // Spaces and symbols (#, etc.) get mangled there and some apps
-  // (WhatsApp included) fall back to showing "Untitled". Keep it
-  // strictly alnum + underscore so the name survives the trip intact.
-  window._invFileBase = `ENKORE_Invoice_${g.invoiceNo}`;
+function openInvoice(idx) {
+  const g = (window._histGroups || [])[idx];
+  if (!g) { toast('Invoice data not found', 'err'); return; }
+  if (!g.invoiceNo) { toast('This transaction has no Invoice No yet', 'err'); return; }
+  const c = invClient();
+
+  const ov   = document.getElementById('invOverlay');
+  const page = document.getElementById('invPage');
+  page.innerHTML = buildInvoiceHtml(g, c);
+  document.getElementById('invTitleNo').textContent  = 'Invoice #' + g.invoiceNo;
+  document.getElementById('invTitleSub').textContent = [c.name, c.shop].filter(Boolean).join(' · ');
+
+  // Android's share pipeline builds a content:// URI from this name. Spaces
+  // and symbols (#, etc.) get mangled there and some apps (WhatsApp
+  // included) fall back to "Untitled". Keep it strictly alnum + underscore.
+  window._invFileBase  = `ENKORE_Invoice_${g.invoiceNo}`;
   window._invInvoiceNo = g.invoiceNo;
-  window._invPdfReady = null; // discard any previous invoice's pre-built PDF
+  window._invPdfReady  = null; // discard any previous invoice's pre-built PDF
+
+  // Open hidden. The page is only revealed once it has been auto-fitted and
+  // scaled to the screen — showing it before that is what made the invoice
+  // flash at full A4 zoom for a moment every single time it was opened.
+  ov.classList.add('inv-prep');
   ovOpen('invOverlay');
-  enableInvoiceZoom();
-  requestAnimationFrame(() => {
-    autoFitInvoicePage();
-    fitInvoiceToScreen();
-    // Build the PDF now, in the background, while sir is just looking at
-    // the invoice — not when Share is tapped. navigator.share() only keeps
-    // its full OS-level handoff (correct filename, no re-processing delay)
-    // if it's called immediately inside the tap's gesture window. Building
-    // the PDF first (a few seconds of canvas work) burns through that
-    // window, which is what was causing both the slow "Loading media…"
-    // stall and the "Untitled" name. Pre-building removes that gap.
+  bindInvoiceGestures();
+
+  (async () => {
+    try {
+      await waitForInvoiceImages(page);        // logo/signature decoded first
+      await new Promise(r => requestAnimationFrame(r));
+      autoFitInvoicePage(page);                // one A4 page
+      resetInvoiceView();                      // fit it to the stage
+      await new Promise(r => requestAnimationFrame(r));
+    } finally {
+      ov.classList.remove('inv-prep');         // reveal, already correct
+    }
+    // Build the PDF now, in the background, while sir is just looking at the
+    // invoice — not when Share is tapped. navigator.share() only keeps its
+    // full OS-level handoff (correct filename, no re-processing delay) if
+    // it is called immediately inside the tap's gesture window, and building
+    // the PDF first would burn through that window.
     window._invPdfReady = buildInvoicePDF().catch(e => { console.error('Pre-build PDF failed:', e); return null; });
-  });
-  window.addEventListener('resize', fitInvoiceToScreen);
+  })();
+
+  window.addEventListener('resize', resetInvoiceView);
 }
 
 function closeInvoice() {
+  document.getElementById('invOverlay').classList.remove('inv-prep');
   ovClose('invOverlay');
-  disableInvoiceZoom();
-  window.removeEventListener('resize', fitInvoiceToScreen);
+  window.removeEventListener('resize', resetInvoiceView);
 }
-
-// ── PINCH-ZOOM: allowed only while reviewing the invoice/receipt ──
-// The rest of the ERP keeps zoom locked (app-like feel), but you need to
-// pinch in on the printed detail here, so the viewport is loosened while
-// this overlay is open and restored the moment it closes.
-const DEFAULT_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-const ZOOM_VIEWPORT     = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes';
-function enableInvoiceZoom()  { document.querySelector('meta[name=viewport]')?.setAttribute('content', ZOOM_VIEWPORT); }
-function disableInvoiceZoom() { document.querySelector('meta[name=viewport]')?.setAttribute('content', DEFAULT_VIEWPORT); }
 
 // ── A4 ONE-PAGE AUTO-FIT ────────────────────────────────────────
 // One invoice must always be exactly one A4 page. This gives back the
@@ -1846,11 +1908,12 @@ function autoFitInvoicePage(page) {
   page = page || document.getElementById('invPage');
   if (!page) return;
 
-  // fitInvoiceToScreen() leaves a CSS zoom (~0.47 on a phone) on the page.
-  // Measuring through that zoom reported the page as roughly twice as tall
-  // as its budget, so every invoice opened after the first one was shrunk
-  // to the minimum font for no reason. Always measure at true scale.
-  const prevZoom = page.style.zoom;
+  // The viewer scales the page down to fit the phone. Measuring through
+  // that scale reported the page as roughly twice as tall as its budget,
+  // so every invoice opened after the first one was shrunk to the minimum
+  // font for no reason. Always measure the page at its true size.
+  const prevT = page.style.transform, prevZ = page.style.zoom;
+  page.style.transform = 'none';
   page.style.zoom = 1;
 
   // name, start, floor, step, unit — applied strictly in this order.
@@ -1868,7 +1931,7 @@ function autoFitInvoicePage(page) {
   STEPS.forEach((s, i) => page.style.setProperty(s[0], val[i] + s[4]));
 
   const width = page.getBoundingClientRect().width;
-  if (!width) { page.style.zoom = prevZoom; return; } // not laid out yet
+  if (!width) { page.style.transform = prevT; page.style.zoom = prevZ; return; }
   // The page is exactly 210mm wide and A4 is 297mm tall, so the height
   // budget is the measured width in that ratio. The +2px absorbs the
   // browser's own mm -> px rounding, which is far less than one text line —
@@ -1889,53 +1952,154 @@ function autoFitInvoicePage(page) {
     if (!shrank) break; // nothing left to give — the PDF builder scales it
   }
 
-  page.style.zoom = prevZoom;
+  page.style.transform = prevT;
+  page.style.zoom = prevZ;
 }
 
-// ── FIT WHOLE PAGE ON SCREEN ─────────────────────────────────────
-// The A4 page is physically wider than a phone screen. Instead of forcing
-// you to pinch-zoom out just to see the layout, this scales the page down
-// (CSS zoom, not transform, so scrolling/panning still works correctly) to
-// fit entirely inside the visible area below the toolbar. Native pinch-zoom
-// still works on top of this to look closer at any part of it.
-function fitInvoiceToScreen() {
-  const scroll = document.getElementById('invScroll');
-  const page   = document.getElementById('invPage');
-  if (!scroll || !page || !document.getElementById('invOverlay').classList.contains('open')) return;
+// ── INVOICE VIEWER: pinch-zoom and pan, handled in-page ──────────
+// Native pinch-zoom zooms the whole ERP shell, which carried the toolbar
+// and the buttons off-screen exactly when sir was reading the invoice. So
+// the stage takes the gestures itself and only the page is transformed:
+// the title bar and the action bar can never be zoomed or scrolled away.
+const IV = { s: 1, fit: 1, max: 3, x: 0, y: 0, pw: 1, ph: 1 };
+let ivGesture = null, ivLastTap = 0;
 
-  page.style.zoom = 1; // measure true size first
-  const availW = scroll.clientWidth  - 16;
-  const availH = scroll.clientHeight - 16;
-  const trueW  = page.offsetWidth;
-  const trueH  = page.offsetHeight;
-  if (!trueW || !trueH) return;
+function ivStage() { return document.getElementById('invScroll'); }
 
-  const fit = Math.min(availW / trueW, availH / trueH, 1);
-  page.style.zoom = fit;
-  window._invFitZoom = fit;
+// Clamp and write the transform. Any axis where the scaled page is smaller
+// than the stage is centred; any axis where it is larger is clamped so the
+// page can never be dragged off into empty grey.
+function ivApply() {
+  const st = ivStage(), pg = document.getElementById('invPage');
+  if (!st || !pg) return;
+  const sw = st.clientWidth, sh = st.clientHeight;
+  // IV.pw/IV.ph are the page's true fractional size, measured untransformed
+  // in resetInvoiceView(). offsetWidth rounds to whole pixels, which left a
+  // half-pixel of grey showing at the far edge of a fully panned page.
+  const pw = IV.pw * IV.s, ph = IV.ph * IV.s;
+  IV.x = pw <= sw ? (sw - pw) / 2 : Math.min(0, Math.max(sw - pw, IV.x));
+  IV.y = ph <= sh ? (sh - ph) / 2 : Math.min(0, Math.max(sh - ph, IV.y));
+  pg.style.transform = `translate(${IV.x}px, ${IV.y}px) scale(${IV.s})`;
+}
+
+// Whole page visible, centred. Also the floor for zooming out.
+function resetInvoiceView() {
+  const st = ivStage(), pg = document.getElementById('invPage');
+  if (!st || !pg || !document.getElementById('invOverlay').classList.contains('open')) return;
+  pg.style.transform = 'none';
+  const r = pg.getBoundingClientRect();
+  const pw = r.width, ph = r.height;
+  if (!pw || !ph || !st.clientWidth || !st.clientHeight) return;
+  IV.pw = pw; IV.ph = ph;
+  IV.fit = Math.min((st.clientWidth - 12) / pw, (st.clientHeight - 12) / ph, 1);
+  IV.s   = IV.fit;
+  IV.max = Math.max(IV.fit * 6, 3);
+  IV.x   = 0; IV.y = 0;
+  ivApply();
+}
+
+// Zoom to `s`, keeping whatever is under (cx, cy) — stage coordinates —
+// pinned under that same point.
+function ivZoomAt(cx, cy, s) {
+  s = Math.min(IV.max, Math.max(IV.fit, s));
+  const k = s / (IV.s || 1);
+  IV.x = cx - (cx - IV.x) * k;
+  IV.y = cy - (cy - IV.y) * k;
+  IV.s = s;
+  ivApply();
+}
+
+function ivLocal(clientX, clientY) {
+  const r = ivStage().getBoundingClientRect();
+  return { x: clientX - r.left, y: clientY - r.top };
+}
+function ivDist(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY); }
+
+function bindInvoiceGestures() {
+  const st = ivStage();
+  if (!st || st._ivBound) return;
+  st._ivBound = true;
+
+  st.addEventListener('touchstart', e => {
+    const t = e.touches;
+    if (t.length === 2) {
+      e.preventDefault();
+      const m = ivLocal((t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2);
+      ivGesture = { mode: 'pinch', d0: ivDist(t) || 1, s0: IV.s, mx: m.x, my: m.y, x0: IV.x, y0: IV.y };
+    } else if (t.length === 1) {
+      ivGesture = { mode: 'pan', px: t[0].clientX, py: t[0].clientY, x0: IV.x, y0: IV.y, moved: false, t0: Date.now() };
+    }
+  }, { passive: false });
+
+  st.addEventListener('touchmove', e => {
+    if (!ivGesture) return;
+    const t = e.touches;
+    if (ivGesture.mode === 'pinch' && t.length === 2) {
+      e.preventDefault();
+      const s = Math.min(IV.max, Math.max(IV.fit, ivGesture.s0 * (ivDist(t) / ivGesture.d0)));
+      const k = s / ivGesture.s0;
+      IV.x = ivGesture.mx - (ivGesture.mx - ivGesture.x0) * k;
+      IV.y = ivGesture.my - (ivGesture.my - ivGesture.y0) * k;
+      IV.s = s;
+      ivApply();
+    } else if (ivGesture.mode === 'pan' && t.length === 1) {
+      if (IV.s <= IV.fit + 0.001) return; // nothing to pan when the whole page is showing
+      e.preventDefault();
+      IV.x = ivGesture.x0 + (t[0].clientX - ivGesture.px);
+      IV.y = ivGesture.y0 + (t[0].clientY - ivGesture.py);
+      ivGesture.moved = true;
+      ivApply();
+    }
+  }, { passive: false });
+
+  const end = e => {
+    // Double-tap toggles between the whole page and a readable zoom.
+    if (ivGesture && ivGesture.mode === 'pan' && !ivGesture.moved && Date.now() - ivGesture.t0 < 320) {
+      const now = Date.now();
+      if (now - ivLastTap < 320) {
+        const tc = e.changedTouches && e.changedTouches[0];
+        if (tc) {
+          const p = ivLocal(tc.clientX, tc.clientY);
+          ivZoomAt(p.x, p.y, IV.s > IV.fit * 1.05 ? IV.fit : IV.fit * 2.5);
+        }
+        ivLastTap = 0;
+      } else ivLastTap = now;
+    }
+    if (!e.touches || e.touches.length === 0) ivGesture = null;
+    else if (e.touches.length === 1) ivGesture = { mode: 'pan', px: e.touches[0].clientX, py: e.touches[0].clientY, x0: IV.x, y0: IV.y, moved: true, t0: Date.now() };
+  };
+  st.addEventListener('touchend', end, { passive: false });
+  st.addEventListener('touchcancel', end, { passive: false });
+
+  // Desktop: wheel zooms, double-click toggles. Handy for the office PC.
+  st.addEventListener('wheel', e => {
+    e.preventDefault();
+    const p = ivLocal(e.clientX, e.clientY);
+    ivZoomAt(p.x, p.y, IV.s * (e.deltaY < 0 ? 1.12 : 1 / 1.12));
+  }, { passive: false });
+  st.addEventListener('dblclick', e => {
+    const p = ivLocal(e.clientX, e.clientY);
+    ivZoomAt(p.x, p.y, IV.s > IV.fit * 1.05 ? IV.fit : IV.fit * 2.5);
+  });
 }
 
 function printInvoice() {
-  const page = document.getElementById('invPage');
-  const fitZoom = window._invFitZoom || 1;
-  page.style.zoom = 1; // print must use true A4 scale, not the on-screen fit
-  autoFitInvoicePage();
-  // Chrome's print/Save-as-PDF dialog suggests the page <title> as the
-  // filename — swap it to the invoice name just for this print, then restore.
+  // The print stylesheet resets the viewer's zoom and position on its own
+  // (transform/position are forced back with !important), so the sheet comes
+  // out at true A4 without disturbing anything on screen.
   const oldTitle = document.title;
+  // Chrome's print / Save-as-PDF dialog suggests the page <title> as the
+  // filename — swap it to the invoice name just for this print.
   document.title = window._invFileBase || document.title;
-  const restoreAfterPrint = () => {
-    document.title = oldTitle;
-    page.style.zoom = fitZoom;
-    window.removeEventListener('afterprint', restoreAfterPrint);
-  };
-  window.addEventListener('afterprint', restoreAfterPrint);
-  setTimeout(() => window.print(), 30); // let the shrink reflow before the print snapshot
+  const restore = () => { document.title = oldTitle; window.removeEventListener('afterprint', restore); };
+  window.addEventListener('afterprint', restore);
+  setTimeout(() => window.print(), 30);
+  setTimeout(restore, 8000); // afterprint does not fire on every Android build
 }
 
 // ── REAL PDF FILE — for direct WhatsApp / Messenger / any app share ──
 // window.print() only opens the OS print dialog, it can't hand us back an
-// actual file. To share a real PDF we render #invPage to a canvas and pack
+// actual file. To share a real PDF we render the page to a canvas and pack
 // it into a PDF ourselves (html2canvas + jsPDF), sized to true A4.
 function waitForInvoiceImages(page) {
   const imgs = Array.from(page.querySelectorAll('img'));
@@ -1949,25 +2113,26 @@ function waitForInvoiceImages(page) {
   }));
 }
 
-async function buildInvoicePDF() {
-  const page = document.getElementById('invPage');
-  const fitZoom = window._invFitZoom || 1;
-  page.style.zoom = 1; // capture at true A4 scale, not the on-screen fit
-  await waitForInvoiceImages(page); // logo/signature must be fully decoded first —
-                                     // capturing mid-fetch is the main cause of the long "Preparing…" stall
-  await new Promise(r => requestAnimationFrame(r)); // let the reflow settle
-  // scale 1.25 is still print-sharp for an A4 invoice and rasterizes
-  // noticeably faster on mid-range Android CPUs than scale 2.
+// The auto-fit result lives in inline CSS variables on the page element, so
+// an off-screen copy has to carry them across or it renders unfitted.
+function copyInvoiceFitVars(from, to) {
+  ['--gap1','--gap2','--gap3','--gap4','--gap5','--tpad','--tsize','--sigh']
+    .forEach(v => to.style.setProperty(v, from.style.getPropertyValue(v)));
+}
+
+// Renders `page` (already filled with buildInvoiceHtml output) to a real A4
+// PDF blob. Used for the single Share build and for each invoice in the
+// "Send All" batch.
+async function renderPageToPdf(page, invoiceNo, fileBase) {
+  await waitForInvoiceImages(page);
+  await new Promise(r => requestAnimationFrame(r));
   const canvas = await html2canvas(page, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
-  page.style.zoom = fitZoom;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('p', 'mm', 'a4');
-  // jsPDF never sets an internal /Title by default. WhatsApp, Google Files,
+  // jsPDF never sets an internal /Title by default. WhatsApp, Google Files
   // and most PDF viewers show that embedded metadata title instead of the
-  // actual on-disk filename — with no title set, they all fall back to
-  // "Untitled" no matter what the file is actually named. This is the real
-  // fix; the filename itself was never the problem.
-  const docTitle = `ENKORE Invoice ${window._invInvoiceNo || ''}`.trim();
+  // on-disk filename — with no title set they all fall back to "Untitled".
+  const docTitle = `ENKORE Invoice ${invoiceNo || ''}`.trim();
   doc.setProperties({ title: docTitle, subject: 'Invoice', creator: 'Enkore Automotive Ltd.' });
 
   const pageW = 210, pageH = 297;
@@ -1985,9 +2150,23 @@ async function buildInvoicePDF() {
   const drawW = pageW * fit, drawH = rawH * fit;
   doc.addImage(imgData, 'JPEG', (pageW - drawW) / 2, 0, drawW, drawH);
 
-  const filename = (window._invFileBase || 'ENKORE Invoice') + '.pdf';
-  const blob = doc.output('blob');
-  return { blob, filename };
+  const filename = (fileBase || 'ENKORE Invoice') + '.pdf';
+  return { blob: doc.output('blob'), filename };
+}
+
+// The PDF is always rendered from an off-screen twin of the page, never
+// from the one on screen. Rendering the visible page meant briefly resetting
+// it to full A4 size, and that is the flash sir saw a second after opening
+// an invoice — "it is zoomed, then it appears".
+async function buildInvoicePDF() {
+  const live = document.getElementById('invPage');
+  const off  = document.getElementById('invPdfPage');
+  off.innerHTML = live.innerHTML;
+  copyInvoiceFitVars(live, off);
+  await new Promise(r => requestAnimationFrame(r));
+  const built = await renderPageToPdf(off, window._invInvoiceNo, window._invFileBase);
+  off.innerHTML = '';
+  return built;
 }
 
 async function shareInvoicePDF() {
