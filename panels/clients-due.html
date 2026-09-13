@@ -215,55 +215,64 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 .inv-scroll{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;background:#525659}
 
-.inv-page{background:#fff;width:210mm;min-height:297mm;box-sizing:border-box;margin:16px auto;padding:0 0 14mm;font-family:Arial,Helvetica,sans-serif;color:var(--ink);font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);position:relative;overflow:hidden}
-.inv-topbar{height:7px;background:linear-gradient(90deg,var(--ib),var(--ib-dk));margin-bottom:14mm}
-.inv-body{padding:0 14mm}
+.inv-page{background:#fff;width:210mm;min-height:297mm;box-sizing:border-box;margin:16px auto;padding:0 0 10mm;display:flex;flex-direction:column;font-family:Arial,Helvetica,sans-serif;color:var(--ink);font-size:16px;box-shadow:0 4px 20px rgba(0,0,0,.3);position:relative;overflow:hidden}
+.inv-topbar{height:9px;background:linear-gradient(90deg,var(--ib),var(--ib-dk));margin-bottom:var(--gap1,10mm)}
+.inv-body{padding:0 12mm;flex:1 0 auto;display:flex;flex-direction:column}
 .inv-hr{border:none;border-top:2px solid var(--ink);margin:10px 0 14px}
 .inv-hr-thin{border:none;border-top:1px solid #ccc;margin:14px 0}
 .inv-header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
-.inv-logo{display:block;height:22px;width:auto;flex-shrink:0;border-radius:4px}
-.inv-title{font-size:24px;font-weight:900;letter-spacing:1.5px;margin-bottom:4px;color:var(--ink)}
-.inv-title-accent{width:44px;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--ib),var(--ib-dk));margin-bottom:9px}
-.inv-co-name{font-size:17px;font-weight:800}
-.inv-co-line{font-size:11px;color:#555;line-height:1.5}
-.inv-co-contact{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#555;margin-top:2px}
-.inv-co-contact span{display:inline-flex;align-items:center;gap:4px}
+.inv-logo{display:block;height:34px;width:auto;flex-shrink:0;border-radius:4px}
+.inv-title{font-size:31px;font-weight:900;letter-spacing:1.6px;margin-bottom:5px;color:var(--ink)}
+.inv-title-accent{width:56px;height:5px;border-radius:3px;background:linear-gradient(90deg,var(--ib),var(--ib-dk));margin-bottom:10px}
+.inv-co-name{font-size:21px;font-weight:800}
+.inv-co-line{font-size:14.5px;color:#444;line-height:1.5}
+.inv-co-contact{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;color:#444;margin-top:3px}
+.inv-co-contact span{display:inline-flex;align-items:center;gap:5px}
 .inv-co-contact svg{flex-shrink:0}
-.inv-2col{display:flex;justify-content:space-between;gap:16px;margin-top:16px}
-.inv-info-card{background:var(--ig);border-left:3px solid var(--ib);border-radius:0 8px 8px 0;padding:10px 14px;flex:1}
-.inv-block-lbl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;color:var(--ib-dk)}
-.inv-row{font-size:12px;line-height:1.7}
-.inv-row b{display:inline-block;min-width:70px;color:#333}
-.inv-table{width:100%;border-collapse:collapse;margin-top:18px;font-size:12px;border-radius:8px;overflow:hidden}
-.inv-table th{background:var(--ib);color:#fff;padding:var(--tpad,8px) 10px;text-align:left;font-size:var(--tsize,11px);text-transform:uppercase;letter-spacing:.3px}
-.inv-table td{padding:var(--tpad,8px) 10px;border-bottom:1px solid #e9ecef;font-size:var(--tsize,12px)}
+.inv-2col{display:flex;justify-content:space-between;gap:16px;margin-top:var(--gap2,16px)}
+.inv-info-card{background:var(--ig);border-left:4px solid var(--ib);border-radius:0 8px 8px 0;padding:11px 15px;flex:1}
+.inv-block-lbl{font-size:13.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px;color:var(--ib-dk)}
+.inv-row{display:flex;gap:9px;font-size:16px;line-height:1.65}
+.inv-row b{flex:0 0 92px;color:#222;font-weight:700}
+/* --tsize / --tpad / --gap* / --sigh are shrunk by JS (autoFitInvoicePage),
+   whitespace first and text size last, only as far as a long product list
+   needs to stay inside one A4 page. */
+.inv-table{width:100%;border-collapse:collapse;margin-top:var(--gap3,16px);font-size:16.5px;border-radius:8px;overflow:hidden}
+.inv-table th{background:var(--ib);color:#fff;padding:var(--tpad,8px) 11px;text-align:left;font-size:calc(var(--tsize,16.5px) - 2px);text-transform:uppercase;letter-spacing:.3px}
+.inv-table td{padding:var(--tpad,8px) 11px;border-bottom:1px solid #e9ecef;font-size:var(--tsize,16.5px)}
 .inv-table tbody tr:nth-child(even){background:var(--ig)}
 .inv-table tr{page-break-inside:avoid}
 .inv-table th:last-child,.inv-table td:last-child{text-align:right}
 .inv-table th:nth-child(3),.inv-table td:nth-child(3),
 .inv-table th:nth-child(4),.inv-table td:nth-child(4),
 .inv-table th:nth-child(5),.inv-table td:nth-child(5){text-align:right}
-.inv-amounts{width:240px;margin-left:auto;background:var(--ig);border-radius:8px;padding:12px 14px;border:1px solid var(--ig2)}
-.inv-amt-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0}
-.inv-amt-row.tot{font-weight:900;font-size:14px;color:#fff;background:var(--ib);border-radius:6px;padding:7px 10px;margin:6px -14px}
+.inv-amounts{width:295px;margin-left:auto;background:var(--ig);border-radius:8px;padding:12px 15px;border:1px solid var(--ig2)}
+.inv-amt-row{display:flex;justify-content:space-between;font-size:16.5px;padding:3.5px 0}
+.inv-amt-row.tot{font-weight:900;font-size:20px;color:#fff;background:var(--ib);border-radius:6px;padding:7px 11px;margin:6px -15px}
 .inv-amt-row.due{color:#e03131;font-weight:800}
-.inv-words{font-size:11px;font-style:italic;color:#333;margin-top:4px}
-.inv-sign{margin-top:36px;display:flex;justify-content:flex-end;page-break-inside:avoid}
-.inv-sign-box{width:220px;text-align:center}
-.inv-sign-for{text-align:right;font-size:12px;color:#333;margin-bottom:2px}
-.inv-signature-img{display:block;margin:2px auto 0;height:68px;width:auto;max-width:210px;object-fit:contain}
-.inv-sign-line{border-top:1.5px solid var(--ink);margin-top:2px;padding-top:5px;font-size:11px;color:#444}
-.inv-footer-tag{text-align:center;margin-top:30px;padding-top:10px;border-top:1px solid var(--ig2)}
-.inv-footer-slogan{font-size:10.5px;color:var(--ib-dk);font-weight:700;letter-spacing:.3px}
-.inv-footer-web{font-size:10px;color:#8a97a3;font-weight:600;margin-top:2px}
+.inv-words{font-size:15px;font-style:italic;color:#333;margin-top:5px}
+.inv-sign{margin-top:auto;padding-top:var(--gap4,26px);display:flex;justify-content:flex-end;page-break-inside:avoid}
+.inv-sign-box{width:250px;text-align:center}
+.inv-sign-for{text-align:right;font-size:15px;color:#333;margin-bottom:2px}
+.inv-signature-img{display:block;margin:2px auto 0;height:var(--sigh,56px);width:auto;max-width:230px;object-fit:contain}
+.inv-sign-line{border-top:1.5px solid var(--ink);margin-top:2px;padding-top:6px;font-size:14px;color:#333}
+.inv-footer-tag{text-align:center;margin-top:var(--gap5,22px);padding-top:11px;border-top:1px solid var(--ig2)}
+.inv-footer-slogan{font-size:13.5px;color:var(--ib-dk);font-weight:700;letter-spacing:.3px}
+.inv-footer-web{font-size:12.5px;color:#8a97a3;font-weight:600;margin-top:3px}
 
+@page{size:A4;margin:0}
 @media print{
   body *{visibility:hidden}
   .inv-overlay,.inv-overlay *{visibility:visible}
   .inv-overlay{position:absolute;inset:0;background:#fff;display:block}
   .inv-toolbar{display:none}
   .inv-scroll{overflow:visible;height:auto}
-  .inv-page{box-shadow:none;margin:0;width:210mm;min-height:297mm}
+  /* Fixed height, not min-height: at exactly 297mm the browser's own
+     mm -> px rounding pushed a hairline of the page onto a second sheet.
+     296mm + overflow:hidden makes Print / Save as PDF one page, always. */
+  .inv-page{box-shadow:none;margin:0;width:210mm;height:296mm;min-height:0;overflow:hidden;break-after:avoid;page-break-after:avoid}
+  /* Off-screen batch page (Client Calls only) must never print. */
+  #invBatchPage{display:none}
 }
 
 /* Off-screen page used only to render each invoice for the "Send All
@@ -905,27 +914,61 @@ const ZOOM_VIEWPORT     = 'width=device-width, initial-scale=1.0, maximum-scale=
 function enableInvoiceZoom()  { document.querySelector('meta[name=viewport]')?.setAttribute('content', ZOOM_VIEWPORT); }
 function disableInvoiceZoom() { document.querySelector('meta[name=viewport]')?.setAttribute('content', DEFAULT_VIEWPORT); }
 
+// ── A4 ONE-PAGE AUTO-FIT ────────────────────────────────────────
+// One invoice must always be exactly one A4 page. This gives back the
+// invoice's slack in order of how little it is missed — the empty space
+// first, the item table's row padding next, and the item text size only as
+// a last resort — until the page fits the A4 height budget. Anything it
+// still cannot squeeze is caught by the PDF builder, which scales the
+// finished page down to fit rather than slicing it onto a second sheet.
 function autoFitInvoicePage(page) {
+  page = page || document.getElementById('invPage');
   if (!page) return;
-  page.style.setProperty('--tsize', '12px');
-  page.style.setProperty('--tpad', '7px');
 
-  const rect = page.getBoundingClientRect();
-  if (!rect.width) return;
-  const pxPerMM = rect.width / 210;
-  const maxHeightPx = pxPerMM * 297;
+  // fitInvoiceToScreen() leaves a CSS zoom (~0.47 on a phone) on the page.
+  // Measuring through that zoom reported the page as roughly twice as tall
+  // as its budget, so every invoice opened after the first one was shrunk
+  // to the minimum font for no reason. Always measure at true scale.
+  const prevZoom = page.style.zoom;
+  page.style.zoom = 1;
 
-  let tsize = 12, tpad = 7;
-  const minSize = 8.5, minPad = 3;
+  // name, start, floor, step, unit — applied strictly in this order.
+  const STEPS = [
+    ['--gap4',  26, 11, 2,    'px'], // space above the signature block
+    ['--gap5',  22, 10, 2,    'px'], // space above the footer strip
+    ['--tpad',   8,  4, 0.5,  'px'], // item row padding
+    ['--gap1',  10,  6, 0.5,  'mm'], // space under the blue top bar
+    ['--sigh',  56, 42, 2,    'px'], // signature image height
+    ['--gap2',  16, 10, 1,    'px'], // space above the Bill To / Details cards
+    ['--gap3',  16, 10, 1,    'px'], // space above the item table
+    ['--tsize', 16.5, 11, 0.25, 'px']  // item text size — last resort
+  ];
+  const val = STEPS.map(s => s[1]);
+  STEPS.forEach((s, i) => page.style.setProperty(s[0], val[i] + s[4]));
+
+  const width = page.getBoundingClientRect().width;
+  if (!width) { page.style.zoom = prevZoom; return; } // not laid out yet
+  // The page is exactly 210mm wide and A4 is 297mm tall, so the height
+  // budget is the measured width in that ratio. The +2px absorbs the
+  // browser's own mm -> px rounding, which is far less than one text line —
+  // without it an already-perfect page shrinks itself for no reason.
+  const maxH = (width / 210) * 297 + 2;
+
   let guard = 0;
-
-  while (page.scrollHeight > maxHeightPx && (tsize > minSize || tpad > minPad) && guard < 40) {
-    if (tpad > minPad)  tpad -= 0.5;
-    else if (tsize > minSize) tsize -= 0.25;
-    page.style.setProperty('--tpad',  tpad  + 'px');
-    page.style.setProperty('--tsize', tsize + 'px');
-    guard++;
+  while (page.scrollHeight > maxH && guard++ < 300) {
+    let shrank = false;
+    for (let i = 0; i < STEPS.length; i++) {
+      if (val[i] > STEPS[i][2]) {
+        val[i] = Math.max(STEPS[i][2], Math.round((val[i] - STEPS[i][3]) * 100) / 100);
+        page.style.setProperty(STEPS[i][0], val[i] + STEPS[i][4]);
+        shrank = true;
+        break;
+      }
+    }
+    if (!shrank) break; // nothing left to give — the PDF builder scales it
   }
+
+  page.style.zoom = prevZoom;
 }
 
 function fitInvoiceToScreen() {
@@ -980,26 +1023,26 @@ function waitForInvoiceImages(page) {
 async function renderPageToPdf(page, invoiceNo, fileBase) {
   await waitForInvoiceImages(page);
   await new Promise(r => requestAnimationFrame(r));
-  const canvas = await html2canvas(page, { scale: 1.25, useCORS: true, backgroundColor: '#ffffff' });
+  const canvas = await html2canvas(page, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('p', 'mm', 'a4');
   const docTitle = `ENKORE Invoice ${invoiceNo || ''}`.trim();
   doc.setProperties({ title: docTitle, subject: 'Invoice', creator: 'Enkore Automotive Ltd.' });
 
   const pageW = 210, pageH = 297;
-  const imgH  = (canvas.height * pageW) / canvas.width;
-  const imgData = canvas.toDataURL('image/jpeg', 0.88);
+  const rawH  = (canvas.height * pageW) / canvas.width;
+  const imgData = canvas.toDataURL('image/jpeg', 0.9);
 
-  if (imgH <= pageH) {
-    doc.addImage(imgData, 'JPEG', 0, 0, pageW, imgH);
-  } else {
-    let renderedMM = 0;
-    while (renderedMM < imgH) {
-      if (renderedMM > 0) doc.addPage();
-      doc.addImage(imgData, 'JPEG', 0, -renderedMM, pageW, imgH);
-      renderedMM += pageH;
-    }
-  }
+  // ONE INVOICE = ONE PAGE, ALWAYS.
+  // html2canvas rounds the canvas down to whole pixels, so a page that is
+  // exactly A4 on screen measures ~297.04mm here. That hairline alone was
+  // enough to push a near-blank second sheet into every shared PDF while
+  // the ERP preview still, correctly, showed one page. Scaling the finished
+  // page to fit removes the rounding error outright, and also keeps a
+  // genuinely over-long invoice on a single sheet instead of slicing it.
+  const fit = Math.min(1, pageH / rawH);
+  const drawW = pageW * fit, drawH = rawH * fit;
+  doc.addImage(imgData, 'JPEG', (pageW - drawW) / 2, 0, drawW, drawH);
   const filename = (fileBase || 'ENKORE Invoice') + '.pdf';
   return { blob: doc.output('blob'), filename };
 }
@@ -1065,10 +1108,8 @@ async function shareInvoicePDF() {
 async function buildInvoicePdfForGroup(g, c) {
   const page = document.getElementById('invBatchPage');
   page.innerHTML = buildInvoiceHtml(g, c);
-  page.style.setProperty('--tsize', '12px');
-  page.style.setProperty('--tpad', '7px');
   await new Promise(r => requestAnimationFrame(r));
-  autoFitInvoicePage(page);
+  autoFitInvoicePage(page); // resets every --gap/--tsize itself, per invoice
   return renderPageToPdf(page, g.invoiceNo, `ENKORE_Invoice_${g.invoiceNo}`);
 }
 
