@@ -49,6 +49,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .banner.show{display:block}
 .banner.bad{background:#ffe3e3;border-color:#ffc9c9;color:#c92a2a}
 
+/* new-for-you strip + at-a-glance summary */
+.newbar{display:none;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--b);color:#fff;border-radius:10px;padding:10px 12px;margin-bottom:10px;
+  font-size:12.5px;font-weight:800;box-shadow:0 4px 14px rgba(25,113,194,.3)}
+.newbar.show{display:flex}
+.newbar button{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45);color:#fff;
+  border-radius:16px;padding:5px 11px;font-size:10.5px;font-weight:800;cursor:pointer;flex:0 0 auto}
+.sumbar{display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.sumbar.show{display:flex}
+.sumbar span{font-size:10.5px;font-weight:800;padding:5px 10px;border-radius:16px;
+  background:#fff;box-shadow:var(--sh)}
+.sumbar span.late{background:#ffe3e3;color:#c92a2a}
+.sumbar span.today{background:#fff3e0;color:#e8590c}
+.sumbar span.rev{background:#f3f0ff;color:#5f3dc4}
+.vtab .dot{display:inline-block;min-width:17px;height:17px;line-height:17px;border-radius:9px;
+  background:var(--red);color:#fff;font-size:9.5px;font-weight:900;margin-left:5px;padding:0 4px;
+  vertical-align:1px}
+
 /* scope + state segments */
 .seg{display:flex;gap:6px;background:#fff;border-radius:10px;padding:4px;box-shadow:var(--sh);margin-bottom:10px}
 .seg button{flex:1;border:none;background:none;padding:9px 4px;border-radius:8px;font-size:11px;
@@ -78,6 +96,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .p-Must{background:#ffe3e3;color:#c92a2a}
 .p-Should{background:#fff3e0;color:#e8590c}
 .p-Later{background:#e9ecef;color:#495057}
+.p-new{background:var(--b);color:#fff}
+.p-fix{background:#ffe3e3;color:#c92a2a}
+/* who it belongs to, as faces not numbers */
+.who{display:flex;align-items:center;gap:5px;margin-top:7px;flex-wrap:wrap}
+.av{width:22px;height:22px;border-radius:50%;background:var(--bbg);color:var(--b);
+  font-size:9px;font-weight:900;display:grid;place-items:center;flex:0 0 auto;
+  border:1.5px solid #fff;box-shadow:0 0 0 1px var(--border)}
+.av.me{background:var(--b);color:#fff;box-shadow:0 0 0 1px var(--b)}
+.av.none{background:#ffe3e3;color:#c92a2a;box-shadow:0 0 0 1px #ffc9c9}
+.who .nm{font-size:10.5px;font-weight:700;color:var(--text)}
+.who .yours{font-size:9px;font-weight:900;color:var(--b);background:var(--bbg);
+  border-radius:10px;padding:2px 7px;letter-spacing:.3px}
 .due{font-weight:800}
 .due.late{color:var(--red)}
 .due.soon{color:var(--amber)}
@@ -113,8 +143,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 .cp{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #f1f3f5}
 .cp:last-child{border-bottom:none}
-.cp .box{width:23px;height:23px;border-radius:50%;border:2px solid var(--border);flex:0 0 auto;
-  display:grid;place-items:center;font-size:12px;color:#fff;cursor:pointer}
+.cp{cursor:pointer}
+.cp .box{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);flex:0 0 auto;
+  display:grid;place-items:center;font-size:13px;color:#fff;cursor:pointer}
 .cp.on .box{background:var(--green);border-color:var(--green)}
 .cp.auto .box{cursor:default}
 .cp .n{flex:1;font-size:12.5px;font-weight:600;line-height:1.35}
@@ -216,9 +247,15 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div class="banner" id="bnWire">Backend not connected yet. Paste the Task Engine Web App URL into
     <b>AS_URL</b> at the top of panels/tasks.html, then redeploy.</div>
   <div class="banner" id="bnRo">Read only access. You can see tasks but not change them.</div>
+  <div class="banner" id="bnStale">Showing your saved copy — the server could not be reached. Pull down to retry.</div>
 
   <!-- ============ BOARD — the common surface, same for every department ============ -->
   <div id="vBoard">
+    <div class="newbar" id="newBar">
+      <span id="newTxt">2 new for you</span>
+      <button type="button" id="newSeen">Mark all seen</button>
+    </div>
+    <div class="sumbar" id="sumBar"></div>
     <div id="notices"></div>
 
     <!-- Daily checklist: workflow, not a score. Always here for everyone,
@@ -354,10 +391,6 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
    ===================================================================== */
 const AS_URL = 'https://script.google.com/macros/s/AKfycby8vfo3cNZAYb3r2OTwpvRcVHxmiP6_ky6B43lJoOboBhBs54z91z9izbxcG-aihsmzvQ/exec';
 
-const CKEY = 'enkore_task_cache';
-const QKEY = 'enkore_task_queue';
-const TKEY = 'enkore_task_token';
-
 const qp = new URLSearchParams(location.search);
 const USER = {
   id:   qp.get('userId') || '',
@@ -365,6 +398,15 @@ const USER = {
   role: qp.get('role')   || '',
   ro:   qp.get('readonly') === '1'
 };
+
+/* Every stored key is tied to the person who is signed in. These used to be one
+   shared key, so when two people used the same phone the second one was shown
+   the first one's saved copy — including a KPI leaderboard that was supposed to
+   be admin only. A cache must never outlive the identity it was saved for. */
+const CKEY = 'enkore_task_cache_' + USER.id;
+const QKEY = 'enkore_task_queue_' + USER.id;
+const SKEY = 'enkore_task_seen_'  + USER.id;
+const TKEY = 'enkore_task_token';
 const WIRED = AS_URL.indexOf('http') === 0;
 
 const $ = id => document.getElementById(id);
@@ -377,15 +419,33 @@ if (USER.ro) $('bnRo').classList.add('show');
 
 /* ------------------------------- state ------------------------------- */
 let ST = {
-  me: USER.id, isLead: false, kpiVisible: false, users: [], teams: [],
-  tasks: [], activity: [], checkpoints: [], kpi: [],
-  view: 'board', scope: 'mine', state: 'To Do', openId: '', pick: [], ctype: 'Task'
+  me: USER.id, isLead: false, isBoss: false, kpiVisible: false, users: [], teams: [],
+  myTeams: [], tasks: [], activity: [], checkpoints: [], kpi: [],
+  view: 'board', scope: 'mine', state: 'To Do', openId: '', pick: [], ctype: 'Task',
+  stale: false, pickMode: 'create'
 };
+
+/**
+ * A person is a name. If an ID cannot be matched to somebody on the staff list
+ * it is either a person who has left or a value that got damaged on the way
+ * into the sheet — in both cases printing the raw digits at a human being tells
+ * them nothing, which is exactly what "1011100002101110000" on a task card was.
+ */
 const nameOf = id => {
-  const u = ST.users.find(x => String(x.id) === String(id));
-  return u ? u.name : (id || '—');
+  const s = String(id == null ? '' : id).trim();
+  if (!s) return 'Unassigned';
+  const u = ST.users.find(x => String(x.id) === s);
+  if (u) return u.name;
+  return /^\d{11,}$/.test(s) ? 'Unassigned' : 'Former staff';
 };
 const firstName = id => String(nameOf(id)).split(' ')[0];
+const initials = id => {
+  const n = nameOf(id);
+  if (n === 'Unassigned' || n === 'Former staff') return '?';
+  const p = n.split(/\s+/).filter(Boolean);
+  return ((p[0] || '')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+};
+const isKnown = id => ST.users.some(u => String(u.id) === String(id));
 
 /* =====================================================================
    BACK BUTTON CONTRACT  (CLAUDE.md §6.1)
@@ -420,6 +480,36 @@ document.querySelectorAll('[data-close]').forEach(b => {
 $('ov').onclick = () => {
   for (const id of SHEETS) if ($(id).classList.contains('on')) return sheetClose(id, false);
 };
+
+/* ===================================================================
+   WHAT IS NEW TO ME
+   There was no signal of any kind before: a task could be given to
+   somebody and nothing on their screen changed. A task counts as new
+   when it is mine and I have never opened it, and it counts as new
+   again when it comes back Returned, because that needs my attention
+   a second time. Seen state is per person and stays on the phone.
+   =================================================================== */
+let SEEN = {};
+function loadSeen() {
+  try { SEEN = JSON.parse(localStorage.getItem(SKEY) || '{}') || {}; } catch (e) { SEEN = {}; }
+}
+function saveSeen() { try { localStorage.setItem(SKEY, JSON.stringify(SEEN)); } catch (e) {} }
+function isNew(t) {
+  if (t.type === 'Notice') return !t.ackBy.some(x => String(x).split('@')[0] === String(ST.me));
+  if (!isMine(t)) return false;
+  if (t.status === 'Done' || t.status === 'Cancelled') return false;
+  return SEEN[t.id] !== t.status;
+}
+function markSeen(id) {
+  const t = ST.tasks.find(x => x.id === id);
+  if (!t) return;
+  if (SEEN[t.id] !== t.status) { SEEN[t.id] = t.status; saveSeen(); renderBadges(); }
+}
+function markAllSeen() {
+  ST.tasks.forEach(t => { if (t.type !== 'Notice') SEEN[t.id] = t.status; });
+  saveSeen(); renderAll();
+}
+function newCount() { return ST.tasks.filter(t => t.type !== 'Notice' && isNew(t)).length; }
 
 /* ------------------------------ helpers ------------------------------ */
 let toastT;
@@ -531,8 +621,32 @@ function visibleTasks() {
     if (ST.scope !== 'mine') return true;        // team scope: whatever the server sent
     // "My tasks" also means work that is waiting on ME to accept or return,
     // otherwise a lead's decision queue stays invisible until he switches scope.
-    return isMine(t) || (t.status === 'Review' && canDecide(t));
+    if (isMine(t) || (t.status === 'Review' && canDecide(t))) return true;
+    // A task with nobody on it belongs to whoever can fix it. Without this line
+    // an unassigned task is invisible to every single person — which is how the
+    // damaged one sat there with nobody able to find it.
+    return !t.assignees.length && canDecide(t);
   });
+}
+
+/** The two strips at the top: what is new, and what needs me today. */
+function renderBadges() {
+  const n = newCount();
+  $('newBar').classList.toggle('show', n > 0);
+  $('newTxt').textContent = n === 1 ? '1 new task for you' : n + ' new tasks for you';
+  const tab = document.querySelector('.vtab[data-view="board"]');
+  if (tab) tab.innerHTML = 'Board' + (n ? ' <span class="dot">' + n + '</span>' : '');
+
+  const mineAll = ST.tasks.filter(t => t.type !== 'Notice' && isMine(t) && t.status !== 'Done');
+  const late  = mineAll.filter(t => dayDiff(t.dueAt) !== null && dayDiff(t.dueAt) < 0).length;
+  const today = mineAll.filter(t => dayDiff(t.dueAt) === 0).length;
+  const rev   = ST.tasks.filter(t => t.type !== 'Notice' && t.status === 'Review' && canDecide(t)).length;
+  const bits = [];
+  if (late)  bits.push('<span class="late">' + late + ' overdue</span>');
+  if (today) bits.push('<span class="today">' + today + ' due today</span>');
+  if (rev)   bits.push('<span class="rev">' + rev + ' waiting for your approval</span>');
+  $('sumBar').innerHTML = bits.join('');
+  $('sumBar').classList.toggle('show', bits.length > 0);
 }
 function renderCounts() {
   const v = visibleTasks();
@@ -563,43 +677,91 @@ function renderCards() {
 
   const box = $('cards');
   if (!rows.length) {
-    box.innerHTML = '<div class="empty">' + (WIRED
-      ? 'Nothing in ' + esc(ST.state) + '.' + (ST.state === 'Done' ? '' : '<br>Enjoy it while it lasts.')
-      : 'Connect the backend to see tasks.') + '</div>';
+    box.innerHTML = '<div class="empty">' + emptyText() + '</div>';
     return;
   }
   box.innerHTML = rows.map(cardHtml).join('');
   rows.forEach(t => bindCard(t));
-  renderNotices();
+}
+
+/** An empty screen should say why it is empty and what to do next. */
+function emptyText() {
+  if (!WIRED) return 'Backend not connected.<br>Ask Chayan to finish the setup.';
+  if (ST.stale) return 'Showing a saved copy.<br>Pull down to try the server again.';
+  const q = $('q').value.trim();
+  if (q) return 'Nothing matches “' + esc(q) + '”.';
+  const anyAtAll = ST.tasks.some(t => t.type !== 'Notice');
+  if (!anyAtAll) {
+    return ST.isLead
+      ? 'No tasks yet.<br>Tap + to give the first one.'
+      : 'No tasks yet.<br>Anything given to you will appear here.';
+  }
+  if (ST.scope === 'mine') {
+    const teamHas = ST.tasks.some(t => t.type !== 'Notice' && !isMine(t));
+    return 'Nothing of yours in ' + esc(ST.state) + '.' +
+      (teamHas ? '<br>Tap <b>My team</b> above to see the rest.' : '');
+  }
+  return 'Nothing in ' + esc(ST.state) + '.';
+}
+
+/** The faces row: who owns this, me highlighted, never a bare ID. */
+function whoHtml(t) {
+  if (!t.assignees.length) {
+    return '<div class="who"><div class="av none">!</div>' +
+           '<span class="nm" style="color:var(--red)">' +
+           (t.needsFix ? 'Not assigned — open and reassign' : 'Not assigned') + '</span></div>';
+  }
+  const shown = t.assignees.slice(0, 4);
+  const extra = t.assignees.length - shown.length;
+  return '<div class="who">' +
+    shown.map(id => '<div class="av' + (String(id) === String(ST.me) ? ' me' : '') + '">' +
+      esc(initials(id)) + '</div>').join('') +
+    (extra > 0 ? '<div class="av">+' + extra + '</div>' : '') +
+    '<span class="nm">' + esc(t.assignees.map(firstName).join(', ')) + '</span>' +
+    (isMine(t) ? '<span class="yours">YOURS</span>' : '') +
+  '</div>';
 }
 
 function cardHtml(t) {
-  const who = t.assignees.map(firstName).join(', ') || '—';
   const mine = isMine(t);
+  const inTeam = (ST.myTeams || []).indexOf(t.team) >= 0;
   let acts = '';
   if (!USER.ro) {
-    if (t.status === 'To Do' && mine)      acts = btn('go', 'start', 'Start');
-    else if (t.status === 'Returned' && mine) acts = btn('go', 'start', 'Redo it');
-    else if (t.status === 'Doing' && mine) acts = btn('go', 'submit', 'Submit for review');
-    else if (t.status === 'Review' && canDecide(t)) acts = btn('ok', 'accept', 'Accept') + btn('no', 'return', 'Return');
-    else if (t.status === 'Review' && mine) acts = btn('', 'pull', 'Pull back');
+    if ((t.status === 'To Do' || t.status === 'Returned') && mine) {
+      acts = btn('go', 'start', t.status === 'Returned' ? 'Redo it' : 'Start');
+    } else if ((t.status === 'To Do' || t.status === 'Returned') && inTeam && t.assignees.length) {
+      // team work anyone may pick up — the backend adds whoever claims it
+      acts = btn('', 'start', 'Pick this up');
+    } else if (t.status === 'Doing' && mine) {
+      acts = btn('go', 'submit', 'Submit for review');
+    } else if (t.status === 'Review' && canDecide(t)) {
+      acts = btn('ok', 'accept', 'Accept') + btn('no', 'return', 'Return');
+    } else if (t.status === 'Review' && mine) {
+      acts = btn('', 'pull', 'Pull back');
+    }
   }
+  const waiting = t.status === 'Review'
+    ? ' &middot; waiting on ' + esc(firstName(t.createdBy)) : '';
   return '' +
   '<div class="tc-wrap" data-id="' + esc(t.id) + '">' +
     '<div class="tc-hint"><span>Back</span><span>Advance</span></div>' +
     '<div class="tc" style="border-left-color:' + statusColor(t.status) + '">' +
       '<div class="tc-top">' +
         '<div class="tc-t">' + esc(t.title) +
+          (isNew(t) ? ' <span class="chip p-new">NEW</span>' : '') +
+          (t.needsFix ? ' <span class="chip p-fix">needs fixing</span>' : '') +
           (t.returns > 0 ? ' <span class="chip p-Must">returned ' + t.returns + 'x</span>' : '') +
           (t._pending ? '<span class="pend">' + (t._pending === 'queued' ? 'queued' : 'saving') + '</span>' : '') +
         '</div>' +
         '<span class="chip p-' + esc(t.priority) + '">' + esc(t.priority) + '</span>' +
       '</div>' +
-      '<div class="tc-m">' + esc(t.team || 'No team') + ' &middot; <b>' + esc(who) + '</b><br>' +
-        '<span class="due' + dueCls(t) + '">' + esc(dueTxt(t)) + '</span>' +
+      '<div class="tc-m">' + esc(t.team || 'No team') +
+        ' &middot; <span class="due' + dueCls(t) + '">' + esc(dueTxt(t)) + '</span>' +
+        waiting +
         (t.status === 'Done' && t.points ? ' &middot; ' + t.points + ' pts' : '') +
         (t.linkRef ? ' &middot; ' + esc(t.linkType) + ' ' + esc(t.linkRef) : '') +
       '</div>' +
+      whoHtml(t) +
       (acts ? '<div class="tc-acts">' + acts + '</div>' : '') +
     '</div>' +
   '</div>';
@@ -705,17 +867,32 @@ function openDetail(id, focusReturn) {
   const hist = ST.activity.filter(a => a.taskId === id)
     .sort((a, b) => (a.at < b.at ? -1 : 1));
 
+  markSeen(id);
+
   let acts = '';
   if (!USER.ro) {
     const mine = isMine(t);
+    const inTeam = (ST.myTeams || []).indexOf(t.team) >= 0;
     if (t.status === 'To Do' || t.status === 'Returned') {
       if (mine) acts += '<button class="bp" data-d="start">Start working</button>';
+      else if (inTeam && t.assignees.length) acts += '<button class="bp" data-d="start">Pick this up</button>';
     } else if (t.status === 'Doing' && mine) {
       acts += '<button class="bp" data-d="submit">Submit for review</button>';
     }
     if (t.status === 'Review' && canDecide(t)) {
       acts += '<button class="bok" data-d="accept">Accept</button><button class="bno" data-d="return">Return</button>';
     }
+  }
+  /* Fixing a mistake used to mean opening the spreadsheet. The giver, the team
+     lead and Chayan can now reassign, move the date or cancel from here — which
+     is also how the tasks wrecked by the old ID bug get repaired. */
+  let admin = '';
+  if (!USER.ro && canDecide(t) && t.type !== 'Notice' && t.status !== 'Done') {
+    admin = '<div class="btnrow" id="dAdmin">' +
+      '<button class="bg2" data-a="reassign">Reassign</button>' +
+      '<button class="bg2" data-a="due">Change due</button>' +
+      '<button class="bno" data-a="cancel">Cancel task</button>' +
+    '</div>';
   }
 
   $('dBody').innerHTML =
@@ -724,12 +901,14 @@ function openDetail(id, focusReturn) {
     row('Status', t.status + (t.returns ? ' (returned ' + t.returns + 'x)' : '')) +
     row('Priority', t.priority + ' · weight ' + (t.priority === 'Must' ? 3 : t.priority === 'Should' ? 2 : 1)) +
     row('Team', t.team || '—') +
-    row('Assigned to', t.assignees.map(nameOf).join(', ') || '—') +
+    row('Assigned to', t.assignees.length ? t.assignees.map(nameOf).join(', ')
+                                          : (t.needsFix ? 'Not assigned — needs fixing' : 'Not assigned')) +
     row('Given by', nameOf(t.createdBy)) +
     row('Due', t.dueAt ? shortDate(t.dueAt) + ' · ' + dueTxt(t) : '—') +
     (t.linkRef ? row('Linked ' + t.linkType, t.linkRef) : '') +
     (t.status === 'Done' ? row('Points earned', String(t.points)) : '') +
     (acts ? '<div class="btnrow" id="dActs">' + acts + '</div>' : '') +
+    admin +
     '<div class="fg" style="margin-top:14px"><div class="fl">Note or comment</div>' +
       '<textarea class="fi" id="dNote" maxlength="400" placeholder="' +
       (focusReturn ? 'Why is it coming back' : 'Add a note') + '"></textarea></div>' +
@@ -759,6 +938,16 @@ function openDetail(id, focusReturn) {
       }
     };
   });
+  const adm = $('dAdmin');
+  if (adm) adm.querySelectorAll('button').forEach(b => {
+    b.onclick = () => {
+      const a = b.dataset.a;
+      if (a === 'reassign') return openPicker('reassign', t);
+      if (a === 'due')      return askDue(t);
+      if (a === 'cancel')   return askCancel(t, b);
+    };
+  });
+
   $('dSay').onclick = () => {
     const v = ($('dNote').value || '').trim();
     if (!v) return toast('Nothing to post', true);
@@ -774,8 +963,9 @@ function row(k, v) {
 
 /* ------------------------------ create ------------------------------- */
 $('fab').onclick = () => {
-  if (!ST.teams.length) return toast('Run setupAll() in the Task Engine script first', true);
+  if (!ST.users.length) return toast('Still loading the staff list, try again in a moment', true);
   ST.pick = [];
+  ST.pickMode = 'create';
   $('nTitle').value = ''; $('nDesc').value = ''; $('nLinkR').value = '';
   $('nLinkT').value = ''; $('nPri').value = 'Should';
   const d = new Date(); d.setDate(d.getDate() + 1);
@@ -806,10 +996,19 @@ function paintTeams() {
     ST.teams.map(t => '<option value="' + esc(t.team) + '">' + esc(t.team) + '</option>').join('');
   const led = ST.teams.find(t => String(t.leadId) === String(ST.me));
   if (led) s.value = led.team;
+  else if ((ST.myTeams || []).length) s.value = ST.myTeams[0];
 }
+/**
+ * Preselect the team's people — but only ones who are still on the staff list
+ * and who this person is allowed to assign to. Handing a task to an ID that no
+ * longer belongs to anybody is how a task ends up owned by nobody.
+ */
 function prefillTeamMembers() {
   const t = ST.teams.find(x => x.team === $('nTeam').value);
-  ST.pick = t ? t.members.slice() : [];
+  const allowed = pickableUsers().map(u => String(u.id));
+  const from = t ? t.members : [];
+  ST.pick = from.filter(id => isKnown(id) && allowed.indexOf(String(id)) >= 0);
+  if (!ST.pick.length && !ST.isLead && !ST.isBoss) ST.pick = [String(ST.me)];
 }
 $('nTeam').onchange = () => { prefillTeamMembers(); paintWho(); };
 function paintWho() {
@@ -817,13 +1016,38 @@ function paintWho() {
     ? ST.pick.map(firstName).join(', ')
     : 'Choose people';
 }
-$('btnWho').onclick = () => {
-  $('pickList').innerHTML = ST.users.map(u =>
+/**
+ * Who this person is allowed to hand work to. A lead or Chayan can pick
+ * anybody; everybody else can pick themselves and their own teammates, so a
+ * staff member can still write down their own job or split one with the person
+ * beside them, without being able to push work across the company.
+ */
+function pickableUsers() {
+  if (ST.isBoss || ST.isLead) return ST.users;
+  const mates = {};
+  mates[String(ST.me)] = true;
+  (ST.teams || []).forEach(t => {
+    if ((ST.myTeams || []).indexOf(t.team) < 0) return;
+    (t.members || []).forEach(m => mates[String(m)] = true);
+    if (t.leadId) mates[String(t.leadId)] = true;
+  });
+  return ST.users.filter(u => mates[String(u.id)]);
+}
+
+let pickTask = null;
+function openPicker(mode, task) {
+  ST.pickMode = mode;
+  pickTask = task || null;
+  if (mode === 'reassign' && task) ST.pick = task.assignees.slice();
+  const list = pickableUsers();
+  $('pickList').innerHTML = list.map(u =>
     '<div class="pickrow' + (ST.pick.map(String).indexOf(String(u.id)) >= 0 ? ' on' : '') +
       '" data-uid="' + esc(u.id) + '">' +
       '<div class="bx">&#10003;</div>' +
-      '<div><div class="nm">' + esc(u.name) + '</div><div class="rl">' + esc(u.id) + '</div></div>' +
-    '</div>').join('') || '<div class="empty">No users found.</div>';
+      '<div class="av">' + esc(initials(u.id)) + '</div>' +
+      '<div><div class="nm">' + esc(u.name) + '</div>' +
+      '<div class="rl">' + esc(String(u.id) === String(ST.me) ? 'you' : (teamOf(u.id) || 'no team')) + '</div></div>' +
+    '</div>').join('') || '<div class="empty">Nobody available to assign.</div>';
   $('pickList').querySelectorAll('.pickrow').forEach(r => {
     r.onclick = () => {
       const id = r.dataset.uid;
@@ -833,16 +1057,75 @@ $('btnWho').onclick = () => {
     };
   });
   sheetOpen('shPick');
+}
+function teamOf(id) {
+  const t = (ST.teams || []).find(x => (x.members || []).map(String).indexOf(String(id)) >= 0);
+  return t ? t.team : '';
+}
+$('btnWho').onclick = () => openPicker('create', null);
+$('pickDone').onclick = () => {
+  sheetClose('shPick', false);
+  if (ST.pickMode === 'reassign' && pickTask) {
+    const ids = ST.pick.filter(isKnown);
+    if (!ids.length) return toast('Pick at least one person', true);
+    const t = pickTask;
+    t.assignees = ids.slice();
+    t.needsFix = false;
+    t._pending = true;
+    saveCache(); renderAll();
+    if (ST.openId === t.id) openDetail(t.id);
+    toast('Reassigned to ' + ids.map(firstName).join(', '));
+    send({ action: 'edit', taskId: t.id, actorId: ST.me, assignees: ids.join('|') }, t);
+    return;
+  }
+  paintWho();
 };
-$('pickDone').onclick = () => { paintWho(); sheetClose('shPick', false); };
+
+/** Move a due date without leaving the panel. */
+function askDue(t) {
+  const box = $('dAdmin');
+  if (!box) return;
+  box.innerHTML = '<input type="date" class="fi" id="dDue" value="' +
+      esc((t.dueAt || '').slice(0, 10)) + '" style="flex:2">' +
+    '<button class="bp" id="dDueSave" style="flex:1">Save</button>';
+  $('dDueSave').onclick = () => {
+    const v = $('dDue').value;
+    if (!v) return toast('Pick a date', true);
+    t.dueAt = v + 'T23:59:00';
+    t._pending = true;
+    saveCache(); renderAll();
+    if (ST.openId === t.id) openDetail(t.id);
+    toast('Due date moved');
+    send({ action: 'edit', taskId: t.id, actorId: ST.me, dueAt: t.dueAt }, t);
+  };
+}
+
+/** Two taps to cancel — no blocking browser dialog, those freeze the shell. */
+function askCancel(t, btn) {
+  if (btn.dataset.sure !== '1') {
+    btn.dataset.sure = '1';
+    btn.textContent = 'Tap again to cancel';
+    setTimeout(() => { try { btn.dataset.sure = ''; btn.textContent = 'Cancel task'; } catch (e) {} }, 4000);
+    return;
+  }
+  sheetClose('shDetail', false);
+  ST.tasks = ST.tasks.filter(x => x.id !== t.id);
+  saveCache(); renderAll();
+  toast('Task cancelled');
+  send({ action: 'cancel', taskId: t.id, actorId: ST.me, note: 'Cancelled from the panel' }, null);
+}
 
 $('btnSave').onclick = () => {
   if (USER.ro) return;
   const title = $('nTitle').value.trim();
   if (title.length < 3) return toast('Give it a real title', true);
   const isNotice = ST.ctype === 'Notice';
-  if (!isNotice && !ST.pick.length) return toast('Pick at least one person', true);
-  if (!isNotice && !$('nDue').value) return toast('A task needs a due date', true);
+  if (isNotice && !ST.isLead && !ST.isBoss) return toast('Only a team lead can post a notice', true);
+  if (!isNotice) {
+    ST.pick = ST.pick.filter(isKnown);           // never send an ID nobody owns
+    if (!ST.pick.length) return toast('Pick at least one person', true);
+    if (!$('nDue').value) return toast('A task needs a due date', true);
+  }
 
   const id = (isNotice ? 'N-' : 'T-') + 'LOCAL' + Date.now().toString().slice(-6);
   const optimistic = {
@@ -865,7 +1148,8 @@ $('btnSave').onclick = () => {
   send({
     action: 'addTask', submitId: USER.id + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
     type: optimistic.type, title: title, desc: optimistic.desc, team: optimistic.team,
-    assignees: optimistic.assignees.join(','), priority: optimistic.priority,
+    // pipes, never commas: a comma separated list of IDs is what Sheets ate
+    assignees: optimistic.assignees.join('|'), priority: optimistic.priority,
     dueAt: optimistic.dueAt, linkType: optimistic.linkType, linkRef: optimistic.linkRef,
     createdBy: ST.me
   }, optimistic);
@@ -880,6 +1164,11 @@ function notSyncedYet(t) {
 function doMove(t, to) {
   if (USER.ro || notSyncedYet(t)) return;
   const from = t.status;
+  // Picking up team work makes me an owner of it — show that at once instead of
+  // waiting for the round trip, the server does the same thing.
+  if (to === 'Doing' && !isMine(t) && (ST.myTeams || []).indexOf(t.team) >= 0) {
+    t.assignees = t.assignees.concat([String(ST.me)]);
+  }
   t.status = to;
   if (to === 'Doing' && !t.startedAt) t.startedAt = new Date().toISOString();
   if (to === 'Review') t.submittedAt = new Date().toISOString();
@@ -943,13 +1232,16 @@ function pushLocalAct(taskId, from, to, note) {
 }
 
 /* ---------------- daily checklist — on the Board, for everyone ---------------- */
-let cpOpen = false;
+/* Open by default: a checklist nobody notices is a checklist nobody ticks, and
+   that is exactly how the old Checklists_Management sheet died. */
+let cpOpen = true;
 function renderChecklist() {
   const cps = ST.checkpoints;
   $('cpCard').style.display = cps.length ? '' : 'none';
   if (!cps.length) return;
   const done = cps.filter(c => c.done).length;
   $('cpFrac').textContent = done + '/' + cps.length;
+  $('cps').style.display = cpOpen ? '' : 'none';
   $('cps').innerHTML = cps.map((c, i) =>
     '<div class="cp' + (c.done ? ' on' : '') + (c.source === 'AUTO' ? ' auto' : '') + '" data-i="' + i + '">' +
       '<div class="box">' + (c.done ? '&#10003;' : '') + '</div>' +
@@ -959,7 +1251,8 @@ function renderChecklist() {
   $('cps').querySelectorAll('.cp').forEach(el => {
     const c = cps[+el.dataset.i];
     if (!c || c.source === 'AUTO') return;
-    el.querySelector('.box').onclick = () => doTick(c, !c.done);
+    // the whole row is the target, not just a 23px circle on a moving bus
+    el.onclick = () => doTick(c, !c.done);
   });
 }
 $('cpToggle').onclick = () => {
@@ -969,10 +1262,15 @@ $('cpToggle').onclick = () => {
 
 /* ------------------------------ KPI view — score only, gated ----------------------------- */
 function renderKpi() {
-  if (!ST.kpiVisible) return;   // server already withheld the numbers; nothing to paint
+  if (!ST.kpiVisible) {
+    // Leave nothing behind in the DOM when the switch goes off mid-session.
+    ['kKpi','kTask','kAdh','kSlip','kAcc','kAsg','kCyc'].forEach(id => $(id).textContent = '—');
+    $('lb').innerHTML = '';
+    return;
+  }
   const mine = ST.kpi.find(r => String(r.userId) === String(ST.me));
   const v = mine || { kpi: 0, taskScore: 0, adherence: 0, slipRate: 0, accepted: 0, assigned: 0, avgCycleHrs: 0 };
-  $('kKpi').textContent  = mine ? Math.round(v.kpi) + '%' : '—';
+  $('kKpi').textContent  = (mine && mine.scored !== false) ? Math.round(v.kpi) + '%' : '—';
   $('kTask').textContent = Math.round(v.taskScore) + '%';
   $('kAdh').textContent  = Math.round(v.adherence) + '%';
   $('kSlip').textContent = Math.round(v.slipRate) + '%';
@@ -986,7 +1284,7 @@ function renderKpi() {
     '<th>Task</th><th>Check</th><th>Slip</th></tr>' +
     ST.kpi.map(r => '<tr' + (String(r.userId) === String(ST.me) ? ' class="me"' : '') + '>' +
       '<td>' + esc(r.name) + '</td>' +
-      '<td class="n">' + Math.round(r.kpi) + '</td>' +
+      '<td class="n">' + (r.scored === false ? '—' : Math.round(r.kpi)) + '</td>' +
       '<td class="n">' + Math.round(r.taskScore) + '</td>' +
       '<td class="n">' + Math.round(r.adherence) + '</td>' +
       '<td class="n">' + Math.round(r.slipRate) + '</td>' +
@@ -995,9 +1293,13 @@ function renderKpi() {
 }
 
 function renderAll() {
-  $('scopeSeg').style.display = ST.isLead ? '' : 'none';
-  $('fab').classList.toggle('show', ST.view === 'board' && ST.isLead && !USER.ro);
+  // A team board belongs to everyone on that team, not only its lead, and
+  // anybody may write down work — a non-lead just cannot hand it to somebody
+  // else, which the picker enforces.
+  $('scopeSeg').style.display = (ST.myTeams && ST.myTeams.length) ? '' : 'none';
+  $('fab').classList.toggle('show', ST.view === 'board' && !USER.ro);
   $('vtabKpi').style.display = ST.kpiVisible ? '' : 'none';
+  $('vtabs').style.display = ST.kpiVisible ? '' : 'none';   // one lone tab is just noise
   if (!ST.kpiVisible && ST.view === 'kpi') {
     // Chayan flipped the switch off while this tab was open — fall back to Board
     ST.view = 'board';
@@ -1005,6 +1307,11 @@ function renderAll() {
     $('vBoard').style.display = ''; $('vKpi').style.display = 'none';
   }
   renderCards();
+  // Notices used to be painted inside renderCards, AFTER its early return for
+  // an empty list — so the moment a tab had no tasks, every notice on the board
+  // silently vanished. They are their own surface and are painted on their own.
+  renderNotices();
+  renderBadges();
   renderChecklist();
   renderKpi();
 }
@@ -1013,7 +1320,8 @@ function renderAll() {
 function saveCache() {
   try {
     localStorage.setItem(CKEY, JSON.stringify({
-      me: ST.me, isLead: ST.isLead, kpiVisible: ST.kpiVisible, users: ST.users, teams: ST.teams,
+      me: ST.me, isLead: ST.isLead, isBoss: ST.isBoss, kpiVisible: ST.kpiVisible,
+      users: ST.users, teams: ST.teams, myTeams: ST.myTeams,
       tasks: ST.tasks, activity: ST.activity, checkpoints: ST.checkpoints, kpi: ST.kpi
     }));
   } catch (e) {}
@@ -1022,8 +1330,12 @@ function paintCache() {
   try {
     const c = JSON.parse(localStorage.getItem(CKEY) || 'null');
     if (!c) return false;
+    // Belt and braces on top of the per-user key: never paint somebody else's
+    // saved copy, drop it instead.
+    if (String(c.me || '') !== String(ST.me)) { localStorage.removeItem(CKEY); return false; }
     Object.assign(ST, {
-      isLead: !!c.isLead, kpiVisible: !!c.kpiVisible, users: c.users || [], teams: c.teams || [],
+      isLead: !!c.isLead, isBoss: !!c.isBoss, kpiVisible: !!c.kpiVisible,
+      users: c.users || [], teams: c.teams || [], myTeams: c.myTeams || [],
       tasks: c.tasks || [], activity: c.activity || [],
       checkpoints: c.checkpoints || [], kpi: c.kpi || []
     });
@@ -1041,7 +1353,10 @@ async function refresh(showPill) {
     const js = await fetch(AS_URL + '?action=bootstrap&userId=' + encodeURIComponent(USER.id) +
       '&role=' + encodeURIComponent(USER.role)).then(r => r.json());
     if (!js || !js.ok) throw new Error((js && js.error) || 'Server error');
+    ST.stale = false;
     ST.isLead = !!js.isLead;
+    ST.isBoss = !!js.isBoss;
+    ST.myTeams = js.myTeams || [];
     ST.kpiVisible = !!js.kpiVisible;
     ST.users = js.users || [];
     ST.teams = js.teams || [];
@@ -1054,10 +1369,17 @@ async function refresh(showPill) {
     const ids = {};
     fresh.forEach(t => ids[t.id] = true);
     ST.tasks = fresh.concat(stuck.filter(t => !ids[t.id]));
+    $('bnStale').classList.remove('show');
     saveCache();
     renderAll();
     if (ST.openId && $('shDetail').classList.contains('on')) openDetail(ST.openId);
   } catch (e) {
+    // Say so on screen instead of leaving a stale board looking live. On a
+    // 4 KB/s connection this is the difference between "the panel is broken"
+    // and "the phone could not reach the server just now".
+    ST.stale = true;
+    $('bnStale').classList.add('show');
+    renderCards();
     if (showPill) toast('Could not reach the server', true);
   } finally {
     loading = false;
@@ -1125,6 +1447,18 @@ addEventListener('touchmove', e => {
 addEventListener('touchend', () => { ptrOn = false; }, { passive: true });
 
 /* -------------------------------- boot -------------------------------- */
+$('newSeen').onclick = () => { markAllSeen(); toast('All marked as seen'); };
+$('newBar').onclick = e => {
+  if (e.target.id === 'newSeen') return;
+  ST.scope = 'mine';
+  [...$('scopeSeg').children].forEach(x => x.classList.toggle('on', x.dataset.scope === 'mine'));
+  ST.state = 'To Do';
+  [...$('stateSeg').children].forEach(x => x.classList.toggle('on', x.dataset.state === 'To Do'));
+  renderAll();
+  window.scrollTo(0, 0);
+};
+
+loadSeen();
 paintCache();
 showQ();
 flushQ();
