@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tasks — Enkore</title>
+<style>
+:root{
+  --b:#1971c2;--b2:#1c7ed6;--bbg:#e7f1fb;--red:#e03131;--green:#2b8a3e;--amber:#e8590c;
+  --text:#1a1a2e;--muted:#868e96;--border:#dee2e6;--bg:#f4f6f8;--card:#fff;--r:12px;
+  --sh:0 2px 8px rgba(0,0,0,.08);
+  /* one color per task stage, so a card's left edge says its status at a glance */
+  --st-todo:#868e96;--st-doing:#0c8599;--st-review:#7048e8;--st-done:#2b8a3e;--st-returned:#e03131;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);
+  color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior-y:contain}
+
+.hdr{background:var(--b);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,.2);display:flex;justify-content:space-between;align-items:center}
+.hdr-t{font-size:15px;font-weight:800}
+.hdr-u{font-size:11px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);
+  padding:4px 10px;border-radius:20px;font-weight:700;max-width:150px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+
+/* pull to refresh — compact pill, never a full width bar */
+#ptr{position:fixed;top:8px;left:50%;transform:translateX(-50%) scale(.7);z-index:400;
+  background:#fff;border:1px solid var(--border);border-radius:20px;padding:6px 14px;
+  font-size:11px;font-weight:700;color:var(--b);box-shadow:0 4px 14px rgba(0,0,0,.14);
+  opacity:0;transition:opacity .18s,transform .18s;pointer-events:none}
+#ptr.on{opacity:1;transform:translateX(-50%) scale(1)}
+#ptr .sp{display:inline-block;width:10px;height:10px;border:2px solid var(--bbg);
+  border-top-color:var(--b);border-radius:50%;vertical-align:-1px;margin-right:6px;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* top level view tabs */
+.vtabs{display:flex;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:45px;z-index:99}
+.vtab{flex:1;text-align:center;padding:11px 6px;font-size:12px;font-weight:800;color:var(--muted);
+  border-bottom:2.5px solid transparent;cursor:pointer;letter-spacing:.4px;text-transform:uppercase}
+.vtab.on{color:var(--b);border-bottom-color:var(--b)}
+
+.body{padding:12px;max-width:560px;margin:0 auto;padding-bottom:90px}
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.card-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;
+  color:var(--muted);margin-bottom:10px}
+
+.banner{background:#fff3bf;border:1px solid #ffe066;border-radius:8px;padding:9px 11px;
+  font-size:11px;font-weight:700;color:#856404;margin-bottom:10px;display:none;line-height:1.45}
+.banner.show{display:block}
+.banner.bad{background:#ffe3e3;border-color:#ffc9c9;color:#c92a2a}
+
+/* scope + state segments */
+.seg{display:flex;gap:6px;background:#fff;border-radius:10px;padding:4px;box-shadow:var(--sh);margin-bottom:10px}
+.seg button{flex:1;border:none;background:none;padding:9px 4px;border-radius:8px;font-size:11px;
+  font-weight:800;color:var(--muted);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg button.on{background:var(--b);color:#fff}
+.seg button .n{display:inline-block;margin-left:3px;opacity:.85;font-weight:900}
+.seg.sm button{font-size:11px;padding:8px 4px}
+
+.srch{width:100%;padding:10px 12px;font-size:14px;border:1.5px solid var(--border);
+  border-radius:8px;outline:none;margin-bottom:10px;background:#fff}
+.srch:focus{border-color:var(--b)}
+
+/* task card */
+.tc-wrap{position:relative;margin-bottom:9px;border-radius:var(--r);overflow:hidden;background:#fff;box-shadow:var(--sh)}
+.tc-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;
+  padding:0 18px;font-size:12px;font-weight:900;color:#fff;background:linear-gradient(90deg,#adb5bd 0 50%,var(--green) 50% 100%)}
+.tc-hint span{opacity:0}
+.tc{position:relative;background:#fff;padding:12px 13px 12px 15px;border-left:4px solid var(--b);
+  transition:transform .18s ease;touch-action:pan-y}
+.tc.drag{transition:none}
+.tc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.tc-t{font-weight:800;font-size:13.5px;line-height:1.35;flex:1;min-width:0}
+.tc-m{font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+.tc-m b{color:var(--text);font-weight:700}
+.chip{display:inline-block;font-size:9px;font-weight:900;padding:3px 7px;border-radius:20px;
+  letter-spacing:.3px;white-space:nowrap}
+.p-Must{background:#ffe3e3;color:#c92a2a}
+.p-Should{background:#fff3e0;color:#e8590c}
+.p-Later{background:#e9ecef;color:#495057}
+.due{font-weight:800}
+.due.late{color:var(--red)}
+.due.soon{color:var(--amber)}
+.tc-acts{display:flex;gap:7px;margin-top:11px}
+.tc-acts button{flex:1;padding:9px 6px;border:none;border-radius:8px;font-size:11.5px;
+  font-weight:800;cursor:pointer;background:var(--bbg);color:var(--b)}
+.tc-acts button.go{background:var(--b);color:#fff}
+.tc-acts button.ok{background:var(--green);color:#fff}
+.tc-acts button.no{background:#ffe3e3;color:#c92a2a}
+.tc-acts button:disabled{background:#f1f3f5;color:var(--muted)}
+.pend{font-size:9px;color:var(--amber);font-weight:800;margin-left:5px}
+
+/* notice */
+.nt{background:#fff9db;border:1.5px solid #ffe066;border-left:4px solid #f59f00;
+  border-radius:var(--r);padding:12px 13px;margin-bottom:9px}
+.nt .t{font-weight:900;font-size:13.5px;line-height:1.35}
+.nt .d{font-size:12px;color:#5f3b00;margin-top:5px;line-height:1.5;white-space:pre-wrap}
+.nt .m{font-size:10px;color:#856404;margin-top:7px;font-weight:700}
+.nt button{margin-top:10px;width:100%;padding:10px;border:none;border-radius:8px;
+  background:#f59f00;color:#fff;font-size:12px;font-weight:800;cursor:pointer}
+.nt button.done{background:#e9ecef;color:var(--muted)}
+
+/* KPI */
+.ring{width:122px;height:122px;border-radius:50%;margin:2px auto 12px;display:grid;place-items:center;
+  background:conic-gradient(var(--b) 0deg, #e9ecef 0deg)}
+.ring .in{width:96px;height:96px;border-radius:50%;background:#fff;display:grid;place-items:center;text-align:center}
+.ring b{display:block;font-size:25px;font-weight:900;color:var(--b);line-height:1}
+.ring span{font-size:8.5px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.k3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.k3 div{background:var(--bg);border-radius:9px;padding:9px 5px;text-align:center}
+.k3 b{display:block;font-size:14px;font-weight:900;color:var(--text)}
+.k3 span{font-size:8.5px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.3px}
+
+.cp{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #f1f3f5}
+.cp:last-child{border-bottom:none}
+.cp .box{width:23px;height:23px;border-radius:50%;border:2px solid var(--border);flex:0 0 auto;
+  display:grid;place-items:center;font-size:12px;color:#fff;cursor:pointer}
+.cp.on .box{background:var(--green);border-color:var(--green)}
+.cp.auto .box{cursor:default}
+.cp .n{flex:1;font-size:12.5px;font-weight:600;line-height:1.35}
+.cp.on .n{color:var(--muted);text-decoration:line-through}
+.badge{font-size:8px;font-weight:900;padding:2px 6px;border-radius:4px;background:var(--bbg);
+  color:var(--b);letter-spacing:.4px}
+
+table.lb{width:100%;border-collapse:collapse;font-size:11.5px}
+table.lb th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.4px;
+  color:var(--muted);padding:0 4px 7px;font-weight:800}
+table.lb td{padding:8px 4px;border-top:1px solid #f1f3f5;font-weight:600}
+table.lb td.n{font-weight:900;text-align:right}
+table.lb tr.me td{background:var(--bbg)}
+table.lb td:first-child{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* fab + toast */
+.fab{position:fixed;bottom:18px;right:16px;z-index:120;width:54px;height:54px;border-radius:50%;
+  background:var(--b);color:#fff;border:none;font-size:27px;font-weight:300;line-height:1;
+  box-shadow:0 6px 20px rgba(25,113,194,.45);cursor:pointer;display:none}
+.fab.show{display:block}
+.fab:active{transform:scale(.94)}
+.qbadge{position:fixed;bottom:24px;left:16px;z-index:120;font-size:10px;color:var(--amber);
+  font-weight:800;background:#fff;border-radius:20px;padding:6px 11px;box-shadow:var(--sh);display:none}
+.toast{position:fixed;top:64px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--green);
+  color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:700;
+  box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;transition:.3s;z-index:900;pointer-events:none;
+  max-width:90vw;text-align:center}
+.toast.err{background:var(--red)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.empty{text-align:center;padding:28px 10px;color:var(--muted);font-size:12px;line-height:1.6}
+
+/* sheets — explicit z-index per popup so nesting unwinds one level at a time */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;opacity:0;pointer-events:none;transition:opacity .22s}
+.ov.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:18px 18px 0 0;
+  transform:translateY(100%);transition:transform .26s cubic-bezier(.32,.72,0,1);max-height:86vh;
+  overflow-y:auto;padding:16px 16px 28px;-webkit-overflow-scrolling:touch}
+.sheet.on{transform:translateY(0)}
+#shDetail{z-index:610}
+#shCreate{z-index:620}
+#shPick{z-index:630}
+.sheet h3{font-size:15px;font-weight:800;margin-bottom:12px;display:flex;
+  justify-content:space-between;align-items:center;gap:10px}
+.sheet h3 button{background:#f1f3f5;border:none;width:28px;height:28px;border-radius:50%;
+  font-size:16px;cursor:pointer;color:var(--muted);line-height:1;flex:0 0 auto}
+.dl{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #f1f3f5;font-size:12.5px}
+.dl span:first-child{color:var(--muted);font-weight:700;flex:0 0 auto}
+.dl span:last-child{font-weight:700;text-align:right}
+.desc{font-size:13px;line-height:1.55;white-space:pre-wrap;background:var(--bg);
+  border-radius:9px;padding:11px;margin-bottom:12px}
+.fg{margin-bottom:10px}
+.fl{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.fl .req{color:var(--red)}
+.fi{width:100%;padding:12px 13px;font-size:15px;border:1.5px solid var(--border);border-radius:8px;
+  outline:none;background:#fff;color:var(--text);font-weight:500}
+.fi:focus{border-color:var(--b)}
+textarea.fi{resize:vertical;min-height:74px;font-family:inherit;font-size:14px;line-height:1.5}
+select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;padding-right:34px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pickbtn{width:100%;padding:12px 13px;font-size:14px;border:1.5px solid var(--border);
+  border-radius:8px;background:#fff;text-align:left;font-weight:700;cursor:pointer;color:var(--text)}
+.pickrow{display:flex;align-items:center;gap:11px;padding:12px 2px;border-bottom:1px solid #f1f3f5;cursor:pointer}
+.pickrow:last-child{border-bottom:none}
+.pickrow .bx{width:21px;height:21px;border-radius:5px;border:2px solid var(--border);
+  display:grid;place-items:center;font-size:12px;color:#fff;flex:0 0 auto}
+.pickrow.on .bx{background:var(--b);border-color:var(--b)}
+.pickrow .nm{font-size:13px;font-weight:700}
+.pickrow .rl{font-size:10px;color:var(--muted)}
+.btnrow{display:flex;gap:9px;margin-top:6px}
+.btnrow button{flex:1;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer}
+.bp{background:var(--b);color:#fff}
+.bok{background:var(--green);color:#fff}
+.bno{background:#ffe3e3;color:#c92a2a}
+.bg2{background:#f1f3f5;color:var(--text)}
+.thread{margin-top:4px}
+.cm{padding:9px 0;border-bottom:1px solid #f1f3f5;font-size:12px;line-height:1.5}
+.cm:last-child{border-bottom:none}
+.cm .w{font-weight:800;font-size:11px;color:var(--b)}
+.cm .tm{font-size:9.5px;color:var(--muted);font-weight:700}
+.cm .sys{color:var(--muted);font-style:italic}
+</style>
+</head>
+<body>
+
+<div id="ptr"><span class="sp"></span>Refreshing</div>
+
+<div class="hdr">
+  <div class="hdr-t">Tasks</div>
+  <div class="hdr-u" id="userChip">—</div>
+</div>
+
+<div class="vtabs" id="vtabs">
+  <div class="vtab on" data-view="board">Board</div>
+  <div class="vtab" data-view="kpi" id="vtabKpi" style="display:none">My KPI</div>
+</div>
+
+<div class="body">
+  <div class="banner" id="bnWire">Backend not connected yet. Paste the Task Engine Web App URL into
+    <b>AS_URL</b> at the top of panels/tasks.html, then redeploy.</div>
+  <div class="banner" id="bnRo">Read only access. You can see tasks but not change them.</div>
+
+  <!-- ============ BOARD — the common surface, same for every department ============ -->
+  <div id="vBoard">
+    <div id="notices"></div>
+
+    <!-- Daily checklist: workflow, not a score. Always here for everyone,
+         whatever Chayan sets KPI Visibility to. -->
+    <div class="card" id="cpCard" style="display:none">
+      <div class="card-lbl" id="cpToggle" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+        <span>Today's checklist</span><span id="cpFrac" style="color:var(--b)">0/0</span>
+      </div>
+      <div id="cps" style="display:none;margin-top:6px"></div>
+    </div>
+
+    <div class="seg sm" id="scopeSeg" style="display:none">
+      <button data-scope="mine" class="on">My tasks</button>
+      <button data-scope="team">My team</button>
+    </div>
+
+    <div class="seg" id="stateSeg">
+      <button data-state="To Do" class="on">To Do<span class="n" id="cTodo">0</span></button>
+      <button data-state="Doing">Doing<span class="n" id="cDoing">0</span></button>
+      <button data-state="Review">Review<span class="n" id="cReview">0</span></button>
+      <button data-state="Done">Done<span class="n" id="cDone">0</span></button>
+    </div>
+
+    <input class="srch" id="q" placeholder="Search title, team, person, priority…">
+    <div id="cards"><div class="empty">Loading…</div></div>
+  </div>
+
+  <!-- ============ KPI — score only, gated server-side by Config!KPI Visibility ============ -->
+  <div id="vKpi" style="display:none">
+    <div class="card">
+      <div class="card-lbl">My score this month</div>
+      <div class="ring" id="ring"><div class="in"><div><b id="kKpi">—</b><span>KPI</span></div></div></div>
+      <div class="k3">
+        <div><b id="kTask">—</b><span>Task score</span></div>
+        <div><b id="kAdh">—</b><span>Checkpoints</span></div>
+        <div><b id="kSlip">—</b><span>Slip rate</span></div>
+      </div>
+      <div class="k3" style="margin-top:8px">
+        <div><b id="kAcc">—</b><span>Accepted</span></div>
+        <div><b id="kAsg">—</b><span>Assigned</span></div>
+        <div><b id="kCyc">—</b><span>Avg hrs</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-lbl">Team leaderboard</div>
+      <div id="lb"><div class="empty">No scores yet this month.</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-lbl">How the score works</div>
+      <div style="font-size:11.5px;line-height:1.65;color:#495057">
+        Points for a task are <b>weight x timeliness x quality</b>. Weight is Must 3, Should 2, Later 1.
+        Timeliness is 1.0 on time, 0.7 up to two days late, 0.4 beyond that. Quality is 1.0 clean,
+        0.6 after one return, 0.3 after two.<br><br>
+        Task score is points earned divided by points assigned. KPI is
+        <b>0.5 task score + 0.3 checkpoints + 0.2 (100 − slip rate)</b>. Only work the task giver
+        has accepted earns points.
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="fab" id="fab">+</button>
+<div class="qbadge" id="qBadge"></div>
+<div class="toast" id="toast"></div>
+
+<div class="ov" id="ov"></div>
+
+<!-- card detail -->
+<div class="sheet" id="shDetail">
+  <h3><span id="dTitle">Task</span><button type="button" data-close>&times;</button></h3>
+  <div id="dBody"></div>
+</div>
+
+<!-- create -->
+<div class="sheet" id="shCreate">
+  <h3><span id="cHead">New task</span><button type="button" data-close>&times;</button></h3>
+  <div class="seg sm" style="margin-bottom:12px">
+    <button data-type="Task" class="on" id="tpTask">Task</button>
+    <button data-type="Notice" id="tpNotice">Notice</button>
+  </div>
+  <div class="fg"><div class="fl">Title <span class="req">*</span></div>
+    <input class="fi" id="nTitle" maxlength="120" placeholder="What has to happen"></div>
+  <div class="fg"><div class="fl">Details</div>
+    <textarea class="fi" id="nDesc" maxlength="900" placeholder="Context, numbers, where to look"></textarea></div>
+  <div class="fg"><div class="fl">Team</div>
+    <select class="fi" id="nTeam"></select></div>
+  <div class="fg" id="wrapWho"><div class="fl">Assign to <span class="req">*</span></div>
+    <button class="pickbtn" id="btnWho" type="button">Choose people</button></div>
+  <div class="r2" id="wrapWhen">
+    <div class="fg"><div class="fl">Priority</div>
+      <select class="fi" id="nPri">
+        <option value="Must">Must</option>
+        <option value="Should" selected>Should</option>
+        <option value="Later">Later</option>
+      </select></div>
+    <div class="fg"><div class="fl">Due <span class="req">*</span></div>
+      <input type="date" class="fi" id="nDue"></div>
+  </div>
+  <div class="r2" id="wrapLink">
+    <div class="fg"><div class="fl">Link to</div>
+      <select class="fi" id="nLinkT">
+        <option value="">None</option>
+        <option value="Client">Client</option>
+        <option value="Invoice">Invoice No</option>
+        <option value="Product">Product</option>
+        <option value="Expense">Expense</option>
+      </select></div>
+    <div class="fg"><div class="fl">Reference</div>
+      <input class="fi" id="nLinkR" maxlength="60" placeholder="optional"></div>
+  </div>
+  <div class="btnrow">
+    <button class="bg2" type="button" data-close>Cancel</button>
+    <button class="bp" id="btnSave" type="button">Post</button>
+  </div>
+</div>
+
+<!-- assignee picker -->
+<div class="sheet" id="shPick">
+  <h3><span>Assign to</span><button type="button" data-close>&times;</button></h3>
+  <div id="pickList"></div>
+  <div class="btnrow"><button class="bp" type="button" id="pickDone">Done</button></div>
+</div>
+
+<script>
+/* =====================================================================
+   ENKORE — Tasks panel
+   Backend: Task Engine Apps Script bound to the "Enkore Task Engine" sheet.
+   Source: Not For GitHub/Task Engine Apps Script/Code.gs
+   After deploying that script, paste its /exec URL into AS_URL below, bump
+   BUILD in enkore-erp.html and CACHE_NAME in sw.js, then push.
+   ===================================================================== */
+const AS_URL = 'PASTE_TASK_ENGINE_WEB_APP_URL_HERE';
+
+const CKEY = 'enkore_task_cache';
+const QKEY = 'enkore_task_queue';
+const TKEY = 'enkore_task_token';
+
+const qp = new URLSearchParams(location.search);
+const USER = {
+  id:   qp.get('userId') || '',
+  name: qp.get('name')   || '',
+  role: qp.get('role')   || '',
+  ro:   qp.get('readonly') === '1'
+};
+const WIRED = AS_URL.indexOf('http') === 0;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+$('userChip').textContent = USER.name || 'Not logged in';
+if (!WIRED) $('bnWire').classList.add('show');
+if (USER.ro) $('bnRo').classList.add('show');
+
+/* ------------------------------- state ------------------------------- */
+let ST = {
+  me: USER.id, isLead: false, kpiVisible: false, users: [], teams: [],
+  tasks: [], activity: [], checkpoints: [], kpi: [],
+  view: 'board', scope: 'mine', state: 'To Do', openId: '', pick: [], ctype: 'Task'
+};
+const nameOf = id => {
+  const u = ST.users.find(x => String(x.id) === String(id));
+  return u ? u.name : (id || '—');
+};
+const firstName = id => String(nameOf(id)).split(' ')[0];
+
+/* =====================================================================
+   BACK BUTTON CONTRACT  (CLAUDE.md §6.1)
+   1. parent.__erpOv()      the moment a sheet OPENS
+   2. parent.__erpOvClose() when it is closed by a tap
+   3. window.__erpHandleBack closes only the TOPMOST sheet, returns true
+   Innermost first — shPick sits on top of shCreate.
+   ===================================================================== */
+const SHEETS = ['shPick', 'shCreate', 'shDetail'];
+function anyOpen() { return SHEETS.some(s => $(s).classList.contains('on')); }
+function sheetOpen(id) {
+  if ($(id).classList.contains('on')) return;
+  $(id).classList.add('on');
+  $('ov').classList.add('on');
+  try { parent.__erpOv && parent.__erpOv(); } catch (e) {}
+}
+function sheetClose(id, fromBack) {
+  if (!$(id).classList.contains('on')) return;
+  $(id).classList.remove('on');
+  if (!anyOpen()) $('ov').classList.remove('on');
+  if (!fromBack) { try { parent.__erpOvClose && parent.__erpOvClose(); } catch (e) {} }
+}
+window.__erpHandleBack = function () {
+  for (const id of SHEETS) {
+    if ($(id).classList.contains('on')) { sheetClose(id, true); return true; }
+  }
+  return false;
+};
+document.querySelectorAll('[data-close]').forEach(b => {
+  b.onclick = () => sheetClose(b.closest('.sheet').id, false);
+});
+$('ov').onclick = () => {
+  for (const id of SHEETS) if ($(id).classList.contains('on')) return sheetClose(id, false);
+};
+
+/* ------------------------------ helpers ------------------------------ */
+let toastT;
+function toast(msg, err) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.className = 'toast', 2800);
+}
+function dayDiff(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const a = new Date(); a.setHours(0, 0, 0, 0);
+  const b = new Date(d); b.setHours(0, 0, 0, 0);
+  return Math.round((b - a) / 86400000);
+}
+function dueTxt(t) {
+  if (t.status === 'Done') return 'closed ' + shortDate(t.closedAt);
+  const n = dayDiff(t.dueAt);
+  if (n === null) return 'no due date';
+  if (n < 0)  return Math.abs(n) + (Math.abs(n) === 1 ? ' day overdue' : ' days overdue');
+  if (n === 0) return 'due today';
+  if (n === 1) return 'due tomorrow';
+  return 'due in ' + n + ' days';
+}
+function dueCls(t) {
+  if (t.status === 'Done') return '';
+  const n = dayDiff(t.dueAt);
+  if (n === null) return '';
+  if (n < 0) return ' late';
+  if (n <= 1) return ' soon';
+  return '';
+}
+function shortDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+}
+function shortStamp(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ' ' +
+         d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+function teamColor(team) {
+  const map = {
+    'Sales': '#1971c2', 'Marketing': '#c2255c', 'Finance': '#2b8a3e',
+    'Operations': '#5f3dc4', 'Supply Chain': '#0b7285',
+    'Planning & Production': '#e8590c', 'Compliance & HR': '#495057'
+  };
+  return map[team] || '#1971c2';
+}
+/* one color per stage so a card's left edge says its status at a glance —
+   To Do grey (waiting), Doing teal (in progress), Review violet (needs a
+   decision), Done green, Returned red — kept apart from the Must/Should/Later
+   priority chip colors so the two signals never look like the same thing. */
+function statusColor(status) {
+  const map = {
+    'To Do': 'var(--st-todo)', 'Doing': 'var(--st-doing)', 'Review': 'var(--st-review)',
+    'Done': 'var(--st-done)', 'Returned': 'var(--st-returned)'
+  };
+  return map[status] || 'var(--st-todo)';
+}
+function canDecide(t) {
+  if (USER.ro) return false;
+  if (String(ST.me) === '1011100001') return true;
+  if (String(t.createdBy) === String(ST.me)) return true;
+  return ST.teams.some(x => x.team === t.team && String(x.leadId) === String(ST.me));
+}
+const isMine = t => t.assignees.map(String).indexOf(String(ST.me)) >= 0;
+
+/* ------------------------------- views ------------------------------- */
+document.querySelectorAll('.vtab').forEach(v => {
+  v.onclick = () => {
+    // Guard here too, not only in renderAll — a hidden tab is unreachable by a
+    // real tap, but never trust visibility alone to be the only lock on a
+    // number Chayan chose to keep private.
+    if (v.dataset.view === 'kpi' && !ST.kpiVisible) return;
+    document.querySelectorAll('.vtab').forEach(x => x.classList.toggle('on', x === v));
+    ST.view = v.dataset.view;
+    $('vBoard').style.display = ST.view === 'board' ? '' : 'none';
+    $('vKpi').style.display   = ST.view === 'kpi'   ? '' : 'none';
+    $('fab').classList.toggle('show', ST.view === 'board' && ST.isLead && !USER.ro);
+    window.scrollTo(0, 0);
+  };
+});
+$('stateSeg').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  ST.state = b.dataset.state;
+  [...$('stateSeg').children].forEach(x => x.classList.toggle('on', x === b));
+  renderCards();
+};
+$('scopeSeg').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  ST.scope = b.dataset.scope;
+  [...$('scopeSeg').children].forEach(x => x.classList.toggle('on', x === b));
+  renderAll();
+};
+$('q').oninput = renderCards;
+
+/* ----------------------------- rendering ----------------------------- */
+function visibleTasks() {
+  return ST.tasks.filter(t => {
+    if (t.type === 'Notice') return false;
+    if (ST.scope !== 'mine') return true;        // team scope: whatever the server sent
+    // "My tasks" also means work that is waiting on ME to accept or return,
+    // otherwise a lead's decision queue stays invisible until he switches scope.
+    return isMine(t) || (t.status === 'Review' && canDecide(t));
+  });
+}
+function renderCounts() {
+  const v = visibleTasks();
+  const n = s => v.filter(t => (s === 'To Do' ? (t.status === 'To Do' || t.status === 'Returned')
+                                             : t.status === s)).length;
+  $('cTodo').textContent   = n('To Do');
+  $('cDoing').textContent  = n('Doing');
+  $('cReview').textContent = n('Review');
+  $('cDone').textContent   = n('Done');
+}
+function renderCards() {
+  renderCounts();
+  const q = $('q').value.trim().toLowerCase();
+  let rows = visibleTasks().filter(t =>
+    ST.state === 'To Do' ? (t.status === 'To Do' || t.status === 'Returned') : t.status === ST.state);
+
+  if (q) {
+    rows = rows.filter(t => (
+      t.title + ' ' + t.desc + ' ' + t.team + ' ' + t.priority + ' ' + t.id + ' ' +
+      t.assignees.map(nameOf).join(' ') + ' ' + nameOf(t.createdBy)
+    ).toLowerCase().includes(q));
+  }
+  rows.sort((a, b) => {
+    const w = { Must: 0, Should: 1, Later: 2 };
+    if (w[a.priority] !== w[b.priority]) return w[a.priority] - w[b.priority];
+    return (a.dueAt || '9') < (b.dueAt || '9') ? -1 : 1;
+  });
+
+  const box = $('cards');
+  if (!rows.length) {
+    box.innerHTML = '<div class="empty">' + (WIRED
+      ? 'Nothing in ' + esc(ST.state) + '.' + (ST.state === 'Done' ? '' : '<br>Enjoy it while it lasts.')
+      : 'Connect the backend to see tasks.') + '</div>';
+    return;
+  }
+  box.innerHTML = rows.map(cardHtml).join('');
+  rows.forEach(t => bindCard(t));
+  renderNotices();
+}
+
+function cardHtml(t) {
+  const who = t.assignees.map(firstName).join(', ') || '—';
+  const mine = isMine(t);
+  let acts = '';
+  if (!USER.ro) {
+    if (t.status === 'To Do' && mine)      acts = btn('go', 'start', 'Start');
+    else if (t.status === 'Returned' && mine) acts = btn('go', 'start', 'Redo it');
+    else if (t.status === 'Doing' && mine) acts = btn('go', 'submit', 'Submit for review');
+    else if (t.status === 'Review' && canDecide(t)) acts = btn('ok', 'accept', 'Accept') + btn('no', 'return', 'Return');
+    else if (t.status === 'Review' && mine) acts = btn('', 'pull', 'Pull back');
+  }
+  return '' +
+  '<div class="tc-wrap" data-id="' + esc(t.id) + '">' +
+    '<div class="tc-hint"><span>Back</span><span>Advance</span></div>' +
+    '<div class="tc" style="border-left-color:' + statusColor(t.status) + '">' +
+      '<div class="tc-top">' +
+        '<div class="tc-t">' + esc(t.title) +
+          (t.returns > 0 ? ' <span class="chip p-Must">returned ' + t.returns + 'x</span>' : '') +
+          (t._pending ? '<span class="pend">' + (t._pending === 'queued' ? 'queued' : 'saving') + '</span>' : '') +
+        '</div>' +
+        '<span class="chip p-' + esc(t.priority) + '">' + esc(t.priority) + '</span>' +
+      '</div>' +
+      '<div class="tc-m">' + esc(t.team || 'No team') + ' &middot; <b>' + esc(who) + '</b><br>' +
+        '<span class="due' + dueCls(t) + '">' + esc(dueTxt(t)) + '</span>' +
+        (t.status === 'Done' && t.points ? ' &middot; ' + t.points + ' pts' : '') +
+        (t.linkRef ? ' &middot; ' + esc(t.linkType) + ' ' + esc(t.linkRef) : '') +
+      '</div>' +
+      (acts ? '<div class="tc-acts">' + acts + '</div>' : '') +
+    '</div>' +
+  '</div>';
+}
+function btn(cls, act, label) {
+  return '<button class="' + cls + '" data-act="' + act + '">' + label + '</button>';
+}
+
+function bindCard(t) {
+  const wrap = document.querySelector('.tc-wrap[data-id="' + cssEsc(t.id) + '"]');
+  if (!wrap) return;
+  const tc = wrap.querySelector('.tc');
+
+  wrap.querySelectorAll('.tc-acts button').forEach(b => {
+    b.onclick = ev => {
+      ev.stopPropagation();
+      const a = b.dataset.act;
+      if (a === 'start')  return doMove(t, 'Doing');
+      if (a === 'submit') return doMove(t, 'Review');
+      if (a === 'pull')   return doMove(t, 'Doing');
+      if (a === 'accept') return doDecide(t, 'accept', '');
+      if (a === 'return') return openDetail(t.id, true);
+    };
+  });
+
+  tc.onclick = () => openDetail(t.id);
+
+  /* swipe: right advances, left steps back. Only for the assignee's own flow —
+     Accept and Return are terminal decisions and stay as explicit buttons. */
+  if (USER.ro || !isMine(t)) return;
+  const fwd = t.status === 'To Do' || t.status === 'Returned' ? 'Doing'
+            : t.status === 'Doing' ? 'Review' : '';
+  const back = t.status === 'Doing' ? 'To Do' : t.status === 'Review' ? 'Doing' : '';
+  if (!fwd && !back) return;
+
+  let x0 = 0, y0 = 0, dx = 0, axis = null, moved = false;
+  tc.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+    dx = 0; axis = null; moved = false;
+    tc.classList.add('drag');
+  }, { passive: true });
+
+  tc.addEventListener('touchmove', e => {
+    if (e.touches.length !== 1) return;
+    const cx = e.touches[0].clientX - x0, cy = e.touches[0].clientY - y0;
+    if (!axis) {
+      if (Math.abs(cx) > 9 && Math.abs(cx) > Math.abs(cy)) axis = 'x';
+      else if (Math.abs(cy) > 9) axis = 'y';
+    }
+    if (axis !== 'x') return;
+    e.preventDefault();
+    dx = cx;
+    if (dx > 0 && !fwd) dx = dx * 0.18;
+    if (dx < 0 && !back) dx = dx * 0.18;
+    moved = true;
+    tc.style.transform = 'translateX(' + dx + 'px)';
+    const h = wrap.querySelector('.tc-hint');
+    h.children[0].style.opacity = dx < -20 && back ? 1 : 0;
+    h.children[1].style.opacity = dx > 20 && fwd ? 1 : 0;
+  }, { passive: false });
+
+  tc.addEventListener('touchend', () => {
+    tc.classList.remove('drag');
+    const h = wrap.querySelector('.tc-hint');
+    h.children[0].style.opacity = 0; h.children[1].style.opacity = 0;
+    const go = dx > 70 && fwd ? fwd : dx < -70 && back ? back : '';
+    tc.style.transform = '';
+    if (go) { tc.onclick = null; doMove(t, go); }
+    else if (moved) { setTimeout(() => { tc.onclick = () => openDetail(t.id); }, 0); }
+    dx = 0; axis = null;
+  }, { passive: true });
+}
+function cssEsc(s) { return String(s).replace(/"/g, '\\"'); }
+
+function renderNotices() {
+  const ns = ST.tasks.filter(t => t.type === 'Notice')
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, 12);
+  $('notices').innerHTML = ns.map(n => {
+    const mineAck = n.ackBy.some(x => String(x).split('@')[0] === String(ST.me));
+    const cnt = n.ackBy.length;
+    return '<div class="nt" data-id="' + esc(n.id) + '">' +
+      '<div class="t">' + esc(n.title) + '</div>' +
+      (n.desc ? '<div class="d">' + esc(n.desc) + '</div>' : '') +
+      '<div class="m">' + esc(firstName(n.createdBy)) + ' &middot; ' + esc(shortStamp(n.createdAt)) +
+        ' &middot; ' + cnt + ' read</div>' +
+      (USER.ro ? '' : '<button class="' + (mineAck ? 'done' : '') + '" data-ack="' + esc(n.id) + '">' +
+        (mineAck ? 'You have read this' : 'Got it') + '</button>') +
+    '</div>';
+  }).join('');
+  $('notices').querySelectorAll('[data-ack]').forEach(b => {
+    b.onclick = () => doAck(b.dataset.ack);
+  });
+}
+
+/* ------------------------------ detail ------------------------------- */
+function openDetail(id, focusReturn) {
+  const t = ST.tasks.find(x => x.id === id);
+  if (!t) return;
+  ST.openId = id;
+  $('dTitle').textContent = t.type === 'Notice' ? 'Notice' : t.id;
+
+  const hist = ST.activity.filter(a => a.taskId === id)
+    .sort((a, b) => (a.at < b.at ? -1 : 1));
+
+  let acts = '';
+  if (!USER.ro) {
+    const mine = isMine(t);
+    if (t.status === 'To Do' || t.status === 'Returned') {
+      if (mine) acts += '<button class="bp" data-d="start">Start working</button>';
+    } else if (t.status === 'Doing' && mine) {
+      acts += '<button class="bp" data-d="submit">Submit for review</button>';
+    }
+    if (t.status === 'Review' && canDecide(t)) {
+      acts += '<button class="bok" data-d="accept">Accept</button><button class="bno" data-d="return">Return</button>';
+    }
+  }
+
+  $('dBody').innerHTML =
+    '<div style="font-weight:900;font-size:15px;line-height:1.4;margin-bottom:10px">' + esc(t.title) + '</div>' +
+    (t.desc ? '<div class="desc">' + esc(t.desc) + '</div>' : '') +
+    row('Status', t.status + (t.returns ? ' (returned ' + t.returns + 'x)' : '')) +
+    row('Priority', t.priority + ' · weight ' + (t.priority === 'Must' ? 3 : t.priority === 'Should' ? 2 : 1)) +
+    row('Team', t.team || '—') +
+    row('Assigned to', t.assignees.map(nameOf).join(', ') || '—') +
+    row('Given by', nameOf(t.createdBy)) +
+    row('Due', t.dueAt ? shortDate(t.dueAt) + ' · ' + dueTxt(t) : '—') +
+    (t.linkRef ? row('Linked ' + t.linkType, t.linkRef) : '') +
+    (t.status === 'Done' ? row('Points earned', String(t.points)) : '') +
+    (acts ? '<div class="btnrow" id="dActs">' + acts + '</div>' : '') +
+    '<div class="fg" style="margin-top:14px"><div class="fl">Note or comment</div>' +
+      '<textarea class="fi" id="dNote" maxlength="400" placeholder="' +
+      (focusReturn ? 'Why is it coming back' : 'Add a note') + '"></textarea></div>' +
+    '<div class="btnrow"><button class="bg2" id="dSay">Post comment</button></div>' +
+    '<div class="card-lbl" style="margin:16px 0 4px">History</div>' +
+    '<div class="thread">' + (hist.length ? hist.map(h =>
+      '<div class="cm">' +
+        '<span class="w">' + esc(firstName(h.actorId)) + '</span> ' +
+        '<span class="tm">' + esc(shortStamp(h.at)) + '</span><br>' +
+        (h.from === 'comment'
+          ? esc(h.note)
+          : '<span class="sys">' + esc((h.from ? h.from + ' → ' : '') + h.to + (h.note ? ' · ' + h.note : '')) + '</span>') +
+      '</div>').join('') : '<div class="empty">Nothing yet.</div>') + '</div>';
+
+  const ab = $('dActs');
+  if (ab) ab.querySelectorAll('button').forEach(b => {
+    b.onclick = () => {
+      const note = ($('dNote').value || '').trim();
+      const d = b.dataset.d;
+      sheetClose('shDetail', false);
+      if (d === 'start')  return doMove(t, 'Doing');
+      if (d === 'submit') return doMove(t, 'Review');
+      if (d === 'accept') return doDecide(t, 'accept', note);
+      if (d === 'return') {
+        if (!note) { sheetOpen('shDetail'); return toast('Say why it is coming back', true); }
+        return doDecide(t, 'return', note);
+      }
+    };
+  });
+  $('dSay').onclick = () => {
+    const v = ($('dNote').value || '').trim();
+    if (!v) return toast('Nothing to post', true);
+    doComment(t, v);
+    $('dNote').value = '';
+  };
+  sheetOpen('shDetail');
+  if (focusReturn) setTimeout(() => { try { $('dNote').focus(); } catch (e) {} }, 320);
+}
+function row(k, v) {
+  return '<div class="dl"><span>' + esc(k) + '</span><span>' + esc(v) + '</span></div>';
+}
+
+/* ------------------------------ create ------------------------------- */
+$('fab').onclick = () => {
+  if (!ST.teams.length) return toast('Run setupAll() in the Task Engine script first', true);
+  ST.pick = [];
+  $('nTitle').value = ''; $('nDesc').value = ''; $('nLinkR').value = '';
+  $('nLinkT').value = ''; $('nPri').value = 'Should';
+  const d = new Date(); d.setDate(d.getDate() + 1);
+  $('nDue').value = d.toISOString().slice(0, 10);
+  setType('Task');
+  paintTeams();
+  prefillTeamMembers();   // the team is preselected, so preselect its people too
+  paintWho();
+  sheetOpen('shCreate');
+};
+document.querySelectorAll('[data-type]').forEach(b => {
+  b.onclick = () => setType(b.dataset.type);
+});
+function setType(tp) {
+  ST.ctype = tp;
+  $('tpTask').classList.toggle('on', tp === 'Task');
+  $('tpNotice').classList.toggle('on', tp === 'Notice');
+  $('cHead').textContent = tp === 'Notice' ? 'New notice' : 'New task';
+  const hide = tp === 'Notice';
+  $('wrapWho').style.display  = hide ? 'none' : '';
+  $('wrapWhen').style.display = hide ? 'none' : '';
+  $('wrapLink').style.display = hide ? 'none' : '';
+  $('btnSave').textContent = hide ? 'Post notice' : 'Give task';
+}
+function paintTeams() {
+  const s = $('nTeam');
+  s.innerHTML = '<option value="">No team</option>' +
+    ST.teams.map(t => '<option value="' + esc(t.team) + '">' + esc(t.team) + '</option>').join('');
+  const led = ST.teams.find(t => String(t.leadId) === String(ST.me));
+  if (led) s.value = led.team;
+}
+function prefillTeamMembers() {
+  const t = ST.teams.find(x => x.team === $('nTeam').value);
+  ST.pick = t ? t.members.slice() : [];
+}
+$('nTeam').onchange = () => { prefillTeamMembers(); paintWho(); };
+function paintWho() {
+  $('btnWho').textContent = ST.pick.length
+    ? ST.pick.map(firstName).join(', ')
+    : 'Choose people';
+}
+$('btnWho').onclick = () => {
+  $('pickList').innerHTML = ST.users.map(u =>
+    '<div class="pickrow' + (ST.pick.map(String).indexOf(String(u.id)) >= 0 ? ' on' : '') +
+      '" data-uid="' + esc(u.id) + '">' +
+      '<div class="bx">&#10003;</div>' +
+      '<div><div class="nm">' + esc(u.name) + '</div><div class="rl">' + esc(u.id) + '</div></div>' +
+    '</div>').join('') || '<div class="empty">No users found.</div>';
+  $('pickList').querySelectorAll('.pickrow').forEach(r => {
+    r.onclick = () => {
+      const id = r.dataset.uid;
+      const i = ST.pick.map(String).indexOf(String(id));
+      if (i >= 0) ST.pick.splice(i, 1); else ST.pick.push(id);
+      r.classList.toggle('on', i < 0);
+    };
+  });
+  sheetOpen('shPick');
+};
+$('pickDone').onclick = () => { paintWho(); sheetClose('shPick', false); };
+
+$('btnSave').onclick = () => {
+  if (USER.ro) return;
+  const title = $('nTitle').value.trim();
+  if (title.length < 3) return toast('Give it a real title', true);
+  const isNotice = ST.ctype === 'Notice';
+  if (!isNotice && !ST.pick.length) return toast('Pick at least one person', true);
+  if (!isNotice && !$('nDue').value) return toast('A task needs a due date', true);
+
+  const id = (isNotice ? 'N-' : 'T-') + 'LOCAL' + Date.now().toString().slice(-6);
+  const optimistic = {
+    id: id, type: isNotice ? 'Notice' : 'Task', title: title, desc: $('nDesc').value.trim(),
+    team: $('nTeam').value, assignees: isNotice ? [] : ST.pick.slice(), createdBy: ST.me,
+    createdAt: new Date().toISOString(), priority: isNotice ? 'Later' : $('nPri').value,
+    dueAt: isNotice ? '' : $('nDue').value + 'T23:59:00',
+    status: isNotice ? 'Notice' : 'To Do', startedAt: '', submittedAt: '', closedAt: '',
+    returns: 0, linkType: $('nLinkT').value, linkRef: $('nLinkR').value.trim(),
+    points: 0, ackBy: [], _pending: true
+  };
+  ST.tasks.unshift(optimistic);
+  saveCache();
+  sheetClose('shCreate', false);
+  toast(isNotice ? 'Notice posted' : 'Task given to ' + ST.pick.map(firstName).join(', '));
+  ST.state = isNotice ? ST.state : 'To Do';
+  [...$('stateSeg').children].forEach(x => x.classList.toggle('on', x.dataset.state === ST.state));
+  renderAll();
+
+  send({
+    action: 'addTask', submitId: USER.id + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    type: optimistic.type, title: title, desc: optimistic.desc, team: optimistic.team,
+    assignees: optimistic.assignees.join(','), priority: optimistic.priority,
+    dueAt: optimistic.dueAt, linkType: optimistic.linkType, linkRef: optimistic.linkRef,
+    createdBy: ST.me
+  }, optimistic);
+};
+
+/* ---------------------------- write actions --------------------------- */
+/** A card created while offline has no server ID yet, so it cannot be moved. */
+function notSyncedYet(t) {
+  if (String(t.id).indexOf('LOCAL') >= 0) { toast('Still saving this one, try again in a moment', true); return true; }
+  return false;
+}
+function doMove(t, to) {
+  if (USER.ro || notSyncedYet(t)) return;
+  const from = t.status;
+  t.status = to;
+  if (to === 'Doing' && !t.startedAt) t.startedAt = new Date().toISOString();
+  if (to === 'Review') t.submittedAt = new Date().toISOString();
+  t._pending = true;
+  pushLocalAct(t.id, from, to, '');
+  saveCache(); renderAll();
+  toast(to === 'Doing' ? 'Started' : to === 'Review' ? 'Sent for review' : 'Moved back to ' + to);
+  send({ action: 'move', taskId: t.id, to: to, actorId: ST.me }, t);
+}
+function doDecide(t, verdict, note) {
+  if (USER.ro || notSyncedYet(t)) return;
+  const from = t.status;
+  if (verdict === 'accept') {
+    t.status = 'Done';
+    t.closedAt = new Date().toISOString();
+    t.points = estPoints(t);
+  } else {
+    t.status = 'Returned';
+    t.returns = (t.returns || 0) + 1;
+  }
+  t._pending = true;
+  pushLocalAct(t.id, from, t.status, note);
+  saveCache(); renderAll();
+  toast(verdict === 'accept' ? 'Accepted · ' + t.points + ' pts' : 'Returned for rework');
+  send({ action: 'decide', taskId: t.id, verdict: verdict, actorId: ST.me, note: note || '' }, t);
+}
+function doAck(id) {
+  const n = ST.tasks.find(x => x.id === id);
+  if (!n || USER.ro) return;
+  if (n.ackBy.some(x => String(x).split('@')[0] === String(ST.me))) return;
+  n.ackBy.push(ST.me + '@now');
+  saveCache(); renderNotices();
+  send({ action: 'ack', taskId: id, actorId: ST.me }, n);
+}
+function doComment(t, text) {
+  pushLocalAct(t.id, 'comment', 'comment', text);
+  renderAll();
+  if (ST.openId === t.id) openDetail(t.id);
+  toast('Comment added');
+  send({ action: 'comment', taskId: t.id, actorId: ST.me, text: text }, t);
+}
+function doTick(cp, done) {
+  if (USER.ro) return;
+  cp.done = done;
+  renderChecklist();
+  send({ action: 'tick', date: cp.date, cpId: cp.cpId, userId: cp.userId, done: done ? '1' : 'false' }, null);
+}
+function estPoints(t) {
+  const w = t.priority === 'Must' ? 3 : t.priority === 'Should' ? 2 : 1;
+  let tm = 1;
+  if (t.dueAt) {
+    const late = (Date.now() - new Date(t.dueAt).getTime()) / 86400000;
+    if (late > 0) tm = late <= 2 ? 0.7 : 0.4;
+  }
+  const q = !t.returns ? 1 : t.returns === 1 ? 0.6 : 0.3;
+  return Math.round(w * tm * q * 100) / 100;
+}
+function pushLocalAct(taskId, from, to, note) {
+  ST.activity.push({ at: new Date().toISOString(), taskId: taskId, actorId: ST.me,
+                     from: from, to: to, note: note || '' });
+}
+
+/* ---------------- daily checklist — on the Board, for everyone ---------------- */
+let cpOpen = false;
+function renderChecklist() {
+  const cps = ST.checkpoints;
+  $('cpCard').style.display = cps.length ? '' : 'none';
+  if (!cps.length) return;
+  const done = cps.filter(c => c.done).length;
+  $('cpFrac').textContent = done + '/' + cps.length;
+  $('cps').innerHTML = cps.map((c, i) =>
+    '<div class="cp' + (c.done ? ' on' : '') + (c.source === 'AUTO' ? ' auto' : '') + '" data-i="' + i + '">' +
+      '<div class="box">' + (c.done ? '&#10003;' : '') + '</div>' +
+      '<div class="n">' + esc(c.name) + '</div>' +
+      (c.source === 'AUTO' ? '<span class="badge">auto</span>' : '') +
+    '</div>').join('');
+  $('cps').querySelectorAll('.cp').forEach(el => {
+    const c = cps[+el.dataset.i];
+    if (!c || c.source === 'AUTO') return;
+    el.querySelector('.box').onclick = () => doTick(c, !c.done);
+  });
+}
+$('cpToggle').onclick = () => {
+  cpOpen = !cpOpen;
+  $('cps').style.display = cpOpen ? '' : 'none';
+};
+
+/* ------------------------------ KPI view — score only, gated ----------------------------- */
+function renderKpi() {
+  if (!ST.kpiVisible) return;   // server already withheld the numbers; nothing to paint
+  const mine = ST.kpi.find(r => String(r.userId) === String(ST.me));
+  const v = mine || { kpi: 0, taskScore: 0, adherence: 0, slipRate: 0, accepted: 0, assigned: 0, avgCycleHrs: 0 };
+  $('kKpi').textContent  = mine ? Math.round(v.kpi) + '%' : '—';
+  $('kTask').textContent = Math.round(v.taskScore) + '%';
+  $('kAdh').textContent  = Math.round(v.adherence) + '%';
+  $('kSlip').textContent = Math.round(v.slipRate) + '%';
+  $('kAcc').textContent  = v.accepted;
+  $('kAsg').textContent  = v.assigned;
+  $('kCyc').textContent  = v.avgCycleHrs ? Math.round(v.avgCycleHrs) : '—';
+  const deg = Math.max(0, Math.min(100, v.kpi)) * 3.6;
+  $('ring').style.background = 'conic-gradient(var(--b) ' + deg + 'deg, #e9ecef ' + deg + 'deg)';
+
+  $('lb').innerHTML = ST.kpi.length ? '<table class="lb"><tr><th>Name</th><th>KPI</th>' +
+    '<th>Task</th><th>Check</th><th>Slip</th></tr>' +
+    ST.kpi.map(r => '<tr' + (String(r.userId) === String(ST.me) ? ' class="me"' : '') + '>' +
+      '<td>' + esc(r.name) + '</td>' +
+      '<td class="n">' + Math.round(r.kpi) + '</td>' +
+      '<td class="n">' + Math.round(r.taskScore) + '</td>' +
+      '<td class="n">' + Math.round(r.adherence) + '</td>' +
+      '<td class="n">' + Math.round(r.slipRate) + '</td>' +
+    '</tr>').join('') + '</table>'
+    : '<div class="empty">No scores yet this month.</div>';
+}
+
+function renderAll() {
+  $('scopeSeg').style.display = ST.isLead ? '' : 'none';
+  $('fab').classList.toggle('show', ST.view === 'board' && ST.isLead && !USER.ro);
+  $('vtabKpi').style.display = ST.kpiVisible ? '' : 'none';
+  if (!ST.kpiVisible && ST.view === 'kpi') {
+    // Chayan flipped the switch off while this tab was open — fall back to Board
+    ST.view = 'board';
+    document.querySelectorAll('.vtab').forEach(x => x.classList.toggle('on', x.dataset.view === 'board'));
+    $('vBoard').style.display = ''; $('vKpi').style.display = 'none';
+  }
+  renderCards();
+  renderChecklist();
+  renderKpi();
+}
+
+/* --------------------- cache: paint first, then fetch ------------------ */
+function saveCache() {
+  try {
+    localStorage.setItem(CKEY, JSON.stringify({
+      me: ST.me, isLead: ST.isLead, kpiVisible: ST.kpiVisible, users: ST.users, teams: ST.teams,
+      tasks: ST.tasks, activity: ST.activity, checkpoints: ST.checkpoints, kpi: ST.kpi
+    }));
+  } catch (e) {}
+}
+function paintCache() {
+  try {
+    const c = JSON.parse(localStorage.getItem(CKEY) || 'null');
+    if (!c) return false;
+    Object.assign(ST, {
+      isLead: !!c.isLead, kpiVisible: !!c.kpiVisible, users: c.users || [], teams: c.teams || [],
+      tasks: c.tasks || [], activity: c.activity || [],
+      checkpoints: c.checkpoints || [], kpi: c.kpi || []
+    });
+    renderAll();
+    return true;
+  } catch (e) { return false; }
+}
+
+let loading = false;
+async function refresh(showPill) {
+  if (!WIRED || loading) return;
+  loading = true;
+  if (showPill) $('ptr').classList.add('on');
+  try {
+    const js = await fetch(AS_URL + '?action=bootstrap&userId=' + encodeURIComponent(USER.id) +
+      '&role=' + encodeURIComponent(USER.role)).then(r => r.json());
+    if (!js || !js.ok) throw new Error((js && js.error) || 'Server error');
+    ST.isLead = !!js.isLead;
+    ST.kpiVisible = !!js.kpiVisible;
+    ST.users = js.users || [];
+    ST.teams = js.teams || [];
+    ST.activity = js.activity || [];
+    ST.checkpoints = js.checkpoints || [];
+    ST.kpi = js.kpi || [];
+    // keep anything still queued offline, the server has not seen it yet
+    const stuck = ST.tasks.filter(t => t._pending === 'queued');
+    const fresh = js.tasks || [];
+    const ids = {};
+    fresh.forEach(t => ids[t.id] = true);
+    ST.tasks = fresh.concat(stuck.filter(t => !ids[t.id]));
+    saveCache();
+    renderAll();
+    if (ST.openId && $('shDetail').classList.contains('on')) openDetail(ST.openId);
+  } catch (e) {
+    if (showPill) toast('Could not reach the server', true);
+  } finally {
+    loading = false;
+    $('ptr').classList.remove('on');
+  }
+}
+
+/* ------------------------- offline write queue ------------------------ */
+const readQ  = () => { try { return JSON.parse(localStorage.getItem(QKEY) || '[]'); } catch (e) { return []; } };
+const writeQ = q => { try { localStorage.setItem(QKEY, JSON.stringify(q)); } catch (e) {} };
+function showQ() {
+  const n = readQ().length, b = $('qBadge');
+  b.style.display = n ? 'block' : 'none';
+  b.textContent = n ? n + ' waiting to sync' : '';
+}
+/**
+ * A network failure is queued and retried. A reply from the server that says
+ * "no" is NOT queued — retrying it forever would poison the queue — the error
+ * is shown and refresh() pulls the truth back, undoing the optimistic change.
+ */
+async function send(params, optimistic) {
+  if (!WIRED) { toast('Backend not connected', true); return; }
+  const qs = new URLSearchParams(params).toString();
+  let js = null;
+  try {
+    js = await fetch(AS_URL + '?' + qs).then(r => r.json());
+  } catch (e) {
+    if (optimistic) optimistic._pending = 'queued';
+    const q = readQ(); q.push({ qs: qs, t: Date.now() }); writeQ(q);
+    showQ(); saveCache(); renderAll();
+    toast('Offline — saved, will sync', true);
+    return;
+  }
+  if (optimistic) delete optimistic._pending;
+  if (!(js && js.ok)) toast((js && js.error) || 'Server rejected that', true);
+  refresh(false);
+}
+async function flushQ() {
+  if (!WIRED) return;
+  const q = readQ();
+  if (!q.length) return;
+  for (const item of [...q]) {
+    try {
+      const js = await fetch(AS_URL + '?' + item.qs).then(r => r.json());
+      // answered, ok or not — either way it is settled, drop it
+      writeQ(readQ().filter(e => e.qs !== item.qs));
+      if (!(js && js.ok)) toast((js && js.error) || 'One queued change was rejected', true);
+    } catch (e) { break; }   // still offline, keep the rest for later
+  }
+  showQ();
+  refresh(false);
+}
+
+/* --------------------------- pull to refresh -------------------------- */
+let ptrY = 0, ptrOn = false;
+addEventListener('touchstart', e => {
+  if (anyOpen()) return;                        // a sheet is up, the page behind it is still at 0
+  if (window.scrollY <= 0 && e.touches.length === 1) { ptrY = e.touches[0].clientY; ptrOn = true; }
+}, { passive: true });
+addEventListener('touchmove', e => {
+  if (!ptrOn) return;
+  const dy = e.touches[0].clientY - ptrY;
+  if (dy > 70 && window.scrollY <= 0) { ptrOn = false; refresh(true); }
+}, { passive: true });
+addEventListener('touchend', () => { ptrOn = false; }, { passive: true });
+
+/* -------------------------------- boot -------------------------------- */
+paintCache();
+showQ();
+flushQ();
+const tok = sessionStorage.getItem('erp_login_token') || '';
+if (tok && localStorage.getItem(TKEY) !== tok) { localStorage.setItem(TKEY, tok); }
+refresh(false);
+addEventListener('online', flushQ);
+</script>
+</body>
+</html>

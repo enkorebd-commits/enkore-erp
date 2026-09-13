@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>My Profile — Enkore</title>
+<style>
+:root{
+  --blue:#1971c2;--blue2:#4098e6;--bluebg:#e7f1fb;--navy:#0d0d0d;
+  --grn:#1b6b3a;--grn2:#2d8a52;--grnbg:#edf7f1;--red:#e03131;--redbg:#fff5f5;
+  --amber:#e67e22;--amberbg:#fff4e6;--gold:#b8860b;
+  --text:#1a1a2e;--muted:#868e96;--border:#dee2e6;--bg:#f3f4f6;--card:#fff;
+  --r:14px;--sh:0 2px 8px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior:none}
+
+.hdr{background:linear-gradient(135deg,#123a63,#1971c2);color:#fff;padding:20px 16px 18px;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.hdr-name{font-size:21px;font-weight:900;letter-spacing:.2px}
+.motiv{font-size:12.5px;font-weight:600;margin-top:10px;line-height:1.5;background:rgba(255,255,255,.12);padding:10px 12px;border-radius:10px}
+
+/* commission bold card */
+.commcard{background:linear-gradient(135deg,#123a63,#1971c2);color:#fff;border-radius:var(--r);padding:16px;box-shadow:0 4px 14px rgba(25,113,194,.28);margin-bottom:10px}
+.cc-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;padding:3px 0}
+.cc-k{opacity:.85}
+.cc-v{font-weight:900}
+.cc-final{margin-top:11px;padding-top:12px;border-top:1px solid rgba(255,255,255,.25);text-align:center}
+.cc-final-l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:.9}
+.cc-final-v{font-size:32px;font-weight:900;letter-spacing:-.5px;margin-top:3px}
+.cc-final-v .u{font-size:13px;opacity:.85;margin-left:3px}
+.cc-final-s{font-size:11px;opacity:.85;margin-top:4px}
+.cc-locked{margin-top:11px;font-size:12.5px;font-weight:700;background:rgba(255,255,255,.15);padding:10px 12px;border-radius:10px;line-height:1.5}
+
+.body{padding:14px;max-width:560px;margin:0 auto;padding-bottom:40px}
+.sec-t{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:18px 4px 8px}
+.sec-t:first-child{margin-top:4px}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px;margin-bottom:10px}
+
+/* month tri-stat */
+.tri{display:flex;gap:8px}
+.tri .box{flex:1;text-align:center;background:var(--bg);border-radius:12px;padding:11px 4px}
+.box-l{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.box-v{font-size:17px;font-weight:900;margin-top:3px;letter-spacing:-.3px}
+.box-v .u{font-size:9px;font-weight:800;color:var(--muted);margin-left:2px}
+.box-v.grn{color:var(--grn)}.box-v.red{color:var(--red)}.box-v.blue{color:var(--blue)}
+
+/* big highlight amount */
+.big{border-radius:var(--r);padding:16px;color:#fff}
+.big.blue{background:linear-gradient(135deg,#1971c2,#4098e6)}
+.big.grn{background:linear-gradient(135deg,#1b6b3a,#2d8a52)}
+.big.amber{background:linear-gradient(135deg,#d9822b,#e8a04e)}
+.big-l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:.9}
+.big-v{font-size:30px;font-weight:900;letter-spacing:-.5px;line-height:1.05;margin-top:4px}
+.big-v .u{font-size:12px;font-weight:800;opacity:.85;margin-left:3px}
+.big-sub{font-size:12px;opacity:.9;margin-top:6px}
+
+/* product / commission table */
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);padding:6px 6px;border-bottom:1.5px solid var(--border)}
+.tbl td{padding:8px 6px;border-bottom:1px solid #f1f3f5;vertical-align:top}
+.tbl td.num,.tbl th.num{text-align:right;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl .pname{font-weight:700;line-height:1.35}
+.tbl .av{font-weight:900;color:var(--blue)}
+.tbl .totrow td{border-top:2px solid var(--border);background:#f8f9fb;font-weight:900}
+.tbl-total{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:2px solid var(--border);font-weight:900}
+.tbl-total .v{font-size:16px;color:var(--blue)}
+
+/* gauge */
+.gauge-wrap{margin-top:12px}
+.gauge-top{display:flex;justify-content:space-between;font-size:11px;font-weight:800;margin-bottom:5px}
+.gauge{height:12px;border-radius:8px;background:#e9ecef;overflow:hidden}
+.gauge-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,#1971c2,#4098e6);transition:width .5s}
+.gauge-fill.warn{background:linear-gradient(90deg,#e67e22,#f0a04b)}
+.gauge-fill.bad{background:linear-gradient(90deg,#e03131,#f06565)}
+
+/* locked commission */
+.locked{background:var(--amberbg);border:1.5px dashed #f0c088;border-radius:var(--r);padding:14px;text-align:center}
+.locked-ic{font-size:26px}
+.locked-t{font-weight:900;margin-top:4px;color:#b06a12}
+.locked-s{font-size:12px;color:#9a6414;margin-top:5px;line-height:1.5}
+
+/* target progress */
+.tgt-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.tgt-ach{font-size:22px;font-weight:900}
+.tgt-ach.met{color:var(--grn)}.tgt-ach.miss{color:var(--amber)}
+.tgt-bar{height:14px;border-radius:8px;background:#e9ecef;overflow:hidden;margin:6px 0}
+.tgt-fill{height:100%;background:linear-gradient(90deg,#1b6b3a,#2d8a52)}
+.tgt-fill.miss{background:linear-gradient(90deg,#e67e22,#f0a04b)}
+.tgt-row{display:flex;justify-content:space-between;font-size:12px;margin-top:6px}
+.tgt-row .k{color:var(--muted);font-weight:700}
+.tgt-row .val{font-weight:800}
+.tgt-note{font-size:12px;font-weight:700;margin-top:12px;background:var(--bluebg);color:#0f4f8a;padding:10px 12px;border-radius:10px;line-height:1.5}
+
+/* product list (all-time) */
+.plist{display:flex;flex-direction:column;gap:7px}
+.pitem{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:9px 11px}
+.pitem .pn{flex:1;min-width:0;font-size:12.5px;font-weight:700;line-height:1.3}
+.pitem .pq{flex-shrink:0;font-size:11px;font-weight:800;color:var(--muted)}
+.pitem .pv{flex-shrink:0;font-size:13px;font-weight:900;text-align:right;min-width:78px}
+
+/* submit form */
+.field{margin-bottom:10px}
+.field label{display:block;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.inp{width:100%;padding:12px 14px;font-size:16px;border:1.5px solid var(--border);border-radius:10px;outline:none;background:#fff;color:var(--text)}
+.inp:focus{border-color:var(--blue)}
+.btn{width:100%;padding:13px;font-size:15px;font-weight:800;color:#fff;background:var(--blue);border:none;border-radius:11px;cursor:pointer;transition:.15s}
+.btn:active{transform:scale(.99)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.cash-row{display:flex;gap:8px;margin-bottom:12px}
+.cash-row .box{flex:1}
+.hist{margin-top:12px}
+.hitem{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f1f3f5}
+.hitem:last-child{border-bottom:none}
+.hitem .hd{flex:1;min-width:0}
+.hitem .ha{font-size:14px;font-weight:900}
+.hitem .hdate{font-size:11px;color:var(--muted);margin-top:1px}
+.badge{flex-shrink:0;font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px}
+.badge.Pending{background:var(--amberbg);color:#b06a12}
+.badge.Approved{background:var(--grnbg);color:var(--grn)}
+.badge.Rejected{background:var(--redbg);color:var(--red)}
+
+/* states */
+.state{text-align:center;padding:48px 20px;color:var(--muted)}
+.state-icon{font-size:34px;margin-bottom:8px}
+.state-txt{font-size:13px;font-weight:600}
+.spin{display:inline-block;width:16px;height:16px;border:2.5px solid #d0d4dc;border-top-color:var(--blue);border-radius:50%;animation:rot .6s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+#ptrIndicator{position:fixed;top:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 18px;margin-top:-56px;font-size:12px;font-weight:800;color:var(--muted);background:rgba(255,255,255,.96);border:1px solid #e3e7ee;border-radius:999px;box-shadow:0 4px 16px rgba(0,0,0,.14);z-index:250;transition:margin-top .18s ease;pointer-events:none;white-space:nowrap}
+#ptrIndicator .ptr-spin{width:16px;height:16px;border:2.5px solid #d0d4dc;border-top-color:var(--blue);border-radius:50%;display:inline-block}
+#ptrIndicator.ptr-loading .ptr-spin{animation:rot .6s linear infinite}
+
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:400;opacity:0;transition:.25s;max-width:90%;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.err{background:#c0392b}
+/* ── login greeting intro (plays once per login) ──
+   NO clone, NO crossfade. The very same greeting and name elements travel to
+   the header and stop on it. Because they match the header's font, weight,
+   colour and letter-spacing exactly, and each is scaled by the measured WIDTH
+   ratio, they land pixel-on-pixel — nothing swaps, so nothing breaks. */
+#introOv{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;
+  padding:24px}
+/* backdrop is a SEPARATE layer so it can dissolve while the words stay solid */
+#introBg{position:absolute;inset:0;
+  background:linear-gradient(150deg,#0d0d0d 0%,#123a63 62%,#1971c2 100%);
+  transition:opacity .36s ease .12s}
+#introBg::after{content:'';position:absolute;left:50%;top:50%;width:min(78vw,420px);height:min(78vw,420px);
+  transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(64,152,230,.34),rgba(64,152,230,0) 68%);
+  animation:introGlow 1.6s ease-out both}
+#introBg.fade{opacity:0}
+@keyframes introGlow{from{opacity:0} to{opacity:1}}
+
+#introTxt{position:relative;z-index:1;color:#fff;text-align:center;max-width:86vw}
+/* Greeting is shown, not animated — it sits above the name and dissolves with
+   the backdrop. Only the name types and travels. */
+#introTxt .ig-greet{font-size:clamp(16px,5.2vw,23px);font-weight:800;letter-spacing:.2px;
+  line-height:1.3;opacity:.82;margin-bottom:6px}
+/* Same casing, weight, colour and letter-spacing as .hdr-name — only the size
+   differs, so the journey is a pure scale with no letterform change. */
+#introTxt .ig-name{font-size:clamp(23px,7.6vw,34px);font-weight:900;letter-spacing:.2px;
+  line-height:1.25;overflow-wrap:anywhere;min-height:1.25em}
+/* transforms are applied to the inner span so we measure the TEXT, not the box */
+#introTxt .t{display:inline-block;transform-origin:top left;backface-visibility:hidden}
+#introTxt.fly .t{transition:transform .44s cubic-bezier(.25,.46,.45,.94),opacity .3s linear}
+#introTxt .cur{display:inline-block;width:2.5px;height:.9em;background:#4098e6;
+  margin-left:4px;vertical-align:-1px;animation:blink .68s step-end infinite;border-radius:2px}
+/* the vibe: a rule that draws itself, then one short cheer line */
+#introTxt .ig-rule{height:2px;width:0;margin:13px auto 0;border-radius:2px;
+  background:linear-gradient(90deg,transparent,#4098e6,transparent);
+  transition:width .52s cubic-bezier(.32,.72,.28,1),opacity .3s ease}
+#introTxt .ig-rule.in{width:118px}
+#introTxt .ig-cheer{font-size:13px;font-weight:600;color:#a8d3f2;margin-top:11px;line-height:1.45;
+  opacity:0;transform:translateY(7px);transition:opacity .4s ease,transform .4s ease}
+#introTxt .ig-cheer.in{opacity:1;transform:none}
+#introTxt.fly .ig-rule,#introTxt.fly .ig-cheer,#introTxt.fly .ig-greet{opacity:0;transition:opacity .24s ease}
+@keyframes blink{50%{opacity:0}}
+.hdr-name.pending{opacity:0}
+
+/* ── header chips ── */
+.hdr-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.chip{font-size:10px;font-weight:800;background:rgba(255,255,255,.16);padding:4px 10px;border-radius:20px;letter-spacing:.3px}
+.chip.gold{background:#ffd43b;color:#4a3800}
+.chip.urgent{background:#ff6b6b;color:#fff}
+
+/* ── scoreboard hero ── */
+.hero{background:var(--card);border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,.1);padding:16px;margin-bottom:10px;border-top:4px solid var(--blue)}
+.hero.met{border-top-color:var(--grn2)}
+.hero.ok{border-top-color:var(--blue2)}
+.hero.warn{border-top-color:var(--amber)}
+.hero-row{display:flex;align-items:center;gap:16px}
+.ringwrap{position:relative;width:118px;height:118px;flex-shrink:0}
+.ringsvg{width:118px;height:118px;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:#eceff3;stroke-width:11}
+.ring-fg{fill:none;stroke-width:11;stroke-linecap:round;transition:stroke-dashoffset .7s cubic-bezier(.32,.72,.28,1)}
+.ringtxt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ringv{font-size:28px;font-weight:900;letter-spacing:-1px;line-height:1}
+.ringv span{font-size:14px;margin-left:1px}
+.ringl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-top:2px}
+.hero-side{flex:1;min-width:0}
+.hs-k{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-top:9px}
+.hs-k:first-child{margin-top:0}
+.hs-v{font-size:22px;font-weight:900;letter-spacing:-.6px;line-height:1.15}
+.hs-v.met{font-size:18px;color:var(--grn)}
+.hs-v2{font-size:15px;font-weight:900;line-height:1.2}
+.hs-v2.hot{color:var(--red)}
+.hs-v2.grn{color:var(--grn)}
+.pace{margin-top:13px;font-size:12px;font-weight:700;padding:10px 12px;border-radius:10px;line-height:1.5}
+.pace.ok{background:var(--grnbg);color:#155c31}
+.pace.bad{background:var(--amberbg);color:#9a6414}
+.pace-sub{font-size:11.5px;color:var(--muted);font-weight:600;line-height:1.5;margin-top:7px;padding:0 2px}
+.hero-flat{text-align:center;border-top-color:var(--muted)}
+.hf-l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.hf-v{font-size:30px;font-weight:900;color:var(--blue);letter-spacing:-.5px;margin-top:4px}
+.hf-s{font-size:12px;color:var(--muted);font-weight:600;line-height:1.5;margin-top:8px}
+
+/* ── the prize (locked commission) ── */
+.prize{background:linear-gradient(135deg,#1b2a3d,#123a63 60%,#1971c2);color:#fff;border-radius:var(--r);
+  padding:18px 16px;text-align:center;box-shadow:0 6px 20px rgba(18,58,99,.34);margin-bottom:10px}
+.pz-l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.4px;opacity:.85}
+.pz-v{font-size:40px;font-weight:900;letter-spacing:-1.2px;line-height:1.05;margin-top:5px}
+.pz-v .u{font-size:15px;font-weight:800;opacity:.85;margin-left:4px}
+.pz-s{font-size:12.5px;opacity:.92;font-weight:600;line-height:1.5;margin-top:8px}
+.pz-warn{margin-top:12px;font-size:12.5px;font-weight:800;background:rgba(224,49,49,.9);
+  padding:10px 12px;border-radius:10px;line-height:1.5}
+
+/* ── action list ── */
+.acts{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.act{display:flex;gap:11px;background:var(--card);border-radius:12px;box-shadow:var(--sh);padding:13px;
+  border-left:4px solid var(--blue)}
+.act-n{flex-shrink:0;width:23px;height:23px;border-radius:50%;background:var(--bluebg);color:var(--blue);
+  font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.act-t{flex:1;min-width:0}
+.act-t b{display:block;font-size:13.5px;font-weight:900;line-height:1.35}
+.act-t span{display:block;font-size:11.5px;color:var(--muted);font-weight:600;line-height:1.5;margin-top:3px}
+
+/* ── career card (highlighted) ── */
+.career{background:linear-gradient(150deg,#0d0d0d 0%,#16283c 55%,#1d3f63 100%);
+  border-radius:var(--r);padding:16px;margin-bottom:10px;color:#fff;
+  box-shadow:0 6px 20px rgba(13,13,13,.32);border:1px solid rgba(64,152,230,.35)}
+.career .tri .box{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.07)}
+.career .box-l{color:rgba(255,255,255,.62)}
+.career .box-v{color:#fff}
+.career .box-v.grn{color:#7fd8a4}.career .box-v.red{color:#ff9c9c}.career .box-v.blue{color:#8ccbf5}
+.career .box-v .u{color:rgba(255,255,255,.5)}
+.career-hd{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.career-hd .ch-t{font-size:13px;font-weight:900;letter-spacing:.2px}
+.career-hd .ch-s{margin-left:auto;font-size:10px;font-weight:800;letter-spacing:.6px;
+  background:rgba(64,152,230,.28);color:#bfe2fb;padding:3px 9px;border-radius:20px;text-transform:uppercase}
+.career-note{font-size:11.5px;color:rgba(255,255,255,.72);font-weight:600;line-height:1.5;
+  margin-top:12px;text-align:center;background:rgba(255,255,255,.07);padding:9px 11px;border-radius:10px}
+
+/* ── lifetime graph ── */
+.chartcard{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px 12px 12px;margin-bottom:10px}
+.chart-hd{display:flex;align-items:baseline;justify-content:space-between;padding:0 2px 10px}
+.chart-t{font-size:12px;font-weight:900}
+.chart-s{font-size:10.5px;font-weight:700;color:var(--muted)}
+.chart-svg{width:100%;height:auto;display:block;overflow:visible}
+.chart-legend{display:flex;gap:14px;justify-content:center;margin-top:9px;font-size:10.5px;font-weight:800;color:var(--muted)}
+.chart-legend i{display:inline-block;width:9px;height:3px;border-radius:2px;margin-right:5px;vertical-align:2px}
+.chart-legend .l1 i{background:var(--blue)}
+.chart-legend .l2 i{background:var(--grn2)}
+.chart-foot{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid #f1f3f5;font-size:11px}
+.chart-foot .cf{text-align:center;flex:1}
+.chart-foot .cf-l{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.chart-foot .cf-v{font-size:13px;font-weight:900;margin-top:2px}
+.chart-hint{text-align:center;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:8px}
+.chart-svg .hit{fill:transparent;cursor:pointer}
+.chart-detail{margin-top:10px;background:var(--bluebg);border:1px solid #cfe3f7;border-radius:11px;padding:11px 12px}
+.cd-hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.cd-m{font-size:13px;font-weight:900;color:#0f4f8a}
+.cd-x{font-size:10px;font-weight:800;color:#5b87b3;letter-spacing:.4px}
+.cd-row{display:flex;gap:8px}
+.cd-row .cd-b{flex:1;text-align:center;background:#fff;border-radius:9px;padding:8px 4px}
+.cd-l{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.cd-v{font-size:13.5px;font-weight:900;margin-top:2px}
+.cd-note{font-size:11px;font-weight:700;color:#0f4f8a;margin-top:8px;text-align:center;line-height:1.45}
+.empty{text-align:center;padding:18px 10px;color:var(--muted);font-size:12.5px;font-weight:600;line-height:1.5}
+
+/* ── daily activity button ── */
+.actbtn{position:relative;overflow:hidden;width:100%;display:flex;align-items:center;gap:12px;
+  background:linear-gradient(135deg,#0f4f8a,#1971c2 55%,#4098e6);color:#fff;border:none;
+  border-radius:var(--r);box-shadow:0 6px 18px rgba(25,113,194,.34);padding:15px 16px;
+  margin-bottom:12px;cursor:pointer;text-align:left;font-family:inherit;
+  animation:actPulse 2.6s ease-in-out infinite}
+@keyframes actPulse{0%,100%{box-shadow:0 6px 18px rgba(25,113,194,.34)}50%{box-shadow:0 6px 26px rgba(25,113,194,.62)}}
+.actbtn:active{transform:scale(.985);animation:none}
+/* sweeping shine so the button reads as new and invites the first tap */
+.actbtn::after{content:'';position:absolute;top:0;left:-60%;width:45%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.32),transparent);
+  transform:skewX(-18deg);animation:actShine 3.4s ease-in-out infinite}
+@keyframes actShine{0%{left:-60%}55%{left:130%}100%{left:130%}}
+.actbtn .ab-ic{width:42px;height:42px;flex-shrink:0;border-radius:12px;background:rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;font-size:21px}
+.actbtn .ab-t{flex:1;min-width:0;position:relative;z-index:1}
+.actbtn .ab-t b{display:flex;align-items:center;gap:7px;font-size:15.5px;font-weight:900;letter-spacing:.2px}
+.actbtn .ab-t span{display:block;font-size:11.5px;opacity:.9;font-weight:600;margin-top:3px}
+.actbtn .ab-c{position:relative;z-index:1;font-size:24px;font-weight:900;line-height:1;opacity:.9}
+@media (prefers-reduced-motion:reduce){.actbtn,.actbtn::after{animation:none}}
+
+/* ── daily activity sheet ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.ov.open{display:flex}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:90vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;animation:up .22s ease}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-hd{background:linear-gradient(135deg,#123a63,#1971c2);color:#fff;padding:14px 16px;border-radius:18px 18px 0 0;display:flex;align-items:flex-start;gap:10px}
+.sheet-hd .sh-t{font-size:16px;font-weight:900;display:flex;align-items:center;gap:8px}
+.sheet-hd .sh-t svg{flex-shrink:0}
+.sheet-hd .sh-s{font-size:11.5px;opacity:.85;font-weight:600;margin-top:2px}
+.sheet-hd .sh-x{margin-left:auto;font-size:22px;line-height:1;cursor:pointer;background:none;border:none;color:#fff;padding:0 2px}
+.sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 14px 26px;flex:1}
+.sheet-empty{text-align:center;padding:34px 20px;color:var(--muted);font-size:13px;font-weight:600}
+
+.mo-hd{display:flex;justify-content:space-between;align-items:baseline;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:14px 4px 7px}
+.mo-hd:first-child{margin-top:2px}
+.mo-hd .mo-sum{text-transform:none;letter-spacing:0;font-size:11px;color:var(--blue);font-weight:900}
+
+/* Each day is a clearly bounded block. Everything used to be white on white,
+   so an expanded day bled into the next one. */
+.dcard{background:var(--card);border:1.5px solid #e3e7ee;border-radius:12px;
+  box-shadow:var(--sh);margin-bottom:10px;overflow:hidden}
+.dcard.open{border-color:var(--blue);box-shadow:0 4px 16px rgba(25,113,194,.18)}
+.dhd{display:flex;align-items:center;gap:10px;padding:12px 13px;cursor:pointer;background:var(--card)}
+.dcard.open .dhd{background:linear-gradient(135deg,#123a63,#1971c2);color:#fff}
+.dhl{flex:1;min-width:0}
+.dday{font-size:13.5px;font-weight:900;line-height:1.25}
+.dmeta{font-size:11px;color:var(--muted);font-weight:700;margin-top:2px}
+.dcard.open .dmeta{color:rgba(255,255,255,.82)}
+.dhr{text-align:right;flex-shrink:0}
+.dsale{font-size:14px;font-weight:900;color:var(--blue)}
+.dcol{font-size:10.5px;font-weight:700;color:var(--grn);margin-top:2px}
+.dcard.open .dsale{color:#fff}
+.dcard.open .dcol{color:#a9e6c4}
+.dhd .chev{flex-shrink:0;font-size:19px;font-weight:900;color:var(--muted);transition:transform .18s}
+.dcard.open .dhd .chev{transform:rotate(90deg);color:#fff}
+.dbody{display:none;padding:8px 11px 11px;background:#eef2f7}
+.dcard.open .dbody{display:block}
+
+/* one bounded white card per entry, numbered, so entries never merge visually */
+.ent{position:relative;background:var(--card);border:1px solid #dde3ec;border-radius:10px;
+  padding:10px 11px 9px 11px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.ent:last-child{margin-bottom:0}
+.ent-t{display:flex;align-items:baseline;gap:7px;padding-bottom:7px;border-bottom:1px solid #eef1f5}
+.ent-sn{flex-shrink:0;font-size:8.5px;font-weight:900;color:var(--muted);
+  background:var(--bg);border-radius:5px;padding:2px 5px;letter-spacing:.4px;line-height:1.3}
+.ent-c{font-size:12.5px;font-weight:900;flex:1;min-width:0;line-height:1.35}
+.ent-i{font-size:9.5px;font-weight:800;color:var(--muted);flex-shrink:0}
+.ent-items{margin:7px 0 7px}
+.it{display:flex;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px dotted #eceff4}
+.it:last-child{border-bottom:none}
+.it-sn{flex-shrink:0;font-size:8.5px;font-weight:800;color:#adb5bd;min-width:12px;line-height:1.55}
+.it-n{flex:1;min-width:0;line-height:1.35}
+.it-q{flex-shrink:0;font-weight:800;color:var(--muted)}
+.it-a{flex-shrink:0;min-width:74px;text-align:right;font-weight:800}
+.gift{font-size:8.5px;font-weight:900;background:var(--grnbg);color:var(--grn);padding:1px 5px;border-radius:20px;letter-spacing:.4px}
+.ent-f{display:flex;gap:10px;font-size:11px;font-weight:800;color:var(--muted);flex-wrap:wrap}
+.ent-f .paid{color:var(--grn)}
+.ent-f .due{color:var(--red)}
+.ent-cm{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.45}
+
+.morebtn{width:100%;padding:12px;margin-top:6px;font-size:13.5px;font-weight:800;color:var(--blue);background:var(--card);border:1.5px solid var(--border);border-radius:11px;cursor:pointer;font-family:inherit}
+.morebtn:disabled{opacity:.6}
+.endnote{text-align:center;font-size:11px;font-weight:700;color:var(--muted);padding:14px 0 4px}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+
+<div id="ptrIndicator"><span class="ptr-spin"></span><span id="ptrText">Pull to refresh</span></div>
+
+<div class="hdr">
+  <div class="hdr-name" id="hGreet">—</div>
+  <div class="hdr-chips" id="hChips"></div>
+  <div class="motiv" id="motiv">Loading…</div>
+</div>
+
+<div class="body" id="body">
+  <div class="state"><div class="state-txt"><span class="spin"></span> Loading profile…</div></div>
+</div>
+
+<div class="ov" id="actOv">
+  <div class="sheet">
+    <div class="sheet-hd">
+      <div>
+        <div class="sh-t" id="actTitle">My Daily Activity</div>
+        <div class="sh-s" id="actSub">Loading…</div>
+      </div>
+      <button class="sh-x" onclick="closeAct()">&times;</button>
+    </div>
+    <div class="sheet-body" id="actBody"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API   = 'https://script.google.com/macros/s/AKfycbylAEyTwyBrejsLKA1a5-dhL57K44UVUJOT9rDvLtd53GSzR-WEEAMYD-WYVx7SpGUaJA/exec';
+const PARAMS   = new URLSearchParams(location.search);
+const USER_ID  = PARAMS.get('userId') || '';
+const READONLY = PARAMS.get('readonly') === '1';
+// Shell sets home=1 only for the user's FIRST panel. The login intro plays
+// nowhere else, so a user who lands elsewhere never sees it mid-session.
+const IS_HOME  = PARAMS.get('home') === '1';
+const CACHE_KEY= 'enkore_profileS_' + USER_ID;
+const LAST_REFRESH_KEY = 'enkore_profileS_last_refresh_' + USER_ID;
+let DATA = null, _ptrBusy = false;
+
+// ── REFRESH POLICY (same as Drive) ──
+// Cached data persists across opens and logins. A network call happens only:
+//   • first ever load (nothing cached)
+//   • first open after 6:00 AM each day
+//   • manual pull-to-refresh, or right after submitting cash
+function refreshDue(){
+  const last = parseInt(localStorage.getItem(LAST_REFRESH_KEY) || '0', 10);
+  const b = new Date(); b.setHours(6,0,0,0);                  // today 06:00
+  if (Date.now() < b.getTime()) b.setDate(b.getDate() - 1);   // before 6 AM → yesterday 06:00
+  return last < b.getTime();
+}
+function markRefreshed(){ try{ localStorage.setItem(LAST_REFRESH_KEY, String(Date.now())); }catch(_){} }
+function readCache(){ try{ return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); }catch(_){ return null; } }
+function writeCache(d){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(d)); }catch(_){} }
+
+function tk(n){ if(n===''||n==null||isNaN(n)) return '0 <span class="u">tk</span>'; return Number(n).toLocaleString('en-IN',{maximumFractionDigits:2}) + ' <span class="u">tk</span>'; }
+function tkPlain(n){ if(n===''||n==null||isNaN(n)) return '0 tk'; return Number(n).toLocaleString('en-IN',{maximumFractionDigits:2}) + ' tk'; }
+function pct(n){ return (Math.round((Number(n)||0)*10)/10) + '%'; }
+// Qty is now real units from column G, so it can be a decimal (e.g. half cartons).
+function qtyFmt(n){ n=Number(n)||0; return (Math.round(n*100)/100).toLocaleString('en-IN'); }
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(m,t){ const e=document.getElementById('toast'); e.innerHTML=m; e.className='show'+(t==='err'?' err':''); clearTimeout(window._tt); window._tt=setTimeout(()=>e.className='',2400); }
+const MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(v){
+  if(!v) return '';
+  const d=new Date(v); if(isNaN(d)) return String(v);
+  return d.getDate()+' '+MOS[d.getMonth()]+', '+d.getFullYear();
+}
+// Neutral calendar glyph. Drawn inline so it never depends on the platform's
+// emoji font, which renders 📅 with a baked-in date.
+const CAL_SVG='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+  +'<rect x="3" y="5" width="18" height="16" rx="3"></rect>'
+  +'<path d="M3 10h18M8 3v4M16 3v4"></path>'
+  +'<circle cx="8.5" cy="14.5" r="1.2" fill="currentColor" stroke="none"></circle>'
+  +'<circle cx="12" cy="14.5" r="1.2" fill="currentColor" stroke="none"></circle>'
+  +'<circle cx="15.5" cy="14.5" r="1.2" fill="currentColor" stroke="none"></circle>'
+  +'<circle cx="8.5" cy="17.8" r="1.2" fill="currentColor" stroke="none"></circle>'
+  +'<circle cx="12" cy="17.8" r="1.2" fill="currentColor" stroke="none"></circle>'
+  +'</svg>';
+
+function greeting(){
+  const h=new Date().getHours();
+  if(h<12) return 'Good morning';
+  if(h<17) return 'Good afternoon';
+  if(h<21) return 'Good evening';
+  return 'Hey night owl';   // never "good night" — he is still working
+}
+
+// ── MONTH CLOCK ──
+// The most motivating number on this page is "how much per day, for how many
+// more days". Everything in the scoreboard is derived from these three.
+function monthDays(){ const n=new Date(); return new Date(n.getFullYear(), n.getMonth()+1, 0).getDate(); }
+function daysElapsed(){ return new Date().getDate(); }
+function daysLeft(){ return Math.max(monthDays()-daysElapsed()+1, 0); } // today still counts
+
+// Progress ring. A bar reads as "some progress"; a ring reads as a scoreboard
+// and the empty arc is the part that nags.
+function ring(pctv, col){
+  const p=Math.max(0,Math.min(Number(pctv)||0,100)), r=52, c=2*Math.PI*r;
+  return '<svg class="ringsvg" viewBox="0 0 120 120">'
+    +'<circle class="ring-bg" cx="60" cy="60" r="'+r+'"></circle>'
+    +'<circle class="ring-fg" cx="60" cy="60" r="'+r+'" style="stroke:'+col+';stroke-dasharray:'+c.toFixed(1)+';stroke-dashoffset:'+(c*(1-p/100)).toFixed(1)+'"></circle>'
+    +'</svg>';
+}
+
+// Boss voice: name the situation, name the number, name the next move.
+function motivLine(d,s){
+  if(s.noTarget) return 'No target set for this month yet. Keep selling and keep collections tight — commission unlocks the day a target lands.';
+  if(s.met && s.clRate>=0.9) return 'Target done and your collections are clean. This is what a top seller looks like. Now stretch it.';
+  if(s.met) return 'Target done. From here every taka you collect turns straight into your own commission.';
+  if(s.dLeft<=3 && s.gap>0) return 'Final stretch. '+tkPlain(s.gap)+' to go with '+s.dLeft+' day'+(s.dLeft===1?'':'s')+' left. This is decided today, not next week.';
+  if(s.onPace) return 'You are on pace. Hold this rhythm for '+s.dLeft+' more day'+(s.dLeft===1?'':'s')+' and the money is yours.';
+  return 'You are behind pace. '+tkPlain(s.perDay)+' a day for '+s.dLeft+' day'+(s.dLeft===1?'':'s')+' closes it. Nothing else matters this month.';
+}
+
+async function load(force){
+  const cached = readCache();
+  if(cached){ DATA=cached; paint(); }
+  if(!USER_ID){ document.getElementById('body').innerHTML='<div class="state"><div class="state-icon">🔒</div><div class="state-txt">No user id. Open this from the ERP.</div></div>'; return; }
+  // Nothing to fetch: we have data, it is not past the 6 AM boundary, and this
+  // is not a manual refresh. Panel stays fixed instead of reloading every open.
+  if(!force && DATA && !refreshDue()) return;
+  try{
+    const r = await fetch(`${API}?action=getProfile&userId=${encodeURIComponent(USER_ID)}&t=${Date.now()}`).then(x=>x.json());
+    if(!r.ok) throw new Error(r.error||'load failed');
+    DATA=r; writeCache(r); markRefreshed();
+    paint();
+  }catch(e){
+    console.error(e);
+    if(!DATA) document.getElementById('body').innerHTML='<div class="state"><div class="state-icon">⚠️</div><div class="state-txt">Could not load. Pull down to retry.</div></div>';
+    else toast('Refresh failed','err');
+  }
+}
+
+/* ─── LOGIN GREETING INTRO ───
+   Types the greeting in the middle of the screen, then flies it up into the
+   header. Runs ONCE per login: the shell writes a fresh erp_login_token into
+   sessionStorage on every ID + password sign-in, and this panel remembers the
+   last token it played for. A session restore or a revisit reuses the same
+   token, so the animation does not replay and never becomes annoying. */
+const INTRO_KEY='enkore_intro_token_'+USER_ID;
+const CHEER_KEY='enkore_intro_cheer_'+USER_ID;
+let _introRan=false;
+
+/* A different line every login so the moment never goes stale. Short, warm,
+   and about the work — a sales floor cheer, not a fortune cookie. */
+const CHEERS=[
+  "Let's make today count.",
+  'One good call can change the month.',
+  'Sell well. Collect better.',
+  'The board is yours today.',
+  'Numbers move when you do.',
+  'Your best month is still ahead.',
+  'Steady hands, big numbers.',
+  'Back at it. Take the lead.',
+  'Small wins stack up fast.',
+  'Every visit is a chance.',
+  'Momentum starts with you.',
+  'Make the calls. Bank the wins.',
+  'Today is a fresh page.',
+  'Show them what you sell.',
+  'Nobody works your route better.',
+  'Close one before lunch.'
+];
+function pickCheer(){
+  let last=-1; try{ last=parseInt(localStorage.getItem(CHEER_KEY),10); }catch(_){}
+  let i=Math.floor(Math.random()*CHEERS.length);
+  if(CHEERS.length>1 && i===last) i=(i+1)%CHEERS.length;   // never twice in a row
+  try{ localStorage.setItem(CHEER_KEY,String(i)); }catch(_){}
+  return CHEERS[i];
+}
+
+function loginToken(){ try{ return sessionStorage.getItem('erp_login_token')||''; }catch(_){ return ''; } }
+function introDue(){
+  if(_introRan) return false;
+  if(!IS_HOME) return false;                               // only the landing panel greets
+  const t=loginToken(); if(!t) return false;               // no token = not a fresh sign-in
+  let seen=''; try{ seen=localStorage.getItem(INTRO_KEY)||''; }catch(_){}
+  if(t===seen) return false;
+  try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches) return false; }catch(_){}
+  return true;
+}
+
+function runIntro(greetWord, name){
+  _introRan=true;
+  try{ localStorage.setItem(INTRO_KEY, loginToken()); }catch(_){}
+
+  const head=document.getElementById('hGreet');
+  head.classList.add('pending');
+
+  const ov=document.createElement('div'); ov.id='introOv';
+  // Greeting is printed straight away. Only the NAME types and moves — that is
+  // the part worth animating.
+  ov.innerHTML='<div id="introBg"></div><div id="introTxt">'
+    +'<div class="ig-greet">'+escapeHtml(greetWord)+'</div>'
+    +'<div class="ig-name"><span class="t"></span></div>'
+    +'<div class="ig-rule"></div>'
+    +'<div class="ig-cheer">'+escapeHtml(pickCheer())+'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+  const bg=ov.querySelector('#introBg');
+  const tx=ov.querySelector('#introTxt');
+  const nEl=ov.querySelector('.ig-name'), nS=nEl.querySelector('.t');
+  const rEl=ov.querySelector('.ig-rule'), cEl=ov.querySelector('.ig-cheer');
+
+  // Lock the name box to its FINAL height before typing starts. A name that
+  // wraps to a second line mid-type would grow the block and shove everything
+  // up — that re-centering jolt is what read as a bounce.
+  nS.textContent=name;
+  const nH=nEl.getBoundingClientRect().height;
+  if(nH) nEl.style.minHeight=nH+'px';
+  nS.textContent='';
+
+  const timers=[];
+  const type=(el,text,total)=>new Promise(res=>{
+    const step=Math.max(22,Math.min(52,total/Math.max(text.length,1)));
+    let i=0;
+    const t=setInterval(()=>{
+      i++;
+      el.innerHTML=escapeHtml(text.slice(0,i))+'<span class="cur"></span>';
+      // Cursor stays after the last letter — removing it nudges centred text
+      // sideways, and that twitch was part of what looked jumpy.
+      if(i>=text.length){ clearInterval(t); res(); }
+    },step);
+    timers.push(()=>clearInterval(t));
+  });
+  const wait=ms=>new Promise(res=>{ const t=setTimeout(res,ms); timers.push(()=>clearTimeout(t)); });
+
+  let done=false;
+  const finish=()=>{
+    if(done) return; done=true;
+    timers.forEach(f=>f());
+    // Drop the cursor and fill in the full name if the user skipped mid-type.
+    nS.innerHTML=escapeHtml(name);
+
+    /* ONE CONTINUOUS MOVE — no clone, no crossfade.
+       The typed name is mapped onto the header's name span. Scale comes from
+       the measured WIDTH ratio, not the font size, so the landing width is
+       exact even if wrapping or letter-spacing differ. transform-origin is
+       top-left, which makes the maths a plain subtraction. */
+    const hn=head.querySelector('.hg-n');
+    let move=null;
+    if(hn){
+      const r=nS.getBoundingClientRect(), t=hn.getBoundingClientRect();
+      if(r.width && t.width){
+        const s=t.width/r.width;
+        move='translate('+(t.left-r.left).toFixed(2)+'px,'+(t.top-r.top).toFixed(2)+'px) scale('+s.toFixed(4)+')';
+      }
+    }
+
+    requestAnimationFrame(()=>{
+      tx.classList.add('fly');                 // arms the transitions
+      bg.classList.add('fade');                // backdrop dissolves, the name does not
+      requestAnimationFrame(()=>{ if(move) nS.style.transform=move; });
+    });
+
+    // The name is already sitting on the header when it un-hides, so the
+    // hand-off is invisible: same glyphs, same size, same pixels.
+    setTimeout(()=>{ head.classList.remove('pending'); },470);
+    setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); },520);
+  };
+
+  (async()=>{
+    await wait(160);                                       // let the greeting settle
+    if(done) return;
+    await type(nS,name,560);
+    if(done) return;
+    rEl.classList.add('in');
+    await wait(120); if(done) return;
+    cEl.classList.add('in');
+    // Hold long enough to actually READ the cheer line. A 6-word line needs
+    // roughly 1.8s at normal reading speed; the fade-out adds a little more.
+    await wait(1500); if(done) return;
+    finish();
+  })();
+
+  ov.addEventListener('click',finish);                     // tap to skip
+}
+
+/* ─── LIFETIME GRAPH ───
+   Hand-drawn SVG, no library. A Catmull-Rom spline converted to cubic beziers
+   gives a smooth curve without the overshoot a naive smoothing produces (an
+   overshoot below zero would draw sales the salesman never made). */
+let _chartSel=null, _LIFE=[];
+// Each point is a DAY the salesman worked. Older payloads used {month}; this
+// falls back to it so a panel cached before the API redeploy still renders.
+function lbl(r){ return r&&(r.label||r.day||r.month)||''; }
+function smoothPath(p){
+  if(p.length<2) return '';
+  let d='M'+p[0].x.toFixed(1)+','+p[0].y.toFixed(1);
+  for(let i=0;i<p.length-1;i++){
+    const p0=p[i-1]||p[i], p1=p[i], p2=p[i+1], p3=p[i+2]||p2;
+    const c1x=p1.x+(p2.x-p0.x)/6, c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6, c2y=p2.y-(p3.y-p1.y)/6;
+    d+=' C'+c1x.toFixed(1)+','+c1y.toFixed(1)+' '+c2x.toFixed(1)+','+c2y.toFixed(1)
+      +' '+p2.x.toFixed(1)+','+p2.y.toFixed(1);
+  }
+  return d;
+}
+function shortTk(n){
+  n=Number(n)||0;
+  if(n>=1e7) return (n/1e7).toFixed(1).replace(/\.0$/,'')+'cr';
+  if(n>=1e5) return (n/1e5).toFixed(1).replace(/\.0$/,'')+'L';
+  if(n>=1e3) return Math.round(n/1e3)+'k';
+  return String(Math.round(n));
+}
+function lifetimeChart(life){
+  if(!Array.isArray(life)||!life.length){
+    return '<div class="chartcard" id="chartCard"><div class="empty">'
+      +'<span class="spin"></span> Loading your history…<br>'
+      +'<span style="font-size:11.5px">If it does not appear, pull down on this page to refresh.</span></div></div>';
+  }
+  if(life.length<2){
+    return '<div class="chartcard" id="chartCard"><div class="empty">One selling day recorded so far. The graph appears from your second day.</div></div>';
+  }
+  const W=320,H=120,PL=8,PR=8,PT=12,PB=20;
+  const n=life.length;
+  const peak=Math.max(...life.map(r=>Math.max(Number(r.sales)||0,Number(r.collected)||0)),1);
+  const xAt=i=>PL+(W-PL-PR)*(n===1?0.5:i/(n-1));
+  const yAt=v=>PT+(H-PT-PB)*(1-(Number(v)||0)/peak);
+  const ptsS=life.map((r,i)=>({x:xAt(i),y:yAt(r.sales)}));
+  const ptsC=life.map((r,i)=>({x:xAt(i),y:yAt(r.collected)}));
+  const base=H-PB;
+  const area=smoothPath(ptsS)+' L'+ptsS[n-1].x.toFixed(1)+','+base+' L'+ptsS[0].x.toFixed(1)+','+base+' Z';
+
+  const best=life.reduce((b,r)=>((Number(r.sales)||0)>(Number(b.sales)||0)?r:b),life[0]);
+  const avg=life.reduce((s,r)=>s+(Number(r.sales)||0),0)/n;
+  const last=life[n-1], prev=life[n-2];
+  const delta=(Number(last.sales)||0)-(Number(prev.sales)||0);
+
+  let svg='<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Lifetime monthly sales">'
+    +'<defs><linearGradient id="lgFill" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="#1971c2" stop-opacity=".26"/>'
+    +'<stop offset="100%" stop-color="#1971c2" stop-opacity="0"/></linearGradient></defs>'
+    +'<line x1="'+PL+'" y1="'+base+'" x2="'+(W-PR)+'" y2="'+base+'" stroke="#e9ecef" stroke-width="1"/>'
+    +'<path d="'+area+'" fill="url(#lgFill)"/>'
+    +'<path d="'+smoothPath(ptsC)+'" fill="none" stroke="#2d8a52" stroke-width="2" '
+    +'stroke-linecap="round" stroke-dasharray="4 4" opacity=".85"/>'
+    +'<path d="'+smoothPath(ptsS)+'" fill="none" stroke="#1971c2" stroke-width="2.6" '
+    +'stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<circle cx="'+ptsS[n-1].x.toFixed(1)+'" cy="'+ptsS[n-1].y.toFixed(1)+'" r="4" fill="#1971c2" stroke="#fff" stroke-width="2"/>';
+
+  // Selected month: guide line + emphasised dots.
+  const sel=(_chartSel!=null && _chartSel>=0 && _chartSel<n) ? _chartSel : null;
+  if(sel!=null){
+    svg+='<line x1="'+ptsS[sel].x.toFixed(1)+'" y1="'+PT+'" x2="'+ptsS[sel].x.toFixed(1)+'" y2="'+base+'" '
+      +'stroke="#1971c2" stroke-width="1.4" stroke-dasharray="3 3" opacity=".55"/>'
+      +'<circle cx="'+ptsC[sel].x.toFixed(1)+'" cy="'+ptsC[sel].y.toFixed(1)+'" r="4" fill="#2d8a52" stroke="#fff" stroke-width="2"/>'
+      +'<circle cx="'+ptsS[sel].x.toFixed(1)+'" cy="'+ptsS[sel].y.toFixed(1)+'" r="5.5" fill="#1971c2" stroke="#fff" stroke-width="2.4"/>';
+  }
+  // Full-height tap targets, one per month, so a fingertip always hits one.
+  const slot=(W-PL-PR)/Math.max(n-1,1);
+  for(let i=0;i<n;i++){
+    const x=Math.max(0, xAt(i)-slot/2);
+    svg+='<rect class="hit" x="'+x.toFixed(1)+'" y="0" width="'+Math.min(slot,W-x).toFixed(1)+'" height="'+H+'" onclick="chartTap('+i+')"></rect>';
+  }
+  svg+='<text x="'+PL+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#adb5bd">'+escapeHtml(lbl(life[0]))+'</text>'
+    +'<text x="'+(W-PR)+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#868e96" text-anchor="end">'+escapeHtml(lbl(last))+'</text>'
+    +'<text x="'+(W-PR)+'" y="'+(PT-2)+'" font-size="9" font-weight="800" fill="#adb5bd" text-anchor="end">peak '+shortTk(peak)+'</text>'
+    +'</svg>';
+
+  // Tapped-month readout. Tapping the same month again clears it.
+  let detail='';
+  if(sel!=null){
+    const r=life[sel], s=Number(r.sales)||0, col=Number(r.collected)||0;
+    const due=Math.max(s-col,0), rate=s>0?Math.round(col/s*100):0;
+    const pv=sel>0?(Number(life[sel-1].sales)||0):null;
+    const dd=pv==null?null:s-pv;
+    detail='<div class="chart-detail">'
+      +'<div class="cd-hd"><span class="cd-m">'+escapeHtml(lbl(r))+'</span><span class="cd-x">tap again to close</span></div>'
+      +'<div class="cd-row">'
+      +'<div class="cd-b"><div class="cd-l">Sales</div><div class="cd-v blue" style="color:var(--blue)">'+tkPlain(s)+'</div></div>'
+      +'<div class="cd-b"><div class="cd-l">Collected</div><div class="cd-v" style="color:var(--grn)">'+tkPlain(col)+'</div></div>'
+      +'<div class="cd-b"><div class="cd-l">Due</div><div class="cd-v" style="color:'+(due>0?'var(--red)':'var(--grn)')+'">'+tkPlain(due)+'</div></div>'
+      +'</div>'
+      +'<div class="cd-note">Collection rate '+rate+'%'
+      +(dd==null?'' : (dd>=0?' · '+tkPlain(dd)+' more than '+escapeHtml(lbl(life[sel-1]))
+                            :' · '+tkPlain(-dd)+' less than '+escapeHtml(lbl(life[sel-1]))))
+      +(s===Number(best.sales)?' · your best day so far':'')+'</div>'
+      +'</div>';
+  }
+
+  return '<div class="chartcard" id="chartCard">'
+    +'<div class="chart-hd"><span class="chart-t">Every day you sold</span>'
+    +'<span class="chart-s">'+(delta>=0?'▲ ':'▼ ')+tkPlain(Math.abs(delta))+' vs last selling day</span></div>'
+    +svg
+    +'<div class="chart-legend"><span class="l1"><i></i>Sales</span><span class="l2"><i></i>Collected</span></div>'
+    +detail
+    +(sel==null?'<div class="chart-hint">Tap any day on the graph for its details</div>':'')
+    +'<div class="chart-foot">'
+    +'<div class="cf"><div class="cf-l">Best day</div><div class="cf-v">'+tkPlain(best.sales)+'</div><div class="cf-l" style="margin-top:2px">'+escapeHtml(lbl(best))+'</div></div>'
+    +'<div class="cf"><div class="cf-l">Days worked</div><div class="cf-v">'+n+'</div></div>'
+    +'<div class="cf"><div class="cf-l">Average per day</div><div class="cf-v">'+tkPlain(avg)+'</div></div>'
+    +'</div></div>';
+}
+
+/* Tap toggles: same month closes it, a different month switches to it.
+   Only the chart card is re-rendered, so the page does not jump or lose scroll. */
+function chartTap(i){
+  _chartSel = (_chartSel===i) ? null : i;
+  const el=document.getElementById('chartCard');
+  if(el) el.outerHTML=lifetimeChart(_LIFE);
+}
+
+function paint(){
+  const d=DATA;
+  const c=d.commission, t=d.target, m=d.thisMonth, a=d.allTime;
+
+  // ── the maths the whole page is built on ──
+  const dTot=monthDays(), dGone=daysElapsed(), dLeft=daysLeft();
+  const noTarget = !(t.target>0);
+  const met      = !noTarget && t.actual>=t.target;
+  const gap      = Math.max(t.gap||0,0);
+  const perDay   = dLeft>0 ? gap/dLeft : gap;
+  const runRate  = dGone>0 ? m.sales/dGone : 0;
+  const projected= runRate*dTot;
+  const shouldBe = noTarget ? 0 : t.target*(dGone/dTot);   // where a steady seller would be today
+  const onPace   = !noTarget && m.sales>=shouldBe;
+  const ach      = noTarget ? 0 : (t.achievementPct||0);
+  const clRate   = m.sales>0 ? (m.collected/m.sales) : 0;
+  const prize    = t.projectedFinal||0;                     // commission at today's collection rate
+  const dueNow   = Math.max(m.due||0,0);
+  const st={noTarget,met,onPace,gap,perDay,dLeft,clRate};
+
+  // ── header ──
+  // Header greeting is split into two spans so the intro can measure exactly
+  // where the greeting ends and the name begins, and land each one there.
+  const who=d.name||d.id;
+  document.getElementById('hGreet').innerHTML=
+    '<span class="hg-w">'+escapeHtml(greeting()+',')+'</span> <span class="hg-n">'+escapeHtml(who)+'</span>';
+  if(introDue()) runIntro(greeting()+',', who);
+  document.getElementById('motiv').innerHTML=motivLine(d,st);
+  let chips='';
+  chips+='<span class="chip">'+escapeHtml(d.month||'')+'</span>';
+  chips+='<span class="chip'+(dLeft<=5?' urgent':'')+'">'+dLeft+' day'+(dLeft===1?'':'s')+' left</span>';
+  document.getElementById('hChips').innerHTML=chips;
+
+  let h='';
+
+  /* ORDER IS DELIBERATE — the page answers six questions in the order a
+     salesman actually asks them:
+     1 Scoreboard   — where do I stand, and what does that cost me per day?
+     2 The prize    — what is the money riding on it?
+     3 Earners      — where does that money come from?
+     4 Do this now  — so what do I actually do today?
+     5 Activity     — what have I been doing?
+     6 This month   — the plain numbers behind all of it
+     7 Career       — pride, last, so it never breeds complacency
+
+     NO NUMBER IS PRINTED TWICE. The scoreboard owns the derived maths
+     (target, gap, per-day, projection). The month summary owns the raw
+     figures (sales, collected, due). Days left lives in the header chip. */
+
+  // ── 1. SCOREBOARD — the calculation, stated once ──
+  h+='<div class="sec-t">Your Scoreboard</div>';
+  if(noTarget){
+    h+='<div class="hero hero-flat">'
+      +'<div class="hf-l">Sold this month</div><div class="hf-v">'+tk(m.sales)+'</div>'
+      +'<div class="hf-s">No target has been set for '+escapeHtml(d.month||'this month')+'. Commission stays locked until Operations sets one. Keep selling — the sales still count.</div>'
+      +'</div>';
+  } else {
+    const col = met?'#2d8a52':(onPace?'#4098e6':(ach<50?'#e03131':'#f0a04b'));
+    h+='<div class="hero '+(met?'met':(onPace?'ok':'warn'))+'">';
+    h+='<div class="hero-row">';
+    h+='<div class="ringwrap">'+ring(ach,col)
+      +'<div class="ringtxt"><div class="ringv">'+Math.round(ach)+'<span>%</span></div><div class="ringl">of target</div></div></div>';
+    h+='<div class="hero-side">';
+    if(met){
+      h+='<div class="hs-k">Status</div><div class="hs-v met">TARGET MET</div>';
+      h+='<div class="hs-k">Target was</div><div class="hs-v2">'+tkPlain(t.target)+'</div>';
+      h+='<div class="hs-k">Beat it by</div><div class="hs-v2 grn">'+tkPlain(t.actual-t.target)+'</div>';
+    } else {
+      h+='<div class="hs-k">Target</div><div class="hs-v2">'+tkPlain(t.target)+'</div>';
+      h+='<div class="hs-k">Still to sell</div><div class="hs-v">'+tkPlain(gap)+'</div>';
+      h+='<div class="hs-k">Needed per day</div><div class="hs-v2 hot">'+tkPlain(perDay)+'</div>';
+    }
+    h+='</div></div>';
+    if(!met){
+      // Stated as a DIFFERENCE, not by restating today's sales — that number
+      // belongs to the month summary and is not repeated here.
+      h+='<div class="pace '+(onPace?'ok':'bad')+'">'+(onPace
+        ? 'On pace. By day '+dGone+' of '+dTot+' a steady seller would be at '+tkPlain(shouldBe)+' — you are '+tkPlain(m.sales-shouldBe)+' ahead of that.'
+        : 'Behind pace. By day '+dGone+' of '+dTot+' a steady seller would be at '+tkPlain(shouldBe)+' — you are '+tkPlain(shouldBe-m.sales)+' short of that.')+'</div>';
+      h+='<div class="pace-sub">At your current speed the month closes around <b>'+tkPlain(projected)+'</b>'
+        +(projected>=t.target?' — that clears the target. Do not slow down.':' — that misses by '+tkPlain(t.target-projected)+'. Speed has to change, not effort alone.')+'</div>';
+    }
+    h+='</div>';
+  }
+
+  // ── 2. THE PRIZE ── money framed as already yours, waiting to be claimed
+  h+='<div class="sec-t">What this month pays you</div>';
+  if(met){
+    const clp=Math.round(clRate*1000)/10;
+    h+='<div class="commcard">'
+      +'<div class="cc-final" style="margin-top:0;border-top:none;padding-top:0">'
+      +'<div class="cc-final-l">Commission Earned</div>'
+      +'<div class="cc-final-v">'+tk(c.finalCommission)+'</div>'
+      +'<div class="cc-final-s">Unlocked. Availed '+tkPlain(c.totalAvailed)+' × collection '+clp+'%</div></div>';
+    if(dueNow>0){
+      h+='<div class="cc-locked">Collect the remaining <b>'+tkPlain(dueNow)+'</b> due and this rises to about <b>'+tkPlain(c.totalAvailed)+'</b>. That gap is '+tkPlain(c.totalAvailed-c.finalCommission)+' of your own money sitting in other people\'s pockets.</div>';
+    }
+    h+='</div>';
+  } else {
+    h+='<div class="prize">'
+      +'<div class="pz-l">Waiting for you</div>'
+      +'<div class="pz-v">'+tk(prize)+'</div>'
+      +'<div class="pz-s">This is what you take home the moment you cross the target, at your current collection rate.</div>'
+      +'<div class="pz-warn">Miss the target and this becomes <b>0 tk</b>. Not reduced. Zero.</div>'
+      +'</div>';
+  }
+
+  // ── 3. WHERE THE MONEY COMES FROM ── the evidence behind the prize above,
+  //      read before the instructions below so the advice already makes sense.
+  h+='<div class="sec-t">Where your money comes from</div>';
+  h+='<div class="card">';
+  if(c.rows&&c.rows.length){
+    h+='<table class="tbl"><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Sales</th><th class="num">%</th><th class="num">You earn</th></tr></thead><tbody>';
+    h+=c.rows.map(p=>'<tr><td class="pname">'+escapeHtml(p.product)+'</td><td class="num">'+qtyFmt(p.qty)+'</td><td class="num">'+tkPlain(p.salesValue)+'</td><td class="num">'+pct((p.commPct||0)*100)+'</td><td class="num av">'+tkPlain(p.availed)+'</td></tr>').join('');
+    const tQty=c.rows.reduce((s,p)=>s+(Number(p.qty)||0),0);
+    const tVal=c.rows.reduce((s,p)=>s+(Number(p.salesValue)||0),0);
+    const tAv =c.rows.reduce((s,p)=>s+(Number(p.availed)||0),0);
+    h+='<tr class="totrow"><td class="pname"><b>Total</b></td><td class="num"><b>'+qtyFmt(tQty)+'</b></td><td class="num"><b>'+tkPlain(tVal)+'</b></td><td class="num">—</td><td class="num av"><b>'+tkPlain(tAv)+'</b></td></tr>';
+    h+='</tbody></table>';
+    // Sanity check: the product table must reconcile with the month summary below.
+    if(Math.abs(tVal-(m.sales||0))>1){
+      h+='<div class="tgt-note">⚠️ Product sales total ('+tkPlain(tVal)+') does not match this month\'s sales ('+tkPlain(m.sales)+'). Difference '+tkPlain(Math.abs(tVal-(m.sales||0)))+' — usually a payment-only row or a sale logged without a product name.</div>';
+    }
+  } else {
+    h+='<div class="empty">Nothing sold this month yet. The first entry is the hardest — log one today.</div>';
+  }
+  // Products earning 0% because Control has no rate row. Say it plainly.
+  if(d.commissionGaps&&d.commissionGaps.length){
+    h+='<div class="tgt-note">⚠️ No commission rate set for: <b>'
+      +d.commissionGaps.map(escapeHtml).join('</b>, <b>')
+      +'</b>. These earn you 0%. Ask Operations to add them to the Control sheet.</div>';
+  }
+  h+='</div>';
+
+  // ── 4. DO THIS NOW ── vague motivation does nothing; named moves do
+  const acts=[];
+  if(!met && gap>0) acts.push({ic:'🎯',t:'Sell '+tkPlain(perDay)+' a day',
+    s:'For the next '+dLeft+' day'+(dLeft===1?'':'s')+' to close a '+tkPlain(gap)+' gap.'});
+  if(dueNow>0) acts.push({ic:'💰',t:'Collect '+tkPlain(dueNow)+' in dues',
+    s:met?'Every taka collected now is commission in your pocket.'
+         :'Your collection rate is '+Math.round(clRate*100)+'%. Commission gets multiplied by this number, so a weak rate cuts your payout even after you hit target.'});
+  if((d.cashInHand||0)>0) acts.push({ic:'🏦',t:'Submit '+tkPlain(d.cashInHand)+' company cash',
+    s:'That much company money is with you. Open the Cash & Submit panel and hand it over.'});
+  /* PRODUCT ADVICE FROM THE WHOLE CAREER, not just this month.
+     Three questions, answered from allTime.products vs this month's rows:
+       1. What have you stopped selling that used to pay you well?
+       2. Which line pays the most per taka across your whole record?
+       3. What is your proven best seller, so you never neglect it?
+     A one-month view would recommend whatever happened to sell last week. */
+  const allP=(a.products||[]).filter(p=>(p.salesValue||0)>0);
+  const soldThisMonth={}; (c.rows||[]).forEach(r=>{ soldThisMonth[r.product]=true; });
+  const lifeTotal=allP.reduce((s,p)=>s+(p.salesValue||0),0)||1;
+
+  // 1) Dormant earner — meaningful lifetime share, nothing sold this month.
+  const dormant=allP.filter(p=>!soldThisMonth[p.name] && (p.availed||0)>0)
+                    .sort((x,y)=>(y.availed||0)-(x.availed||0))[0];
+  if(dormant){
+    const share=Math.round((dormant.salesValue/lifeTotal)*100);
+    acts.push({ic:'🔁',t:'You stopped selling '+dormant.name,
+      s:'It is '+share+'% of your lifetime sales and has paid you '+tkPlain(dormant.availed)+' in commission, but you have not sold any this month. Take it on your next round.'});
+  }
+
+  // 2) Highest paying line across the career. Excludes the dormant pick so the
+  //    same product is never listed twice with two different messages.
+  const richest=allP.filter(p=>(p.commPct||0)>0 && (!dormant || p.name!==dormant.name))
+                    .sort((x,y)=>(y.commPct||0)-(x.commPct||0))[0];
+  if(richest){
+    acts.push({ic:'⭐',t:'Push '+richest.name,
+      s:'Your highest paying line at '+pct(richest.commPct*100)+' across your whole record. Every 1,000 tk of it earns you '+tkPlain(1000*richest.commPct)
+        +(soldThisMonth[richest.name]?'. You are already moving it — push harder.':'. You have sold none this month.')});
+  }
+
+  // 3) Proven best seller — the thing your customers already say yes to.
+  const proven=allP.slice().sort((x,y)=>(y.salesValue||0)-(x.salesValue||0))[0];
+  if(proven && (!richest || proven.name!==richest.name) && (!dormant || proven.name!==dormant.name)){
+    acts.push({ic:'🏆',t:proven.name+' is your proven seller',
+      s:tkPlain(proven.salesValue)+' lifetime, '+Math.round((proven.salesValue/lifeTotal)*100)+'% of everything you have sold. Lead with it when a customer is undecided.'});
+  }
+  if(acts.length){
+    h+='<div class="sec-t">Do this now</div>';
+    h+='<div class="acts">'+acts.map((x,i)=>'<div class="act"><div class="act-n">'+(i+1)+'</div>'
+      +'<div class="act-t"><b>'+escapeHtml(x.t)+'</b><span>'+x.s+'</span></div></div>').join('')+'</div>';
+  }
+
+  // ── 5. MY DAILY ACTIVITY ── its own section, not buried under the numbers
+  h+='<div class="sec-t">My daily activity</div>';
+  h+='<button class="actbtn" onclick="openAct()">'
+    +'<span class="ab-ic">'+CAL_SVG+'</span>'
+    +'<span class="ab-t"><b>Open day-by-day log</b><span>Every sale and collection you logged, by date</span></span>'
+    +'<span class="ab-c">›</span></button>';
+
+  // ── 6. THIS MONTH SUMMARY ── the plain raw figures, stated once, nowhere else
+  h+='<div class="sec-t">This month summary</div>';
+  h+='<div class="card"><div class="tri">'
+    +'<div class="box"><div class="box-l">Sales</div><div class="box-v blue">'+tk(m.sales)+'</div></div>'
+    +'<div class="box"><div class="box-l">Collected</div><div class="box-v grn">'+tk(m.collected)+'</div></div>'
+    +'<div class="box"><div class="box-l">Due</div><div class="box-v red">'+tk(m.due)+'</div></div>'
+    +'</div>';
+  h+='<div class="gauge-wrap"><div class="gauge-top"><span>Collection rate</span><span>'+Math.round(clRate*100)+'%</span></div>'
+    +'<div class="gauge"><div class="gauge-fill'+(clRate<0.6?' bad':(clRate<0.85?' warn':''))+'" style="width:'+Math.min(clRate*100,100)+'%"></div></div></div>';
+  h+='</div>';
+
+  // ── 7. CAREER TOTALS ── last on purpose: pride, not a place to rest
+  const life=Array.isArray(d.lifetime)?d.lifetime:[];
+  _LIFE=life;
+  if(_chartSel!=null && _chartSel>=life.length) _chartSel=null;  // data shrank
+  h+='<div class="sec-t">Your career at Enkore</div>';
+  h+='<div class="career">'
+    +'<div class="career-hd"><span class="ch-t">Lifetime record</span>'
+    +'<span class="ch-s">'+(life.length?life.length+' day'+(life.length===1?'':'s')+' worked':'All time')+'</span></div>'
+    +'<div class="tri">'
+    +'<div class="box"><div class="box-l">Lifetime Sales</div><div class="box-v blue">'+tk(a.sales)+'</div></div>'
+    +'<div class="box"><div class="box-l">Collected</div><div class="box-v grn">'+tk(a.collected)+'</div></div>'
+    +'<div class="box"><div class="box-l">Due</div><div class="box-v red">'+tk(a.due)+'</div></div>'
+    +'</div>';
+  if((a.due||0)>0) h+='<div class="career-note">'+tkPlain(a.due)+' of everything you have ever sold is still uncollected. Old dues count against you the same as new ones.</div>';
+  h+='</div>';
+
+  // ── 6b. LIFETIME GRAPH ── month by month, so the trend is visible at a glance
+  h+=lifetimeChart(life);
+
+  document.getElementById('body').innerHTML=h;
+}
+
+/* ─────────── DAILY ACTIVITY ───────────
+   Opens on the current month. "See more" pulls the next month that actually
+   has data, so the salesman never waits on an all-time payload. Cached like
+   the rest of the panel: last view paints instantly, then the current month
+   revalidates in the background. */
+const ACT_KEY = 'enkore_activity_' + USER_ID;
+let ACT = { months:[], busy:false };
+
+function readActCache(){ try{ return JSON.parse(localStorage.getItem(ACT_KEY)||'null'); }catch(_){ return null; } }
+function writeActCache(){ try{ localStorage.setItem(ACT_KEY, JSON.stringify(ACT.months.slice(0,3))); }catch(_){} }
+
+/* Popup open/close MUST be announced to the shell (enkore-erp.html).
+   __erpOv() pushes a history entry; __erpOvClose() pops it. Without this the
+   shell's ovDepth stays 0, so Back never routes to __erpHandleBack and instead
+   leaves the panel. This is the contract every panel popup follows. */
+function openAct(){
+  const ov=document.getElementById('actOv');
+  if(ov.classList.contains('open')) return;
+  ov.classList.add('open');
+  try{ if(parent&&parent.__erpOv) parent.__erpOv(); }catch(_){}
+  document.getElementById('actTitle').innerHTML=CAL_SVG+'<span>My Daily Activity</span>';
+  document.body.style.overflow='hidden';
+  if(!ACT.months.length){
+    const c=readActCache();
+    if(c && c.length){ ACT.months=c; renderAct(); }
+    else document.getElementById('actBody').innerHTML='<div class="sheet-empty"><span class="spin"></span> Loading activity…</div>';
+    loadActMonth(null, true);   // always refresh the current month on first open
+  } else {
+    renderAct();
+  }
+}
+function closeAct(){
+  const ov=document.getElementById('actOv');
+  if(!ov.classList.contains('open')) return;
+  ov.classList.remove('open');
+  // Muted automatically when Back drove the close, so the entry is never
+  // unwound twice.
+  try{ if(parent&&parent.__erpOvClose) parent.__erpOvClose(); }catch(_){}
+  document.body.style.overflow='';
+}
+
+async function loadActMonth(mk, replaceFirst){
+  if(!USER_ID || ACT.busy) return;
+  ACT.busy=true;
+  const btn=document.getElementById('moreBtn');
+  if(btn){ btn.disabled=true; btn.textContent='Loading…'; }
+  try{
+    const qs=new URLSearchParams({action:'getActivity',userId:USER_ID,t:Date.now()});
+    if(mk) qs.set('month', mk);
+    const r=await fetch(`${API}?${qs}`).then(x=>x.json());
+    if(!r.ok) throw new Error(r.error||'failed');
+    if(replaceFirst) ACT.months = [r].concat(ACT.months.filter(m=>m.month!==r.month));
+    else if(!ACT.months.some(m=>m.month===r.month)) ACT.months.push(r);
+    // Keep months in newest-first order regardless of load order.
+    ACT.months.sort((a,b)=> monthRank(b.month)-monthRank(a.month));
+    writeActCache();
+    renderAct();
+  }catch(e){
+    console.error(e);
+    if(!ACT.months.length) document.getElementById('actBody').innerHTML='<div class="sheet-empty">⚠️ Could not load activity. Check internet and try again.</div>';
+    else toast('Could not load '+(mk||'activity'),'err');
+    if(btn){ btn.disabled=false; btn.textContent='Try again'; }
+  }finally{ ACT.busy=false; }
+}
+
+const MO_IDX={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+function monthRank(mk){
+  const m=String(mk||'').match(/([A-Za-z]{3})\s*,\s*(\d{2})/);
+  if(!m) return -1;
+  return (2000+parseInt(m[2],10))*12 + (MO_IDX[m[1].charAt(0).toUpperCase()+m[1].slice(1,3).toLowerCase()] ?? 0);
+}
+function tgDay(el){ el.parentElement.classList.toggle('open'); }
+
+function renderAct(){
+  const el=document.getElementById('actBody');
+  const first=ACT.months[0];
+  document.getElementById('actSub').textContent = first
+    ? (first.totals.activeDays+' active day'+(first.totals.activeDays===1?'':'s')+' · '+tkPlain(first.totals.sales)+' this month')
+    : '—';
+  if(!ACT.months.length){ el.innerHTML='<div class="sheet-empty">No activity yet.</div>'; return; }
+
+  let h='';
+  ACT.months.forEach(mo=>{
+    h+='<div class="mo-hd"><span>'+escapeHtml(mo.month)+'</span><span class="mo-sum">'
+      + tkPlain(mo.totals.sales)+' · '+mo.totals.visits+' entr'+(mo.totals.visits===1?'y':'ies')+'</span></div>';
+    if(!mo.days.length){ h+='<div class="sheet-empty">Nothing logged in '+escapeHtml(mo.month)+'.</div>'; return; }
+    mo.days.forEach(d=>{
+      h+='<div class="dcard"><div class="dhd" onclick="tgDay(this)">'
+        +'<div class="dhl"><div class="dday">'+escapeHtml(d.label)+'</div>'
+        +'<div class="dmeta">'+d.entries.length+' entr'+(d.entries.length===1?'y':'ies')+' · tap to open</div></div>'
+        +'<div class="dhr"><div class="dsale">'+tkPlain(d.sales)+'</div>'
+        +'<div class="dcol">Collected '+tkPlain(d.collected)+'</div></div>'
+        +'<span class="chev">›</span></div><div class="dbody">';
+      d.entries.forEach((e,ei)=>{
+        const due=Math.max((e.bill||0)-(e.paid||0),0);
+        h+='<div class="ent">';
+        // Tiny serial on the entry and on each product line, so a long day is
+        // countable at a glance instead of being one undifferentiated block.
+        h+='<div class="ent-t"><span class="ent-sn">'+(ei+1)+'</span>'
+          +'<span class="ent-c">'+escapeHtml(e.client||'—')+'</span>'
+          +(e.invoice?'<span class="ent-i">#'+escapeHtml(e.invoice)+'</span>':'')+'</div>';
+        h+='<div class="ent-items">';
+        if(e.items&&e.items.length){
+          h+=e.items.map((it,ii)=>'<div class="it"><span class="it-sn">'+(ii+1)+'.</span>'
+            +'<span class="it-n">'+escapeHtml(it.product)
+            +(it.gift?' <span class="gift">GIFT</span>':'')+'</span><span class="it-q">×'+qtyFmt(it.qty)
+            +'</span><span class="it-a">'+tkPlain(it.amount)+'</span></div>').join('');
+        } else {
+          h+='<div class="it"><span class="it-sn"></span><span class="it-n">💵 Payment collection only</span><span class="it-q"></span><span class="it-a"></span></div>';
+        }
+        h+='</div>';
+        h+='<div class="ent-f"><span>Bill '+tkPlain(e.bill)+'</span><span class="paid">Paid '+tkPlain(e.paid)+'</span>'
+          +'<span class="'+(due>0?'due':'')+'">Due '+tkPlain(due)+'</span></div>';
+        if(e.comment) h+='<div class="ent-cm">💬 '+escapeHtml(e.comment)+'</div>';
+        h+='</div>';
+      });
+      h+='</div></div>';
+    });
+  });
+  const last=ACT.months[ACT.months.length-1];
+  if(last && last.prevMonth) h+='<button class="morebtn" id="moreBtn" onclick="loadActMonth(\''+escapeHtml(last.prevMonth)+'\')">See '+escapeHtml(last.prevMonth)+' ↓</button>';
+  else h+='<div class="endnote">— that is your full history —</div>';
+  el.innerHTML=h;
+}
+
+/* Cash submission moved to its own panel (panels/cash-s.html). Handling money
+   deserves a deliberate destination, not a form at the bottom of a page the
+   salesman scrolls past. This panel only nudges toward it. */
+
+async function forceRefresh(){
+  if(_ptrBusy) return; _ptrBusy=true;
+  const ind=document.getElementById('ptrIndicator'); ind.classList.add('ptr-loading');
+  document.getElementById('ptrText').textContent='Refreshing…';
+  try{
+    await load(true);
+    if(ACT.months.length) await loadActMonth(null, true); // keep the activity feed in step
+    toast('✅ Refreshed');
+  }catch(e){ toast('Refresh failed','err'); }
+  finally{ _ptrBusy=false; ind.classList.remove('ptr-loading'); document.getElementById('ptrText').textContent='Pull to refresh'; }
+}
+function initPTR(){
+  const ind=document.getElementById('ptrIndicator'), txt=document.getElementById('ptrText');
+  const MAX=90, FIRE=60; let startY=0, pulling=false, dist=0;
+  // Never fire pull-to-refresh while the activity sheet is open — the sheet
+  // has its own scroller and the page behind it is still at scrollY 0.
+  const sheetOpen=()=>document.getElementById('actOv').classList.contains('open');
+  document.addEventListener('touchstart',e=>{ if(_ptrBusy||sheetOpen()||window.scrollY>0){pulling=false;return;} startY=e.touches[0].clientY; pulling=true; },{passive:true});
+  document.addEventListener('touchmove',e=>{ if(!pulling||_ptrBusy)return; dist=e.touches[0].clientY-startY; if(dist<=0){dist=0;ind.style.marginTop='-56px';return;} if(window.scrollY>0){pulling=false;return;} const es=Math.min(MAX,dist*0.5); ind.style.marginTop=(es-56)+'px'; txt.textContent=es>=FIRE?'Release to refresh':'Pull to refresh'; },{passive:true});
+  document.addEventListener('touchend',()=>{ if(!pulling)return; pulling=false; const es=Math.min(MAX,dist*0.5); if(es>=FIRE){ind.style.marginTop='0px';forceRefresh().then(()=>{ind.style.marginTop='-56px';});} else ind.style.marginTop='-56px'; dist=0; });
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  load(); initPTR();
+  // Tap the dark backdrop to close the activity sheet.
+  document.getElementById('actOv').addEventListener('click', e=>{ if(e.target.id==='actOv') closeAct(); });
+});
+
+// ── SHELL BACK-BUTTON HOOK ──
+// Back closes the activity sheet first instead of leaving the panel.
+window.__erpHandleBack = function(){
+  const ov=document.getElementById('actOv');
+  if(ov && ov.classList.contains('open')){ closeAct(); return true; }
+  return false;
+};
+</script>
+</body>
+</html>
