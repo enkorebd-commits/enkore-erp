@@ -673,6 +673,10 @@ function alertRows() {
 function renderAlerts() {
   const rows = alertRows();
   $('alerts').style.display = rows.length ? '' : 'none';
+  // Tell the shell so the Tasks icon itself carries the count, wherever the
+  // user actually lands when the app opens — the card here is the detail,
+  // the icon badge is what makes it visible at first look.
+  try { parent.__erpBadge && parent.__erpBadge('tasks', rows.length); } catch (e) {}
   if (!rows.length) return;
 
   const SHOW = 6;                       // a phone screen, not a wall of text
