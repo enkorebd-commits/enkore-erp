@@ -49,23 +49,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .banner.show{display:block}
 .banner.bad{background:#ffe3e3;border-color:#ffc9c9;color:#c92a2a}
 
-/* new-for-you strip + at-a-glance summary */
-.newbar{display:none;align-items:center;justify-content:space-between;gap:10px;
-  background:var(--b);color:#fff;border-radius:10px;padding:10px 12px;margin-bottom:10px;
-  font-size:12.5px;font-weight:800;box-shadow:0 4px 14px rgba(25,113,194,.3)}
-.newbar.show{display:flex}
-.newbar button{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45);color:#fff;
-  border-radius:16px;padding:5px 11px;font-size:10.5px;font-weight:800;cursor:pointer;flex:0 0 auto}
-.sumbar{display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.sumbar.show{display:flex}
-.sumbar span{font-size:10.5px;font-weight:800;padding:5px 10px;border-radius:16px;
-  background:#fff;box-shadow:var(--sh)}
-.sumbar span.late{background:#ffe3e3;color:#c92a2a}
-.sumbar span.today{background:#fff3e0;color:#e8590c}
-.sumbar span.rev{background:#f3f0ff;color:#5f3dc4}
-.vtab .dot{display:inline-block;min-width:17px;height:17px;line-height:17px;border-radius:9px;
-  background:var(--red);color:#fff;font-size:9.5px;font-weight:900;margin-left:5px;padding:0 4px;
-  vertical-align:1px}
+/* one open list of everything waiting on this person */
+.alerts{padding:12px 14px 6px}
+.al{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #f1f3f5;
+  cursor:pointer}
+.al:last-child{border-bottom:none}
+.al .bar{width:4px;align-self:stretch;border-radius:3px;flex:0 0 auto;min-height:30px}
+.al .tx{flex:1;min-width:0}
+.al .k{font-size:9.5px;font-weight:900;letter-spacing:.4px;text-transform:uppercase;display:block;
+  margin-bottom:2px}
+.al .ti{font-size:12.5px;font-weight:700;line-height:1.35;color:var(--text);display:block}
+.al .mt{font-size:10px;color:var(--muted);font-weight:600;margin-top:2px;display:block}
+.al.red .bar{background:var(--red)}      .al.red .k{color:var(--red)}
+.al.amber .bar{background:var(--amber)}  .al.amber .k{color:var(--amber)}
+.al.violet .bar{background:#7048e8}      .al.violet .k{color:#7048e8}
+.al.blue .bar{background:var(--b)}       .al.blue .k{color:var(--b)}
+.al.yellow .bar{background:#f59f00}      .al.yellow .k{color:#a06800}
+.al-more{font-size:10.5px;color:var(--muted);font-weight:700;padding:8px 0 4px;text-align:center}
 
 /* scope + state segments */
 .seg{display:flex;gap:6px;background:#fff;border-radius:10px;padding:4px;box-shadow:var(--sh);margin-bottom:10px}
@@ -251,11 +251,12 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
   <!-- ============ BOARD — the common surface, same for every department ============ -->
   <div id="vBoard">
-    <div class="newbar" id="newBar">
-      <span id="newTxt">2 new for you</span>
-      <button type="button" id="newSeen">Mark all seen</button>
+    <!-- Everything that wants this person's attention, in one open list.
+         Nothing to expand, nothing to dismiss, no counter to chase. -->
+    <div class="card alerts" id="alerts" style="display:none">
+      <div class="card-lbl">Needs your attention</div>
+      <div id="alertList"></div>
     </div>
-    <div class="sumbar" id="sumBar"></div>
     <div id="notices"></div>
 
     <!-- Daily checklist: workflow, not a score. Always here for everyone,
@@ -503,13 +504,8 @@ function isNew(t) {
 function markSeen(id) {
   const t = ST.tasks.find(x => x.id === id);
   if (!t) return;
-  if (SEEN[t.id] !== t.status) { SEEN[t.id] = t.status; saveSeen(); renderBadges(); }
+  if (SEEN[t.id] !== t.status) { SEEN[t.id] = t.status; saveSeen(); renderAlerts(); }
 }
-function markAllSeen() {
-  ST.tasks.forEach(t => { if (t.type !== 'Notice') SEEN[t.id] = t.status; });
-  saveSeen(); renderAll();
-}
-function newCount() { return ST.tasks.filter(t => t.type !== 'Notice' && isNew(t)).length; }
 
 /* ------------------------------ helpers ------------------------------ */
 let toastT;
@@ -629,24 +625,75 @@ function visibleTasks() {
   });
 }
 
-/** The two strips at the top: what is new, and what needs me today. */
-function renderBadges() {
-  const n = newCount();
-  $('newBar').classList.toggle('show', n > 0);
-  $('newTxt').textContent = n === 1 ? '1 new task for you' : n + ' new tasks for you';
-  const tab = document.querySelector('.vtab[data-view="board"]');
-  if (tab) tab.innerHTML = 'Board' + (n ? ' <span class="dot">' + n + '</span>' : '');
+/* ===================================================================
+   NEEDS YOUR ATTENTION
+   One open list, printed in full, no tab to find and nothing to
+   expand. A task appears once, under the most urgent reason that
+   applies to it, and leaves the list by itself the moment that
+   reason stops being true — nothing to dismiss by hand.
+   =================================================================== */
+function alertRows() {
+  const out = [], used = {};
+  const add = (t, kind, cls, label, meta) => {
+    if (used[t.id]) return;
+    used[t.id] = true;
+    out.push({ id: t.id, kind: kind, cls: cls, label: label, title: t.title, meta: meta });
+  };
+  const live = ST.tasks.filter(t => t.type !== 'Notice' && t.status !== 'Done');
 
-  const mineAll = ST.tasks.filter(t => t.type !== 'Notice' && isMine(t) && t.status !== 'Done');
-  const late  = mineAll.filter(t => dayDiff(t.dueAt) !== null && dayDiff(t.dueAt) < 0).length;
-  const today = mineAll.filter(t => dayDiff(t.dueAt) === 0).length;
-  const rev   = ST.tasks.filter(t => t.type !== 'Notice' && t.status === 'Review' && canDecide(t)).length;
-  const bits = [];
-  if (late)  bits.push('<span class="late">' + late + ' overdue</span>');
-  if (today) bits.push('<span class="today">' + today + ' due today</span>');
-  if (rev)   bits.push('<span class="rev">' + rev + ' waiting for your approval</span>');
-  $('sumBar').innerHTML = bits.join('');
-  $('sumBar').classList.toggle('show', bits.length > 0);
+  // most urgent first, so the top of the list is always the real answer to
+  // "what should I do now"
+  live.filter(t => isMine(t) && t.status === 'Returned')
+      .forEach(t => add(t, 'returned', 'red', 'Sent back to you',
+        nameOf(t.createdBy) + ' wants it redone'));
+
+  live.filter(t => isMine(t) && dayDiff(t.dueAt) !== null && dayDiff(t.dueAt) < 0)
+      .forEach(t => add(t, 'late', 'red', 'Overdue', dueTxt(t)));
+
+  live.filter(t => t.status === 'Review' && canDecide(t))
+      .forEach(t => add(t, 'approve', 'violet', 'Waiting for your approval',
+        'from ' + firstName(t.assignees[0] || t.createdBy)));
+
+  live.filter(t => !t.assignees.length && canDecide(t))
+      .forEach(t => add(t, 'fix', 'red', 'Nobody is assigned', 'open it and tap Reassign'));
+
+  live.filter(t => isMine(t) && dayDiff(t.dueAt) === 0)
+      .forEach(t => add(t, 'today', 'amber', 'Due today', t.team || ''));
+
+  live.filter(t => isNew(t))
+      .forEach(t => add(t, 'new', 'blue', 'New task for you',
+        nameOf(t.createdBy) + ' · ' + dueTxt(t)));
+
+  // Notices are deliberately not repeated here. The yellow notice sits open
+  // directly below this list with its full text already on screen, so saying
+  // it twice would only make the top of the panel busier.
+  return out;
+}
+
+function renderAlerts() {
+  const rows = alertRows();
+  $('alerts').style.display = rows.length ? '' : 'none';
+  if (!rows.length) return;
+
+  const SHOW = 6;                       // a phone screen, not a wall of text
+  const head = rows.slice(0, SHOW);
+  $('alertList').innerHTML = head.map(r =>
+    '<div class="al ' + r.cls + '" data-id="' + esc(r.id) + '">' +
+      '<div class="bar"></div>' +
+      '<div class="tx">' +
+        '<span class="k">' + esc(r.label) + '</span>' +
+        '<span class="ti">' + esc(r.title) + '</span>' +
+        (r.meta ? '<span class="mt">' + esc(r.meta) + '</span>' : '') +
+      '</div>' +
+    '</div>').join('') +
+    (rows.length > SHOW
+      ? '<div class="al-more">and ' + (rows.length - SHOW) + ' more below</div>' : '');
+
+  // Tapping a line is a shortcut into the task, never a requirement — every
+  // line is already readable without touching anything.
+  $('alertList').querySelectorAll('.al').forEach(el => {
+    el.onclick = () => { if (ST.tasks.some(x => x.id === el.dataset.id)) openDetail(el.dataset.id); };
+  });
 }
 function renderCounts() {
   const v = visibleTasks();
@@ -1311,7 +1358,7 @@ function renderAll() {
   // an empty list — so the moment a tab had no tasks, every notice on the board
   // silently vanished. They are their own surface and are painted on their own.
   renderNotices();
-  renderBadges();
+  renderAlerts();
   renderChecklist();
   renderKpi();
 }
@@ -1447,17 +1494,6 @@ addEventListener('touchmove', e => {
 addEventListener('touchend', () => { ptrOn = false; }, { passive: true });
 
 /* -------------------------------- boot -------------------------------- */
-$('newSeen').onclick = () => { markAllSeen(); toast('All marked as seen'); };
-$('newBar').onclick = e => {
-  if (e.target.id === 'newSeen') return;
-  ST.scope = 'mine';
-  [...$('scopeSeg').children].forEach(x => x.classList.toggle('on', x.dataset.scope === 'mine'));
-  ST.state = 'To Do';
-  [...$('stateSeg').children].forEach(x => x.classList.toggle('on', x.dataset.state === 'To Do'));
-  renderAll();
-  window.scrollTo(0, 0);
-};
-
 loadSeen();
 paintCache();
 showQ();
