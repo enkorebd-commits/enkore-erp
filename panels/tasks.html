@@ -87,6 +87,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .tc{position:relative;background:#fff;padding:12px 13px 12px 15px;border-left:4px solid var(--b);
   transition:transform .18s ease;touch-action:pan-y}
 .tc.drag{transition:none}
+/* A faint, always-on chevron on whichever edge a card can move to — the
+   opposite of the big Back/Advance banner, which only reveals itself mid
+   drag. This is what teaches people the gesture exists in the first place. */
+.tc-peek{position:absolute;top:50%;transform:translateY(-50%);font-size:17px;font-weight:900;
+  color:var(--muted);opacity:.32;pointer-events:none;line-height:1}
+.tc-peek.l{left:3px}
+.tc-peek.r{right:5px}
+.tc.drag .tc-peek{opacity:0}
 .tc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .tc-t{font-weight:800;font-size:13.5px;line-height:1.35;flex:1;min-width:0}
 .tc-m{font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.5}
@@ -343,8 +351,12 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <input class="fi" id="nTitle" maxlength="120" placeholder="What has to happen"></div>
   <div class="fg"><div class="fl">Details</div>
     <textarea class="fi" id="nDesc" maxlength="900" placeholder="Context, numbers, where to look"></textarea></div>
-  <div class="fg"><div class="fl">Team</div>
+  <div class="fg" id="wrapTeam"><div class="fl">Team</div>
     <select class="fi" id="nTeam"></select></div>
+  <div class="fg" id="wrapNoticeTeams" style="display:none">
+    <div class="fl">Send to</div>
+    <div id="noticeTeamList"></div>
+  </div>
   <div class="fg" id="wrapWho"><div class="fl">Assign to <span class="req">*</span></div>
     <button class="pickbtn" id="btnWho" type="button">Choose people</button></div>
   <div class="r2" id="wrapWhen">
@@ -423,7 +435,7 @@ let ST = {
   me: USER.id, isLead: false, isBoss: false, kpiVisible: false, users: [], teams: [],
   myTeams: [], tasks: [], activity: [], checkpoints: [], kpi: [],
   view: 'board', scope: 'mine', state: 'To Do', openId: '', pick: [], ctype: 'Task',
-  stale: false, pickMode: 'create'
+  stale: false, pickMode: 'create', noticeTeams: []   // [] = All teams / everyone
 };
 
 /**
@@ -478,9 +490,26 @@ window.__erpHandleBack = function () {
 document.querySelectorAll('[data-close]').forEach(b => {
   b.onclick = () => sheetClose(b.closest('.sheet').id, false);
 });
-$('ov').onclick = () => {
-  for (const id of SHEETS) if ($(id).classList.contains('on')) return sheetClose(id, false);
-};
+/**
+ * A shorter nested sheet (the people/team picker, opened from within the
+ * create sheet) can leave part of the sheet BEHIND it visible above it.
+ * Chayan, 15 Sep: "the pop up of selecting team member doesn't go away when
+ * I click somewhere else." That visible band belongs to the sheet
+ * underneath, not to #ov, so #ov's own tap-to-close never saw the tap. This
+ * catches a tap ANYWHERE outside the topmost open sheet — on #ov or on a
+ * lower sheet peeking out from behind it — and closes just that one sheet,
+ * eating the tap so it can't also hit whatever button was under it.
+ */
+document.addEventListener('click', e => {
+  for (const id of SHEETS) {
+    const el = $(id);
+    if (!el.classList.contains('on')) continue;
+    if (el.contains(e.target)) return;   // tap was inside the topmost open sheet
+    e.stopPropagation();
+    sheetClose(id, false);
+    return;                              // only the topmost open sheet closes per tap
+  }
+}, true);
 
 /* ===================================================================
    WHAT IS NEW TO ME
@@ -664,6 +693,16 @@ function alertRows() {
       .forEach(t => add(t, 'new', 'blue', 'New task for you',
         nameOf(t.createdBy) + ' · ' + dueTxt(t)));
 
+  // A team task nobody has claimed is invisible to a plain member unless they
+  // manually switch the My tasks / My team toggle — which is exactly the
+  // complaint: "I got in, saw nothing, had to open My team and To Do to find
+  // it." This puts it on the same open list everything else is on, so there
+  // is nowhere else to go looking. Deciders already have this task under
+  // "Nobody is assigned" above; this is the plain-member version of the same
+  // fact, worded as an invitation rather than a repair job.
+  live.filter(t => !t.assignees.length && !canDecide(t) && (ST.myTeams || []).indexOf(t.team) >= 0)
+      .forEach(t => add(t, 'open', 'yellow', 'Open in your team', t.team + ' · tap to pick it up'));
+
   // Notices are deliberately not repeated here. The yellow notice sits open
   // directly below this list with its full text already on screen, so saying
   // it twice would only make the top of the panel busier.
@@ -773,30 +812,63 @@ function whoHtml(t) {
   '</div>';
 }
 
-function cardHtml(t) {
+/**
+ * What a signed-in person may do to THIS card right now, and which status
+ * a forward/back move lands on. Single source of truth for the button row
+ * AND the swipe gesture, so the two can never say different things.
+ *
+ * "In the team anyone can do in task" — Chayan's own words when this panel
+ * was built — originally only covered CLAIMING an unassigned team task.
+ * 15 Sep: "any member should change the position to next step and make it
+ * backward as well" extends the same rule to moving a team's own card
+ * forward or back, not just claiming it. Accept/Return stay a decision only
+ * the giver, team lead or boss can make (canDecide) — those are judgments
+ * about the work, not a position on a board, so they are deliberately left
+ * out of this.
+ */
+function cardActions(t) {
   const mine = isMine(t);
   const inTeam = (ST.myTeams || []).indexOf(t.team) >= 0;
+  const decide = canDecide(t);
+  const canAct = mine || inTeam;
+  let fwd = '', back = '', claim = false;
+  if ((t.status === 'To Do' || t.status === 'Returned') && canAct) {
+    fwd = 'Doing';
+    claim = !mine;   // somebody else's/unclaimed team card — moving it also claims it
+  } else if (t.status === 'Doing' && canAct) {
+    fwd = 'Review';
+    back = 'To Do';
+  } else if (t.status === 'Review' && !decide && canAct) {
+    back = 'Doing';  // a plain member's own second thoughts, never the formal Return
+  }
+  return { mine, inTeam, decide, canAct, fwd, back, claim };
+}
+
+function cardHtml(t) {
+  const A = cardActions(t);
   let acts = '';
   if (!USER.ro) {
-    if ((t.status === 'To Do' || t.status === 'Returned') && mine) {
-      acts = btn('go', 'start', t.status === 'Returned' ? 'Redo it' : 'Start');
-    } else if ((t.status === 'To Do' || t.status === 'Returned') && inTeam && t.assignees.length) {
-      // team work anyone may pick up — the backend adds whoever claims it
-      acts = btn('', 'start', 'Pick this up');
-    } else if (t.status === 'Doing' && mine) {
-      acts = btn('go', 'submit', 'Submit for review');
-    } else if (t.status === 'Review' && canDecide(t)) {
+    if (t.status === 'Review' && A.decide) {
       acts = btn('ok', 'accept', 'Accept') + btn('no', 'return', 'Return');
-    } else if (t.status === 'Review' && mine) {
-      acts = btn('', 'pull', 'Pull back');
+    } else {
+      if (A.back) acts += btnTo('', A.back, 'Move back');
+      if (A.fwd)  acts += btnTo('go', A.fwd, A.claim ? 'Pick this up'
+                    : t.status === 'Returned' ? 'Redo it'
+                    : t.status === 'Doing' ? 'Submit for review' : 'Start');
     }
   }
   const waiting = t.status === 'Review'
     ? ' &middot; waiting on ' + esc(firstName(t.createdBy)) : '';
+  // A faint, ALWAYS-visible arrow on whichever edge this card can move to —
+  // not just revealed mid-drag — so people discover swipe exists instead of
+  // only finding it by accident. The full "Back"/"Advance" banner still only
+  // appears while actually dragging (see .tc-hint / .drag CSS).
   return '' +
   '<div class="tc-wrap" data-id="' + esc(t.id) + '">' +
     '<div class="tc-hint"><span>Back</span><span>Advance</span></div>' +
     '<div class="tc" style="border-left-color:' + statusColor(t.status) + '">' +
+      (A.back ? '<span class="tc-peek l">&lsaquo;</span>' : '') +
+      (A.fwd  ? '<span class="tc-peek r">&rsaquo;</span>' : '') +
       '<div class="tc-top">' +
         '<div class="tc-t">' + esc(t.title) +
           (isNew(t) ? ' <span class="chip p-new">NEW</span>' : '') +
@@ -820,6 +892,9 @@ function cardHtml(t) {
 function btn(cls, act, label) {
   return '<button class="' + cls + '" data-act="' + act + '">' + label + '</button>';
 }
+function btnTo(cls, to, label) {
+  return '<button class="' + cls + '" data-to="' + esc(to) + '">' + label + '</button>';
+}
 
 function bindCard(t) {
   const wrap = document.querySelector('.tc-wrap[data-id="' + cssEsc(t.id) + '"]');
@@ -830,22 +905,20 @@ function bindCard(t) {
     b.onclick = ev => {
       ev.stopPropagation();
       const a = b.dataset.act;
-      if (a === 'start')  return doMove(t, 'Doing');
-      if (a === 'submit') return doMove(t, 'Review');
-      if (a === 'pull')   return doMove(t, 'Doing');
       if (a === 'accept') return doDecide(t, 'accept', '');
       if (a === 'return') return openDetail(t.id, true);
+      if (b.dataset.to)   return doMove(t, b.dataset.to);
     };
   });
 
   tc.onclick = () => openDetail(t.id);
 
-  /* swipe: right advances, left steps back. Only for the assignee's own flow —
-     Accept and Return are terminal decisions and stay as explicit buttons. */
-  if (USER.ro || !isMine(t)) return;
-  const fwd = t.status === 'To Do' || t.status === 'Returned' ? 'Doing'
-            : t.status === 'Doing' ? 'Review' : '';
-  const back = t.status === 'Doing' ? 'To Do' : t.status === 'Review' ? 'Doing' : '';
+  /* swipe: right advances, left steps back — mirrors cardActions() exactly,
+     so anything the buttons allow, the gesture allows too, for the same
+     people. Accept and Return stay explicit buttons only, never a swipe. */
+  if (USER.ro) return;
+  const A = cardActions(t);
+  const fwd = A.fwd, back = A.back;
   if (!fwd && !back) return;
 
   let x0 = 0, y0 = 0, dx = 0, axis = null, moved = false;
@@ -921,16 +994,13 @@ function openDetail(id, focusReturn) {
   markSeen(id);
 
   let acts = '';
+  const A = cardActions(t);
   if (!USER.ro) {
-    const mine = isMine(t);
-    const inTeam = (ST.myTeams || []).indexOf(t.team) >= 0;
-    if (t.status === 'To Do' || t.status === 'Returned') {
-      if (mine) acts += '<button class="bp" data-d="start">Start working</button>';
-      else if (inTeam && t.assignees.length) acts += '<button class="bp" data-d="start">Pick this up</button>';
-    } else if (t.status === 'Doing' && mine) {
-      acts += '<button class="bp" data-d="submit">Submit for review</button>';
-    }
-    if (t.status === 'Review' && canDecide(t)) {
+    if (A.back) acts += '<button class="bg2" data-d="' + esc(A.back) + '">Move back</button>';
+    if (A.fwd)  acts += '<button class="bp" data-d="' + esc(A.fwd) + '">' +
+      (A.claim ? 'Pick this up' : t.status === 'Returned' ? 'Redo it'
+        : t.status === 'Doing' ? 'Submit for review' : 'Start working') + '</button>';
+    if (t.status === 'Review' && A.decide) {
       acts += '<button class="bok" data-d="accept">Accept</button><button class="bno" data-d="return">Return</button>';
     }
   }
@@ -980,13 +1050,12 @@ function openDetail(id, focusReturn) {
       const note = ($('dNote').value || '').trim();
       const d = b.dataset.d;
       sheetClose('shDetail', false);
-      if (d === 'start')  return doMove(t, 'Doing');
-      if (d === 'submit') return doMove(t, 'Review');
       if (d === 'accept') return doDecide(t, 'accept', note);
       if (d === 'return') {
         if (!note) { sheetOpen('shDetail'); return toast('Say why it is coming back', true); }
         return doDecide(t, 'return', note);
       }
+      return doMove(t, d);   // d is the target status: 'Doing' / 'Review' / 'To Do'
     };
   });
   const adm = $('dAdmin');
@@ -1016,6 +1085,7 @@ function row(k, v) {
 $('fab').onclick = () => {
   if (!ST.users.length) return toast('Still loading the staff list, try again in a moment', true);
   ST.pick = [];
+  ST.noticeTeams = [];
   ST.pickMode = 'create';
   $('nTitle').value = ''; $('nDesc').value = ''; $('nLinkR').value = '';
   $('nLinkT').value = ''; $('nPri').value = 'Should';
@@ -1025,6 +1095,7 @@ $('fab').onclick = () => {
   paintTeams();
   prefillTeamMembers();   // the team is preselected, so preselect its people too
   paintWho();
+  paintNoticeTeams();
   sheetOpen('shCreate');
 };
 document.querySelectorAll('[data-type]').forEach(b => {
@@ -1039,29 +1110,67 @@ function setType(tp) {
   $('wrapWho').style.display  = hide ? 'none' : '';
   $('wrapWhen').style.display = hide ? 'none' : '';
   $('wrapLink').style.display = hide ? 'none' : '';
+  $('wrapTeam').style.display = hide ? 'none' : '';
+  $('wrapNoticeTeams').style.display = hide ? '' : 'none';
+  if (hide) { ST.noticeTeams = []; paintNoticeTeams(); }
   $('btnSave').textContent = hide ? 'Post notice' : 'Give task';
 }
+/**
+ * A plain staff member only ever files a task under a team they actually
+ * belong to — a lead or Chayan can still originate work under any team.
+ * This is also what fixes "why is Hasan getting the team selecting option":
+ * he still gets one, but it now only ever lists his own team(s).
+ */
 function paintTeams() {
   const s = $('nTeam');
+  const options = (ST.isBoss || ST.isLead) ? ST.teams
+    : ST.teams.filter(t => (ST.myTeams || []).indexOf(t.team) >= 0);
   s.innerHTML = '<option value="">No team</option>' +
-    ST.teams.map(t => '<option value="' + esc(t.team) + '">' + esc(t.team) + '</option>').join('');
+    options.map(t => '<option value="' + esc(t.team) + '">' + esc(t.team) + '</option>').join('');
   const led = ST.teams.find(t => String(t.leadId) === String(ST.me));
   if (led) s.value = led.team;
   else if ((ST.myTeams || []).length) s.value = ST.myTeams[0];
 }
 /**
- * Preselect the team's people — but only ones who are still on the staff list
- * and who this person is allowed to assign to. Handing a task to an ID that no
- * longer belongs to anybody is how a task ends up owned by nobody.
+ * Preselect the team's FULL roster, not just whoever else the assigner
+ * happens to overlap with. Chayan, 15 Sep: "he should get all options
+ * according to the team" — once a team is on screen at all, everyone in it
+ * is a legitimate option, the same rule reassigning already follows.
  */
 function prefillTeamMembers() {
-  const t = ST.teams.find(x => x.team === $('nTeam').value);
-  const allowed = pickableUsers().map(u => String(u.id));
-  const from = t ? t.members : [];
-  ST.pick = from.filter(id => isKnown(id) && allowed.indexOf(String(id)) >= 0);
+  const team = $('nTeam').value;
+  ST.pick = team ? teamMembers(team).map(u => String(u.id)) : [];
   if (!ST.pick.length && !ST.isLead && !ST.isBoss) ST.pick = [String(ST.me)];
 }
 $('nTeam').onchange = () => { prefillTeamMembers(); paintWho(); };
+/**
+ * Who a Notice reaches. [] means every team (unchanged from before this
+ * existed — a notice with no targeting has always reached everyone).
+ * Chayan, 15 Sep: "I should get to select multiple teams at once, or select
+ * all option."
+ */
+function paintNoticeTeams() {
+  const box = $('noticeTeamList');
+  const allOn = !ST.noticeTeams.length;
+  const rows = [{ team: '', label: 'All teams (everyone)' }]
+    .concat(ST.teams.map(t => ({ team: t.team, label: t.team })));
+  box.innerHTML = rows.map(r => {
+    const on = r.team === '' ? allOn : ST.noticeTeams.indexOf(r.team) >= 0;
+    return '<div class="pickrow' + (on ? ' on' : '') + '" data-team="' + esc(r.team) + '">' +
+      '<div class="bx">&#10003;</div><div class="nm">' + esc(r.label) + '</div></div>';
+  }).join('');
+  box.querySelectorAll('.pickrow').forEach(row => {
+    row.onclick = () => {
+      const v = row.dataset.team;
+      if (v === '') { ST.noticeTeams = []; }
+      else {
+        const i = ST.noticeTeams.indexOf(v);
+        if (i >= 0) ST.noticeTeams.splice(i, 1); else ST.noticeTeams.push(v);
+      }
+      paintNoticeTeams();
+    };
+  });
+}
 function paintWho() {
   $('btnWho').textContent = ST.pick.length
     ? ST.pick.map(firstName).join(', ')
@@ -1085,12 +1194,31 @@ function pickableUsers() {
   return ST.users.filter(u => mates[String(u.id)]);
 }
 
+/**
+ * Reassigning moves work INSIDE the team it already belongs to — it is a
+ * repair tool, not a way to hand a task to someone outside that team.
+ * Chayan's own words: "reassigning should be in the team only." A brand
+ * new task (openPicker('create', …)) is unaffected — pickableUsers() still
+ * governs that, since who may originate work is a separate question from
+ * who an existing task's team may pass it to.
+ */
+function teamMembers(teamName) {
+  const t = (ST.teams || []).find(x => x.team === teamName);
+  if (!t) return [];
+  const ids = {};
+  (t.members || []).forEach(m => ids[String(m)] = true);
+  if (t.leadId) ids[String(t.leadId)] = true;
+  return ST.users.filter(u => ids[String(u.id)]);
+}
+
 let pickTask = null;
 function openPicker(mode, task) {
   ST.pickMode = mode;
   pickTask = task || null;
   if (mode === 'reassign' && task) ST.pick = task.assignees.slice();
-  const list = pickableUsers();
+  const list = (mode === 'reassign' && task) ? teamMembers(task.team)
+             : (mode === 'create' && $('nTeam').value) ? teamMembers($('nTeam').value)
+             : pickableUsers();
   $('pickList').innerHTML = list.map(u =>
     '<div class="pickrow' + (ST.pick.map(String).indexOf(String(u.id)) >= 0 ? ' on' : '') +
       '" data-uid="' + esc(u.id) + '">' +
@@ -1181,7 +1309,8 @@ $('btnSave').onclick = () => {
   const id = (isNotice ? 'N-' : 'T-') + 'LOCAL' + Date.now().toString().slice(-6);
   const optimistic = {
     id: id, type: isNotice ? 'Notice' : 'Task', title: title, desc: $('nDesc').value.trim(),
-    team: $('nTeam').value, assignees: isNotice ? [] : ST.pick.slice(), createdBy: ST.me,
+    team: isNotice ? ST.noticeTeams.join(' | ') : $('nTeam').value,
+    assignees: isNotice ? [] : ST.pick.slice(), createdBy: ST.me,
     createdAt: new Date().toISOString(), priority: isNotice ? 'Later' : $('nPri').value,
     dueAt: isNotice ? '' : $('nDue').value + 'T23:59:00',
     status: isNotice ? 'Notice' : 'To Do', startedAt: '', submittedAt: '', closedAt: '',
@@ -1191,7 +1320,9 @@ $('btnSave').onclick = () => {
   ST.tasks.unshift(optimistic);
   saveCache();
   sheetClose('shCreate', false);
-  toast(isNotice ? 'Notice posted' : 'Task given to ' + ST.pick.map(firstName).join(', '));
+  toast(isNotice
+    ? 'Notice posted to ' + (ST.noticeTeams.length ? ST.noticeTeams.join(', ') : 'everyone')
+    : 'Task given to ' + ST.pick.map(firstName).join(', '));
   ST.state = isNotice ? ST.state : 'To Do';
   [...$('stateSeg').children].forEach(x => x.classList.toggle('on', x.dataset.state === ST.state));
   renderAll();
