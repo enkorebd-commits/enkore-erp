@@ -309,8 +309,11 @@
   // ── CONFIG ──
   // Bump BUILD on every deploy. It is shown in the profile menu so you can see
   // at a glance whether a phone is actually running the newest files.
-  const BUILD = '2026.09.15-2';
+  const BUILD = '2026.09.15-3';
   const SHEET_ID   = '1mXI0MI9R_5_ImxiTvw8vH0EaQ38M3WlHncjZgmPLTmc';
+  // Task Engine backend — used ONLY for the one-number nav-badge seed below.
+  // Everything else the Tasks panel needs, it fetches for itself once it loads.
+  const TASK_ENGINE_URL = 'https://script.google.com/macros/s/AKfycby8vfo3cNZAYb3r2OTwpvRcVHxmiP6_ky6B43lJoOboBhBs54z91z9izbxcG-aihsmzvQ/exec';
   const ACCESS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Access`;
   const LINK_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Panels`;
 
@@ -522,6 +525,7 @@
 
     loadBadges(user.id);
     buildNav(user.panels);
+    seedAttentionBadge(user);
 
     // Both frames are still on an UNTINTED about:blank at this point, which is
     // pure white. Tint them first so any hiccup shows the app's grey, never a
@@ -613,13 +617,45 @@
         else { el.style.display = 'none'; }
       });
   }
+  // Tracks which panels have reported their OWN exact, live count this boot —
+  // once one has, the one-shot server seed below must never overwrite it.
+  let _liveReported = {};
   window.__erpBadge = function(file, count) {
     count = Math.max(0, parseInt(count, 10) || 0);
+    _liveReported[file] = true;
     if (_badgeCounts[file] === count) return;
     _badgeCounts[file] = count;
     applyBadge(file, count);
     if (currentUser) saveBadges(currentUser.id);
   };
+
+  // ── ONE-SHOT BADGE SEED — the true first-look fix ──
+  // A localStorage-restored badge is right from the SECOND open onward, but a
+  // phone that has never opened Tasks even once still shows nothing on the
+  // very first open, because no panel has ever reported a count to seed it
+  // with. This one lightweight call (action=attn — one number, no task list)
+  // closes that gap: fired once at login/boot, before Tasks has necessarily
+  // loaded, so the badge is right even the very first time. It is always a
+  // safe lower bound (see attentionCount_ in Code.gs) and is never applied
+  // once the real panel has reported its own exact count this boot.
+  function seedBadge(file, count) {
+    if (_liveReported[file]) return;
+    count = Math.max(0, parseInt(count, 10) || 0);
+    if (_badgeCounts[file] === count) return;
+    _badgeCounts[file] = count;
+    applyBadge(file, count);
+    if (currentUser) saveBadges(currentUser.id);
+  }
+  function seedAttentionBadge(user) {
+    if (!user || !user.panels || !user.panels.some(p => p.file === 'tasks')) return;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4000);
+    fetch(TASK_ENGINE_URL + '?action=attn&userId=' + encodeURIComponent(user.id), { signal: ctrl.signal })
+      .then(r => r.json())
+      .then(js => { if (js && js.ok) seedBadge('tasks', js.count); })
+      .catch(() => {})   // offline or slow — the localStorage-restored count already stands
+      .finally(() => clearTimeout(timer));
+  }
 
   // ── PANEL NAVIGATION + BACK BUTTON ────────────────────────────
   // ONE real history entry per visible step, so hardware Back unwinds serially:
