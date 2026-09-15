@@ -200,6 +200,21 @@
     .nav-item.active { background:#1f1f1f; color:#fff; border-left-color:var(--blue); }
     .nav-icon { font-size:14px; width:18px; text-align:center; flex-shrink:0; }
     .ro-badge { margin-left:auto; font-size:8px; padding:2px 5px; background:#1a2a35; color:var(--blue); border-radius:4px; font-weight:600; }
+
+    /* NOTIFICATION BADGE — a count on a panel's own nav icon, visible on
+       whichever panel is open, so "something needs you" is on screen from
+       the moment the app opens, not just after tapping into that panel. */
+    .bnav-icowrap { position:relative; display:inline-flex; }
+    .nav-item .nbadge {
+      margin-left:auto; font-size:9px; font-weight:800; color:#fff; background:var(--red,#e03131);
+      min-width:15px; height:15px; padding:0 4px; border-radius:8px;
+      display:none; align-items:center; justify-content:center; line-height:1;
+    }
+    .bnav-icowrap .nbadge {
+      position:absolute; top:-2px; right:-4px; font-size:9px; font-weight:800; color:#fff;
+      background:var(--red,#e03131); min-width:16px; height:16px; padding:0 4px; border-radius:8px;
+      display:none; align-items:center; justify-content:center; line-height:1; box-shadow:0 0 0 2px #fff;
+    }
     .sb-footer { margin-top:auto; padding:14px 16px; border-top:1px solid var(--dark2); font-size:10px; color:#282828; }
 
     /* DESKTOP ≥769px */
@@ -294,7 +309,7 @@
   // ── CONFIG ──
   // Bump BUILD on every deploy. It is shown in the profile menu so you can see
   // at a glance whether a phone is actually running the newest files.
-  const BUILD = '2026.09.15-1';
+  const BUILD = '2026.09.15-2';
   const SHEET_ID   = '1mXI0MI9R_5_ImxiTvw8vH0EaQ38M3WlHncjZgmPLTmc';
   const ACCESS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Access`;
   const LINK_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Panels`;
@@ -505,6 +520,7 @@
     document.getElementById('um-id').textContent     = 'ID: ' + user.id;
     document.getElementById('um-build').textContent  = 'Build ' + BUILD;
 
+    loadBadges(user.id);
     buildNav(user.panels);
 
     // Both frames are still on an UNTINTED about:blank at this point, which is
@@ -553,18 +569,57 @@
       si.className = 'nav-item';
       si.id = 'snav-' + panel.file;
       si.innerHTML = `<span class="nav-icon">${panel.icon}</span>${panel.name}` +
-        (panel.readonly ? `<span class="ro-badge">View</span>` : '');
+        (panel.readonly ? `<span class="ro-badge">View</span>` : '') +
+        `<span class="nbadge" id="snbadge-${panel.file}">0</span>`;
       si.onclick = () => loadPanel(panel.file, panel.name, panel.readonly);
       sbPanels.appendChild(si);
 
       const bi = document.createElement('div');
       bi.className = 'bnav-item';
       bi.id = 'bnav-' + panel.file;
-      bi.innerHTML = `<span class="bnav-icon">${panel.icon}</span><span class="bnav-label">${panel.name}</span>`;
+      bi.innerHTML = `<span class="bnav-icowrap"><span class="bnav-icon">${panel.icon}</span>` +
+        `<span class="nbadge" id="bnbadge-${panel.file}">0</span></span>` +
+        `<span class="bnav-label">${panel.name}</span>`;
       bi.onclick = () => loadPanel(panel.file, panel.name, panel.readonly);
       btmNav.appendChild(bi);
     });
+
+    // Repaint whatever counts we already knew (restored from this user's
+    // last session) the instant the icons exist — before any panel loads.
+    Object.keys(_badgeCounts).forEach(f => applyBadge(f, _badgeCounts[f]));
   }
+
+  // ── NOTIFICATION BADGES — a count on a panel's own nav icon ──
+  // A panel calls parent.__erpBadge('tasks', 3) whenever its own "needs your
+  // attention" count changes. The count is kept per signed-in user in
+  // localStorage and repainted on boot BEFORE any panel has loaded, so the
+  // badge from last time is on screen at first look, not just after the
+  // panel happens to run again. The panel that is actually open still
+  // updates it live the moment it renders.
+  let _badgeCounts = {};
+  function badgeKey(uid) { return 'enkore_erp_badges_' + uid; }
+  function loadBadges(uid) {
+    try { _badgeCounts = JSON.parse(localStorage.getItem(badgeKey(uid)) || '{}') || {}; }
+    catch (e) { _badgeCounts = {}; }
+  }
+  function saveBadges(uid) {
+    try { localStorage.setItem(badgeKey(uid), JSON.stringify(_badgeCounts)); } catch (e) {}
+  }
+  function applyBadge(file, count) {
+    [document.getElementById('snbadge-' + file), document.getElementById('bnbadge-' + file)]
+      .forEach(el => {
+        if (!el) return;
+        if (count > 0) { el.textContent = count > 9 ? '9+' : String(count); el.style.display = 'flex'; }
+        else { el.style.display = 'none'; }
+      });
+  }
+  window.__erpBadge = function(file, count) {
+    count = Math.max(0, parseInt(count, 10) || 0);
+    if (_badgeCounts[file] === count) return;
+    _badgeCounts[file] = count;
+    applyBadge(file, count);
+    if (currentUser) saveBadges(currentUser.id);
+  };
 
   // ── PANEL NAVIGATION + BACK BUTTON ────────────────────────────
   // ONE real history entry per visible step, so hardware Back unwinds serially:
