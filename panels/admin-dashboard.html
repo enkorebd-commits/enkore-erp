@@ -210,7 +210,8 @@
       box-shadow:var(--sh); margin-bottom:16px; overflow:hidden;
     }
     .tbl-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .perf-tbl { width:100%; min-width:520px; border-collapse:collapse; font-size:12px; }
+    .perf-tbl { width:100%; min-width:680px; border-collapse:collapse; font-size:12px; }
+    .perf-tbl tr[onclick] { cursor:pointer; }
     .perf-tbl th {
       text-align:right; padding:11px 10px; font-size:9px; font-weight:800;
       text-transform:uppercase; letter-spacing:.6px; color:rgba(255,255,255,.85);
@@ -268,8 +269,8 @@
     .pend-empty { text-align:center; padding:20px; color:var(--sub2); font-size:12.5px; }
 
     /* ── popup (back-button contract, CLAUDE.md §6.1) ── */
-    .ov { position:fixed; inset:0; background:rgba(15,20,30,.55); z-index:500; display:flex; align-items:flex-end; }
-    .ov-sheet { background:#fff; width:100%; max-height:86vh; overflow-y:auto; border-radius:18px 18px 0 0; padding:16px 16px 26px; }
+    .ov { position:fixed; inset:0; background:rgba(15,20,30,.55); z-index:500; display:flex; align-items:flex-end; overscroll-behavior:contain; touch-action:none; }
+    .ov-sheet { background:#fff; width:100%; max-height:86vh; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y; border-radius:18px 18px 0 0; padding:16px 16px 26px; }
     .ov-hd { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
     .ov-title { font-size:15px; font-weight:800; max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .ov-x { width:28px; height:28px; border-radius:50%; background:#f1f3f6; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--sub2); cursor:pointer; flex-shrink:0; }
@@ -324,7 +325,7 @@
 </div>
 
 <div class="section" id="perf-section" style="display:none; padding-top:14px;">
-  <div class="sec-hdr"><span class="sec-title">Salesman Performance</span></div>
+  <div class="sec-hdr"><span class="sec-title">Salesman Performance</span><span class="chart-s">tap a row for full detail</span></div>
   <div class="tbl-card"><div class="tbl-scroll">
     <table class="perf-tbl" id="perf-tbl"></table>
   </div></div>
@@ -344,8 +345,15 @@
   <div class="ov-sheet" id="pendSheet"></div>
 </div>
 
+<!-- Salesman performance detail popup — same contract as pendOv above. -->
+<div class="ov" id="sellerOv" style="display:none" onclick="if(event.target===this) closeSellerDetail()">
+  <div class="ov-sheet" id="sellerSheet"></div>
+</div>
+
 <script>
   const FIN_SHEET_ID = '1XE05NQJYc2QPM1qUivoGYUynu-lI1iaTH5Y785dPwJk';
+  const SALES_FILE_ID = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg'; // Sale Entry spreadsheet — also holds "Clients Info"
+  const SALESMAN_AS_URL = 'https://script.google.com/macros/s/AKfycbylAEyTwyBrejsLKA1a5-dhL57K44UVUJOT9rDvLtd53GSzR-WEEAMYD-WYVx7SpGUaJA/exec';
 
   const qp    = new URLSearchParams(window.location.search);
   const userId = qp.get('userId') || '';
@@ -1010,23 +1018,37 @@
       return v>0 ? '<td class="neg-t">'+inner+'</td>' : '<td class="pos-t">'+inner+'</td>';
     }
 
-    let h = '<thead><tr><th>Seller</th><th>Sales</th><th>Coll.</th><th>Due</th><th>Collection Rate</th><th>Clients</th></tr></thead><tbody>';
+    // Target % and Incentive always come from the Salesman API and are always
+    // THIS MONTH's figures (that's the only period the backend tracks target
+    // against) — independent of whatever date range is picked above for
+    // Sales/Coll./Due/Clients. Labelled "(mo.)" in the header so the two
+    // don't read as if they obey the same date range.
+    let h = '<thead><tr><th>Seller</th><th>Sales</th><th>Coll.</th><th>Due</th><th>Collection Rate</th><th>Clients</th>'
+      + '<th>Target % <span style="font-weight:600;text-transform:none;letter-spacing:0">(mo.)</span></th>'
+      + '<th>Incentive <span style="font-weight:600;text-transform:none;letter-spacing:0">(mo.)</span></th></tr></thead><tbody>';
     let totC = new Set();
     sellers.forEach(k => {
       const o = by[k];
       o.clients.forEach(c => totC.add(c));
-      h += '<tr>'+
+      const t = TEAM_BY_NAME[k.trim().toLowerCase()];
+      const achv = t ? (t.target > 0 ? Math.round(t.achievementPct) + '%' : 'No target set') : (window._teamLoaded ? '—' : '…');
+      const achvCls = t && t.target > 0 ? (t.achievementPct >= 100 ? 'pos-t' : (t.achievementPct < 70 ? 'neg-t' : '')) : '';
+      const inc = t ? tk(t.finalCommission) : (window._teamLoaded ? '—' : '…');
+      const rowAttrs = t ? ' onclick="openSellerDetail(\''+k.replace(/'/g,"\\'")+'\')"' : '';
+      h += '<tr'+rowAttrs+'>'+
         '<td><div class="seller-cell"><div class="s-ava">'+initials(k)+'</div><span class="s-name">'+k+'</span></div></td>'+
         '<td>'+tk(o.sales)+'</td>'+
         '<td>'+tk(o.paid)+'</td>'+
         dueCell(o.sales - o.paid)+
         '<td>'+ratePill(o.sales, o.paid)+'</td>'+
         '<td>'+o.clients.size+'</td>'+
+        '<td class="'+achvCls+'">'+achv+'</td>'+
+        '<td>'+inc+'</td>'+
       '</tr>';
     });
     h += '<tr class="tot">'+
       '<td>Total</td><td>'+tk(tSales)+'</td><td>'+tk(tPaid)+'</td>'+
-      dueCell(due)+'<td>'+ratePill(tSales, tPaid)+'</td><td>'+totC.size+'</td>'+
+      dueCell(due)+'<td>'+ratePill(tSales, tPaid)+'</td><td>'+totC.size+'</td><td></td><td></td>'+
     '</tr></tbody>';
     document.getElementById('perf-tbl').innerHTML = h;
     document.getElementById('perf-section').style.display = 'block';
@@ -1095,9 +1117,11 @@
         const age = noteAgeDays(n.ts);
         const ageTxt = age===null ? '' : (age<=0 ? 'today' : age+'d old');
         const itemN = (n.products||[]).length;
+        const cinfo = CLIENTS_BY_DET[n.client];
+        const dispName = (cinfo && cinfo.name) ? cinfo.name : (n.client || 'Unknown client');
         h += '<div class="pend-row" onclick="openPendDetail('+i+')">'
           + '<div class="pr-ava">'+initials(n.sellerName||n.seller||'?')+'</div>'
-          + '<div class="pr-main"><div class="pr-client">'+(n.client||'Unknown client')+'</div>'
+          + '<div class="pr-main"><div class="pr-client">'+dispName+'</div>'
           + '<div class="pr-sub">'+(n.sellerName||'Unassigned')+' · '+itemN+' item'+(itemN===1?'':'s')+'</div></div>'
           + '<div><div class="pr-val">'+tk(n.subtotal)+'</div>'
           + '<div class="pr-age'+(age!==null && age>7 ? ' old':'')+'">'+ageTxt+'</div></div>'
@@ -1107,34 +1131,167 @@
     el.innerHTML = h;
   }
 
-  // ── Popup — full 3-part back-button contract ──
+  // ── CLIENTS INFO — full name/shop/location/zone/phone, joined by "det" ──
+  // Sales Notes' client field IS the "det" string (name, shop, loc, zone
+  // joined with ", "), the same join key used across Clients Info, Sale
+  // Entry, Sales Notes and the Call Log sheet. This tab is the only place
+  // the phone number lives, so a phone/full-detail view has to read it too.
+  // Columns verified against Sales Panel Apps Script's updateClientPhone:
+  // B=type C=name D=shop E=loc F=zone G=phone H=det.
+  let CLIENTS_BY_DET = {};
+  async function loadClientsInfo() {
+    try {
+      const tbl = await gvTable(SALES_FILE_ID, 'Clients Info');
+      const map = {};
+      (tbl.rows||[]).forEach(r => {
+        const c = r.c||[];
+        const det = cellStr(c[7]);
+        if (!det) return;
+        map[det] = { name:cellStr(c[2]), shop:cellStr(c[3]), loc:cellStr(c[4]), zone:cellStr(c[5]), phone:cellStr(c[6]) };
+      });
+      CLIENTS_BY_DET = map;
+    } catch(e) { console.error('clients info:', e); }
+  }
+  function toWaNumber(phone) {
+    const d = String(phone||'').replace(/\D/g,'');
+    if (!d) return '';
+    if (d.indexOf('880') === 0) return d;
+    if (d.indexOf('0') === 0) return '880' + d.slice(1);
+    return '880' + d;
+  }
+
+  // ── friendly date/time — so a salesman reading this, not just Chayan,
+  // understands it at a glance instead of a raw "2026-09-16 14:30:00" ──
+  function fmtNoteTs(raw) {
+    if (!raw) return '—';
+    const d = new Date(String(raw).trim().replace(' ','T'));
+    if (isNaN(d.getTime())) return String(raw);
+    let hh = d.getHours(); const ap = hh >= 12 ? 'PM' : 'AM';
+    hh = hh % 12; if (hh === 0) hh = 12;
+    return fmtDate(d) + ', ' + hh + ':' + String(d.getMinutes()).padStart(2,'0') + ' ' + ap;
+  }
+  function fmtNoteDeadline(raw) {
+    if (!raw) return '—';
+    const s = String(raw).trim();
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) { const d = new Date(+m[1], +m[2]-1, +m[3]); return isNaN(d) ? s : fmtDate(d); }
+    const d = new Date(s.replace(' ','T'));
+    return isNaN(d.getTime()) ? s : fmtDate(d);
+  }
+
+  // ── TEAM PERFORMANCE — target%, incentive and product mix per seller,
+  // straight from the Salesman API's own commission/target engine (same
+  // numbers profile-s.html shows each seller for themselves; this is the
+  // admin-wide version). Always "this month", same period the backend
+  // tracks target against. ──
+  let TEAM_PERF = [], TEAM_BY_NAME = {};
+  window._teamLoaded = false;
+  async function loadTeamPerformance() {
+    try {
+      const js = await fetch(SALESMAN_AS_URL + '?action=getTeamPerformance&approverId=' + encodeURIComponent(userId) + '&t=' + Date.now()).then(r => r.json());
+      if (!js || !js.ok) throw new Error((js && js.error) || 'bad response');
+      TEAM_PERF = js.team || [];
+      const map = {};
+      TEAM_PERF.forEach(t => { map[String(t.name||'').trim().toLowerCase()] = t; });
+      TEAM_BY_NAME = map;
+      window._teamLoaded = true;
+    } catch(e) { console.error('team performance:', e); }
+  }
+
+  // ── shared popup scroll-lock — fixes "popup open, but scrolling moves the
+  // page behind it instead of the popup" (16 Sep 2026). CSS alone
+  // (touch-action / overscroll-behavior) covers most phones; this is the
+  // belt-and-braces JS lock for the rest. ──
+  function anyOvOpen() {
+    const a = document.getElementById('pendOv'), b = document.getElementById('sellerOv');
+    return (a && a.style.display !== 'none') || (b && b.style.display !== 'none');
+  }
+  function lockScroll() { document.body.style.overflow = 'hidden'; }
+  function unlockScroll() { if (!anyOvOpen()) document.body.style.overflow = ''; }
+
+  // ── Popup #1 — Due Deliveries detail. Full 3-part back-button contract ──
   function openPendDetail(i) {
     const n = PEND_SORTED[i];
     if (!n) return;
+    const c = CLIENTS_BY_DET[n.client] || null;
+    const displayName = (c && c.name) ? c.name : (n.client || 'Unknown client');
     const prodHtml = '<div class="ov-prod">' + (n.products||[]).map(p =>
       '<div class="ov-prod-line"><span>'+p.qty+' × '+p.product+(p.gift==='YES'?' (gift)':'')+'</span><span>'+fmt(p.qty*p.price - p.discount)+' tk</span></div>'
     ).join('') + '</div>';
+    let contactHtml = '';
+    if (c && c.phone) {
+      const wa = toWaNumber(c.phone);
+      contactHtml = '<div class="ov-row"><span class="k">Phone</span><span class="v">'
+        + '<a href="tel:'+c.phone+'" style="color:var(--blue-d);text-decoration:none;font-weight:800">'+c.phone+'</a>'
+        + (wa ? '&nbsp;&nbsp;<a href="https://wa.me/'+wa+'" style="color:#16b07c;text-decoration:none;font-weight:800">WhatsApp</a>' : '')
+        + '</span></div>';
+    }
     document.getElementById('pendSheet').innerHTML =
-        '<div class="ov-hd"><span class="ov-title">'+(n.client||'Unknown client')+'</span>'
+        '<div class="ov-hd"><span class="ov-title">'+displayName+'</span>'
       + '<span class="ov-x" onclick="closePendDetail()">✕</span></div>'
+      + (c && (c.shop||c.loc||c.zone) ? '<div class="ov-row"><span class="k">Location</span><span class="v">'+[c.shop,c.loc,c.zone].filter(Boolean).join(', ')+'</span></div>' : '')
+      + contactHtml
       + '<div class="ov-row"><span class="k">Seller</span><span class="v">'+(n.sellerName||'Unassigned')+'</span></div>'
-      + '<div class="ov-row"><span class="k">Logged</span><span class="v">'+(n.ts||'—')+'</span></div>'
-      + '<div class="ov-row"><span class="k">Deadline</span><span class="v">'+(n.deadline||'—')+'</span></div>'
+      + '<div class="ov-row"><span class="k">Logged</span><span class="v">'+fmtNoteTs(n.ts)+'</span></div>'
+      + '<div class="ov-row"><span class="k">Deadline</span><span class="v">'+fmtNoteDeadline(n.deadline)+'</span></div>'
       + '<div class="ov-row"><span class="k">Value</span><span class="v">'+tk(n.subtotal)+'</span></div>'
       + (n.comment ? '<div class="ov-row"><span class="k">Comment</span><span class="v">'+n.comment+'</span></div>' : '')
       + prodHtml;
     document.getElementById('pendOv').style.display = 'flex';
+    lockScroll();
     parent.__erpOv();                 // 1. announce the popup opened
   }
   function closePendDetail() {
     document.getElementById('pendOv').style.display = 'none';
+    unlockScroll();
     parent.__erpOvClose();            // 2. announce it closed by tap
   }
-  // 3. let Android Back close it — must close only the topmost popup and
-  // return true, per CLAUDE.md §6.1 (this panel had none of these before).
+
+  // ── Popup #2 — Salesman performance detail ──
+  function openSellerDetail(name) {
+    const t = TEAM_BY_NAME[String(name||'').trim().toLowerCase()];
+    if (!t) return;
+    const prodHtml = (t.products && t.products.length)
+      ? '<div class="ov-prod">' + t.products.map(p =>
+          '<div class="ov-prod-line"><span>'+fmt(p.qty)+' × '+p.product+'</span><span>'+tk(p.salesValue)+' · '+Math.round((p.commPct||0)*100)+'%</span></div>'
+        ).join('') + '</div>'
+      : '<div class="pend-empty">No products sold this month yet.</div>';
+    document.getElementById('sellerSheet').innerHTML =
+        '<div class="ov-hd"><span class="ov-title">'+t.name+'</span>'
+      + '<span class="ov-x" onclick="closeSellerDetail()">✕</span></div>'
+      + '<div class="pend-sum">'
+      + '<div class="ptile"><div class="pl">Rank This Month</div><div class="pv">'+(t.rank||'—')+'</div></div>'
+      + '<div class="ptile val"><div class="pl">Incentive Earned</div><div class="pv">'+tk(t.finalCommission)+'</div></div>'
+      + '</div>'
+      + '<div class="ov-row"><span class="k">Sales this month</span><span class="v">'+tk(t.mSales)+'</span></div>'
+      + '<div class="ov-row"><span class="k">Collected this month</span><span class="v">'+tk(t.mPaid)+'</span></div>'
+      + '<div class="ov-row"><span class="k">Due this month</span><span class="v">'+tk(t.mDue)+'</span></div>'
+      + '<div class="ov-row"><span class="k">Target</span><span class="v">'+(t.target>0 ? tk(t.target) : 'Not set')+'</span></div>'
+      + (t.target>0 ? '<div class="ov-row"><span class="k">Target achieved</span><span class="v">'+Math.round(t.achievementPct)+'%'+(t.targetMet?' (met)':'')+'</span></div>' : '')
+      + '<div class="ov-row"><span class="k">Collection rate</span><span class="v">'+Math.round((t.collectionPct||0)*100)+'%</span></div>'
+      + '<div class="ov-row"><span class="k">Commission if target met</span><span class="v">'+tk(t.availed)+'</span></div>'
+      + '<div class="ov-row"><span class="k">Lifetime sales</span><span class="v">'+tk(t.allSales)+'</span></div>'
+      + '<div class="sec-title" style="margin:14px 0 6px;display:block">Products sold this month</div>'
+      + prodHtml;
+    document.getElementById('sellerOv').style.display = 'flex';
+    lockScroll();
+    parent.__erpOv();
+  }
+  function closeSellerDetail() {
+    document.getElementById('sellerOv').style.display = 'none';
+    unlockScroll();
+    parent.__erpOvClose();
+  }
+
+  // 3. let Android Back close whichever popup is open — must close only the
+  // topmost and return true, per CLAUDE.md §6.1 (this panel had none of
+  // these before 16 Sep 2026). The two popups never open at the same time in
+  // this UI, so "check pend, then seller" is enough — no z-index stacking.
   window.__erpHandleBack = function () {
-    const ov = document.getElementById('pendOv');
-    if (ov && ov.style.display !== 'none') { ov.style.display = 'none'; return true; }
+    const p = document.getElementById('pendOv');
+    if (p && p.style.display !== 'none') { p.style.display = 'none'; unlockScroll(); return true; }
+    const s = document.getElementById('sellerOv');
+    if (s && s.style.display !== 'none') { s.style.display = 'none'; unlockScroll(); return true; }
     return false;
   };
 
@@ -1183,7 +1340,12 @@
   async function refreshDashLive() {
     if (_dashRefreshing) return;
     _dashRefreshing = true;
-    await Promise.allSettled([loadFinance(), loadAnalytics(), loadPendingOrders()]);
+    await Promise.allSettled([loadFinance(), loadAnalytics(), loadPendingOrders(), loadTeamPerformance(), loadClientsInfo()]);
+    // Re-render with whatever finished, regardless of which call resolved
+    // last — Target%/Incentive and the pending-orders client names/phones
+    // depend on the Salesman API and Clients Info calls specifically.
+    if (window._pendLoaded) renderPendingOrders();
+    if (document.getElementById('d-start').value) renderAnalytics();
     saveDashCache();
     _dashRefreshing = false;
   }
@@ -1230,7 +1392,7 @@
     const MAX = 84, FIRE = 58;
     let startY = 0, pulling = false, dist = 0;
     document.addEventListener('touchstart', e => {
-      if (_dashRefreshing || window.scrollY > 0) { pulling = false; return; }
+      if (_dashRefreshing || window.scrollY > 0 || anyOvOpen()) { pulling = false; return; }
       startY = e.touches[0].clientY; pulling = true;
     }, { passive:true });
     document.addEventListener('touchmove', e => {
