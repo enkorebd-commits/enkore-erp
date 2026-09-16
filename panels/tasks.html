@@ -74,6 +74,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .seg button.on{background:var(--b);color:#fff}
 .seg button .n{display:inline-block;margin-left:3px;opacity:.85;font-weight:900}
 .seg.sm button{font-size:11px;padding:8px 4px}
+.seg .sbadge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;
+  padding:0 4px;margin-left:5px;border-radius:999px;background:var(--red);color:#fff;font-size:9px;
+  font-weight:800;line-height:16px;vertical-align:middle}
 
 .srch{width:100%;padding:10px 12px;font-size:14px;border:1.5px solid var(--border);
   border-radius:8px;outline:none;margin-bottom:10px;background:#fff}
@@ -271,14 +274,14 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
          whatever Chayan sets KPI Visibility to. -->
     <div class="card" id="cpCard" style="display:none">
       <div class="card-lbl" id="cpToggle" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">
-        <span>Today's checklist</span><span id="cpFrac" style="color:var(--b)">0/0</span>
+        <span>Today's checklist <span id="cpChevron" style="display:inline-block;transition:transform .15s">&#9660;</span></span><span id="cpFrac" style="color:var(--b)">0/0</span>
       </div>
       <div id="cps" style="display:none;margin-top:6px"></div>
     </div>
 
     <div class="seg sm" id="scopeSeg" style="display:none">
-      <button data-scope="mine" class="on">My tasks</button>
-      <button data-scope="team">My team</button>
+      <button data-scope="mine" class="on">My tasks<span class="sbadge" id="sbMine" style="display:none">0</span></button>
+      <button data-scope="team">My team<span class="sbadge" id="sbTeam" style="display:none">0</span></button>
     </div>
 
     <div class="seg" id="stateSeg">
@@ -709,6 +712,11 @@ function alertRows() {
   return out;
 }
 
+function applyScopeBadge(id, n) {
+  const el = $(id); if (!el) return;
+  el.style.display = n > 0 ? '' : 'none';
+  el.textContent = n > 99 ? '99+' : String(n);
+}
 function renderAlerts() {
   const rows = alertRows();
   $('alerts').style.display = rows.length ? '' : 'none';
@@ -716,6 +724,18 @@ function renderAlerts() {
   // user actually lands when the app opens — the card here is the detail,
   // the icon badge is what makes it visible at first look.
   try { parent.__erpBadge && parent.__erpBadge('tasks', rows.length); } catch (e) {}
+
+  // Same idea, one level in: once he's actually inside Tasks, the "My tasks" /
+  // "My team" toggle is itself two destinations, and a lone card at the top
+  // doesn't say which one to tap. Every alert row already carries a kind, and
+  // 'open' (unclaimed team work) is exactly the set visibleTasks() only shows
+  // under My team scope — everything else is already reachable under My tasks
+  // (see visibleTasks() above). Split on that instead of re-deriving scope.
+  const teamOnly = rows.filter(r => r.kind === 'open').length;
+  const mineOnly = rows.length - teamOnly;
+  applyScopeBadge('sbMine', mineOnly);
+  applyScopeBadge('sbTeam', teamOnly);
+
   if (!rows.length) return;
 
   const SHOW = 6;                       // a phone screen, not a wall of text
@@ -1414,9 +1434,25 @@ function pushLocalAct(taskId, from, to, note) {
 }
 
 /* ---------------- daily checklist — on the Board, for everyone ---------------- */
-/* Open by default: a checklist nobody notices is a checklist nobody ticks, and
-   that is exactly how the old Checklists_Management sheet died. */
-let cpOpen = true;
+/* Open the FIRST time this person ever opens the panel — a checklist nobody
+   notices is a checklist nobody ticks, and that is exactly how the old
+   Checklists_Management sheet died. After that, remember whatever state
+   Chayan leaves it in (tap the header row to collapse/expand) so it does not
+   plant itself back open every single time he comes in. Per-user, like
+   CKEY/QKEY/SKEY above. */
+const CPOPEN_KEY = 'enkore_task_cpopen_' + USER.id;
+let cpOpen = (function () {
+  try {
+    const v = localStorage.getItem(CPOPEN_KEY);
+    return v === null ? true : v === '1';   // never touched it yet -> open once
+  } catch (e) { return true; }
+})();
+function setCpOpen(v) {
+  cpOpen = v;
+  try { localStorage.setItem(CPOPEN_KEY, v ? '1' : '0'); } catch (e) {}
+  $('cps').style.display = cpOpen ? '' : 'none';
+  $('cpChevron').style.transform = cpOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
 function renderChecklist() {
   const cps = ST.checkpoints;
   $('cpCard').style.display = cps.length ? '' : 'none';
@@ -1424,6 +1460,7 @@ function renderChecklist() {
   const done = cps.filter(c => c.done).length;
   $('cpFrac').textContent = done + '/' + cps.length;
   $('cps').style.display = cpOpen ? '' : 'none';
+  $('cpChevron').style.transform = cpOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
   $('cps').innerHTML = cps.map((c, i) =>
     '<div class="cp' + (c.done ? ' on' : '') + (c.source === 'AUTO' ? ' auto' : '') + '" data-i="' + i + '">' +
       '<div class="box">' + (c.done ? '&#10003;' : '') + '</div>' +
@@ -1437,10 +1474,7 @@ function renderChecklist() {
     el.onclick = () => doTick(c, !c.done);
   });
 }
-$('cpToggle').onclick = () => {
-  cpOpen = !cpOpen;
-  $('cps').style.display = cpOpen ? '' : 'none';
-};
+$('cpToggle').onclick = () => setCpOpen(!cpOpen);
 
 /* ------------------------------ KPI view — score only, gated ----------------------------- */
 function renderKpi() {

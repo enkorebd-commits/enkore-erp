@@ -313,6 +313,15 @@
     .ov-row .v { font-weight:700; text-align:right; }
     .ov-prod { background:var(--bg); border-radius:10px; padding:8px 10px; margin-top:8px; font-size:12px; }
     .ov-prod-line { display:flex; justify-content:space-between; padding:3px 0; }
+    /* Tap-to-call / tap-to-WhatsApp icons — same pattern as Client Calls panel,
+       replaces a plain "number  WhatsApp" text link that didn't work on tap. */
+    .tel-icons { display:flex; align-items:center; gap:8px; }
+    .icon-btn { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; text-decoration:none; flex-shrink:0; }
+    .icon-btn:active { opacity:.7; }
+    .icon-btn.tel-ic { background:var(--blue); }
+    .icon-btn.tel-ic svg { width:15px; height:15px; }
+    .icon-btn.wa-ic { background:#25D366; }
+    .icon-btn.wa-ic svg { width:15px; height:15px; }
   </style>
 </head>
 <body>
@@ -1097,7 +1106,11 @@
       const achieved = t ? tk(t.mSales) : (window._teamLoaded ? '—' : '…');
       const achv = t ? (t.target > 0 ? tk(t.target)+' ('+Math.round(t.achievementPct)+'%)' : 'No target') : (window._teamLoaded ? '—' : '…');
       const achvCls = t && t.target > 0 ? (t.achievementPct >= 100 ? 'pos-t' : (t.achievementPct < 70 ? 'neg-t' : '')) : '';
-      const inc = t ? tk(t.finalCommission) : (window._teamLoaded ? '—' : '…');
+      // Incentive shown as the AVAILED amount (what they'd earn on current
+      // sales, before the target gate) — not finalCommission, which stays 0
+      // until target is met and reads as "earning nothing" even when close.
+      // finalCommission (the actual gated payout) is still in Full Detail ›.
+      const inc = t ? tk(t.availed) : (window._teamLoaded ? '—' : '…');
       const due2 = o.sales - o.paid;
       const dueCls = due2 > 0 ? 'neg-t' : (due2 < 0 ? 'pos-t' : '');
       const collPct = o.sales ? Math.round(o.paid/o.sales*100) : null;
@@ -1168,8 +1181,8 @@
   }
 
   function noteAgeDays(ts) {
-    const d = new Date(String(ts||'').trim().replace(' ','T'));
-    if (isNaN(d.getTime())) return null;
+    const d = parseNoteDate(ts);
+    if (!d) return null;
     return Math.floor((new Date() - d) / 86400000);
   }
 
@@ -1263,24 +1276,51 @@
     if (d.indexOf('0') === 0) return '880' + d.slice(1);
     return '880' + d;
   }
+  // Same call/WhatsApp icon pair as the Client Calls panel — an emoji glyph
+  // ignores CSS color, an inline SVG can be made solid white to match.
+  const TEL_SVG = '<svg viewBox="0 0 24 24" fill="white"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>';
+  const WA_SVG = '<svg viewBox="0 0 24 24" fill="white"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.85.5 3.58 1.36 5.08L2 22l5.25-1.38a9.87 9.87 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.8 14.07c-.24.68-1.4 1.32-1.93 1.4-.5.08-1.13.11-1.82-.11-.42-.13-.96-.31-1.65-.6-2.9-1.25-4.79-4.17-4.93-4.36-.14-.19-1.18-1.57-1.18-3 0-1.42.75-2.12 1.02-2.41.27-.29.58-.36.78-.36.19 0 .39 0 .56.01.18.01.42-.07.66.5.24.58.83 2 .9 2.14.07.15.12.32.02.51-.09.19-.14.31-.28.48-.14.17-.29.37-.42.5-.14.14-.28.29-.12.57.16.28.7 1.16 1.51 1.88 1.04.93 1.92 1.22 2.19 1.36.28.14.44.12.6-.07.16-.19.68-.79.87-1.06.18-.27.36-.22.6-.13.24.09 1.53.72 1.79.85.27.14.44.2.51.32.06.11.06.65-.18 1.32z"/></svg>';
+  function telIconsHtml(phone) {
+    if (!phone) return '';
+    const wa = toWaNumber(phone);
+    return '<a class="icon-btn tel-ic" href="tel:'+phone.replace(/[^0-9+]/g,'')+'" onclick="event.stopPropagation()" aria-label="Call">'+TEL_SVG+'</a>'
+      + (wa ? '<a class="icon-btn wa-ic" href="https://wa.me/'+wa+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" aria-label="WhatsApp">'+WA_SVG+'</a>' : '');
+  }
 
   // ── friendly date/time — so a salesman reading this, not just Chayan,
   // understands it at a glance instead of a raw "2026-09-16 14:30:00" ──
+  // Robust parse for two very different raw shapes: gviz's "YYYY-MM-DD HH:MM:SS"
+  // AND the Apps Script backend's String(dateCell), which is a full JS
+  // Date.toString() like "Thu Sep 24 2026 00:00:00 GMT+0600 (Bangladesh
+  // Standard Time)". BUG FIXED 16 Sep 2026: the old code always did
+  // s.replace(' ','T') before parsing — fine for the gviz shape, but for the
+  // GMT shape it inserted a T after "Thu" and produced an unparseable string,
+  // so parsing failed and the function fell back to returning that raw GMT
+  // string as-is. That raw fallback is exactly what Chayan saw on the
+  // Deadline row. Fix: try parsing the raw string directly first (both shapes
+  // above parse fine with a plain `new Date(s)`), only reach for the
+  // space→T fallback if that fails.
+  function parseNoteDate(raw) {
+    const s = String(raw||'').trim();
+    if (!s) return null;
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+    let d = new Date(s);
+    if (isNaN(d.getTime())) d = new Date(s.replace(' ','T'));
+    return isNaN(d.getTime()) ? null : d;
+  }
   function fmtNoteTs(raw) {
     if (!raw) return '—';
-    const d = new Date(String(raw).trim().replace(' ','T'));
-    if (isNaN(d.getTime())) return String(raw);
+    const d = parseNoteDate(raw);
+    if (!d) return String(raw);
     let hh = d.getHours(); const ap = hh >= 12 ? 'PM' : 'AM';
     hh = hh % 12; if (hh === 0) hh = 12;
     return fmtDate(d) + ', ' + hh + ':' + String(d.getMinutes()).padStart(2,'0') + ' ' + ap;
   }
   function fmtNoteDeadline(raw) {
     if (!raw) return '—';
-    const s = String(raw).trim();
-    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (m) { const d = new Date(+m[1], +m[2]-1, +m[3]); return isNaN(d) ? s : fmtDate(d); }
-    const d = new Date(s.replace(' ','T'));
-    return isNaN(d.getTime()) ? s : fmtDate(d);
+    const d = parseNoteDate(raw);
+    return d ? fmtDate(d) : String(raw);
   }
 
   // ── TEAM PERFORMANCE — target%, incentive and product mix per seller,
@@ -1338,10 +1378,8 @@
     ).join('') + '</div>';
     let contactHtml = '';
     if (c && c.phone) {
-      const wa = toWaNumber(c.phone);
-      contactHtml = '<div class="ov-row"><span class="k">Phone</span><span class="v">'
-        + '<a href="tel:'+c.phone+'" style="color:var(--blue-d);text-decoration:none;font-weight:800">'+c.phone+'</a>'
-        + (wa ? '&nbsp;&nbsp;<a href="https://wa.me/'+wa+'" style="color:#16b07c;text-decoration:none;font-weight:800">WhatsApp</a>' : '')
+      contactHtml = '<div class="ov-row"><span class="k">Phone</span><span class="v tel-icons" style="justify-content:flex-end">'
+        + telIconsHtml(c.phone)
         + '</span></div>';
     }
     document.getElementById('pendSheet').innerHTML =
