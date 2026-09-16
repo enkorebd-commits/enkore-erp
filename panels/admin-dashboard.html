@@ -36,14 +36,12 @@
     body.booted { visibility:visible; }
 
     /* ── greeting ── */
-    /* brand navy — deep shades of the Enkore blue (#29ABE2). Richer 4-stop
-       gradient + a second, brighter glow accent (16 Sep 2026: Chayan called
-       the old flat 3-stop version "very basic colors" — this is a first
-       pass toward "something good," the full brand-direction reskin he also
-       asked for (Red Bull/GoPro reference) is a separate, bigger call still
-       waiting on his answer). */
+    /* Actual brand colors this time (16 Sep 2026, 2nd pass): Enkore's own
+       Deep Blue (#1A3A8F) and Black (#09090D), per [[enkore_brand]] — the
+       Round 4 gradient was blue-only navy shades, Chayan asked specifically
+       for black+blue like the logo, not another shade of blue. */
     .greeting {
-      background:linear-gradient(135deg,#081826 0%,#0d3050 38%,#0f5580 72%,#1583b3 100%);
+      background:linear-gradient(135deg,#09090D 0%,#111a3d 45%,#1A3A8F 100%);
       padding:18px 18px 24px;
       color:#fff; position:relative; overflow:hidden;
     }
@@ -62,9 +60,9 @@
     .g-quote { font-size:11px; color:rgba(255,255,255,.5); font-style:italic; margin-top:6px; line-height:1.5; max-width:300px; position:relative; }
 
     /* ══ INSIGHTS LAYER (hero · attention · trend) ══ */
-    .hero { background:linear-gradient(150deg,#0a1f30 0%,#123a58 50%,#166ba0 100%);
+    .hero { background:linear-gradient(150deg,#09090D 0%,#14205a 55%,#1A3A8F 100%);
       border-radius:var(--r); padding:16px; color:#fff; margin-bottom:12px; position:relative; overflow:hidden;
-      box-shadow:0 8px 26px rgba(10,31,48,.35); border:1px solid rgba(99,205,255,.35); }
+      box-shadow:0 8px 26px rgba(9,9,13,.35); border:1px solid rgba(99,205,255,.35); }
     .hero::before {
       content:''; position:absolute; right:-40px; top:-40px; width:150px; height:150px;
       border-radius:50%; background:radial-gradient(circle, rgba(99,205,255,.16) 0%, rgba(99,205,255,0) 70%);
@@ -153,7 +151,7 @@
     @media(min-width:560px){ .ytd-grid { grid-template-columns:repeat(6,1fr); } }
     .ystat {
       background:var(--card); border-radius:12px; padding:9px 8px 8px;
-      box-shadow:var(--sh); text-align:left;
+      box-shadow:var(--sh); text-align:left; border-top:3px solid var(--blue);
     }
     .ystat-l { font-size:8.5px; color:var(--sub2); font-weight:700; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .ystat-v { font-size:13px; font-weight:800; line-height:1; white-space:nowrap; }
@@ -189,14 +187,18 @@
     .sc-wrap .amt .tk { color:var(--sub2); }
 
     .range-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+    /* Black, not green — this section's own identity color (YTD = blue,
+       Sales vs Collection = black, per the logo's two colors) so the two
+       "everything is just white" grids read as different sections at a
+       glance, per Chayan's ask (16 Sep 2026, 2nd pass). */
     .dwrap {
       position:relative; flex:1; min-width:0;
-      background:linear-gradient(135deg,rgba(22,176,124,.85),rgba(16,140,98,.85));
-      border:1px solid rgba(63,224,168,.45);
+      background:linear-gradient(135deg,#1a1a22,#09090D);
+      border:1px solid rgba(255,255,255,.12);
       border-radius:12px; padding:10px 6px;
       font-size:13px; font-weight:700; color:#fff; text-align:center;
       white-space:nowrap; overflow:hidden;
-      box-shadow:0 2px 8px rgba(22,176,124,.25);
+      box-shadow:0 2px 8px rgba(9,9,13,.28);
     }
     .dwrap:active { filter:brightness(1.08); }
     .dwrap input {
@@ -211,8 +213,9 @@
 
     .sc-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:10px; }
     .gtile {
-      background:var(--bg); border:1px solid var(--border);
+      background:var(--card); border:1px solid var(--border);
       border-radius:12px; padding:9px 10px;
+      box-shadow:var(--sh); border-top:3px solid #09090D;
     }
     .gtile-l { font-size:9px; color:var(--sub2); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .gtile-v { font-size:14px; font-weight:800; line-height:1; white-space:nowrap; color:var(--text); }
@@ -232,10 +235,16 @@
        doesn't want. Cards stack top-to-bottom only, key numbers wrap onto
        more rows on a narrow phone instead of forcing sideways scroll, and
        the whole card is the "button" into the full popup. */
-    .sc-total { background:var(--card); border-radius:12px; box-shadow:var(--sh); padding:10px 14px; margin-bottom:10px; font-size:12px; color:var(--sub2); }
-    .sc-total b { color:var(--text); }
-    .seller-list { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
-    .seller-card { background:var(--card); border-radius:14px; box-shadow:var(--sh); padding:12px 14px; cursor:pointer; }
+    .sc-total { margin-bottom:10px; }
+    /* Team total as cards, not a text line (16 Sep 2026, 2nd pass) — blue
+       top accent ties this section visually to Team Performance/Seller
+       Information (see .expand-btn.blue below), same blue/black coding as
+       the YTD (blue) vs Sales-vs-Collection (black) grids above. */
+    .team-tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+    .team-tiles .gtile { border-top-color:var(--blue); }
+    .pf-note { font-size:10.5px; color:var(--sub2); font-style:italic; margin-top:8px; line-height:1.4; }
+    .seller-list { display:flex; flex-direction:column; gap:14px; margin-bottom:16px; }
+    .seller-card { background:var(--card); border-radius:14px; box-shadow:0 3px 10px rgba(18,22,33,.09), 0 0 1px rgba(18,22,33,.1); border:1px solid var(--border); padding:12px 14px; cursor:pointer; }
     .sc-top { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
     .seller-cell, .sc-top { display:flex; align-items:center; gap:8px; }
     .s-ava {
@@ -255,16 +264,46 @@
     .pf-stat .v { font-size:12.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .sc-foot { display:flex; align-items:center; justify-content:flex-end; gap:3px; margin-top:9px; font-size:11px; font-weight:700; color:var(--blue-d); }
     .pf-err { margin-top:6px; color:var(--red); font-weight:700; font-size:11px; }
+    /* Filled, colored expand/collapse buttons (16 Sep 2026, 2nd pass) —
+       Chayan's exact ask: "apply a color connected with that button so
+       everyone understands that button is responsible for this whole
+       information." A plain white link-style button didn't read as a
+       button at all. Each toggle's fill color matches the section it
+       reveals — .blue for Seller Information (ties to Team Performance's
+       blue accent above), .amber for Due Deliveries (ties to its existing
+       orange pending-order tiles). Same arrow-flip and open/closed label
+       swap as before, just with real color now. */
     .expand-btn {
       display:flex; align-items:center; justify-content:center; gap:5px;
-      background:var(--card); box-shadow:var(--sh); border-radius:12px;
-      padding:10px; margin-bottom:12px; font-size:12px; font-weight:800;
-      color:var(--blue-d); cursor:pointer; user-select:none;
+      box-shadow:0 3px 10px rgba(18,22,33,.14); border-radius:12px;
+      padding:11px; margin-bottom:12px; font-size:12.5px; font-weight:800;
+      color:#fff; cursor:pointer; user-select:none;
     }
+    .expand-btn.blue  { background:linear-gradient(135deg,var(--blue),var(--blue-d)); }
+    .expand-btn.amber { background:linear-gradient(135deg,#f0a83c,#b7791f); }
+    .expand-btn:active { filter:brightness(1.06); }
     .expand-btn .arrow { transition:transform .2s; display:inline-block; }
     .expand-btn.open .arrow { transform:rotate(180deg); }
     .collapsible { display:none; }
     .collapsible.open { display:block; }
+
+    /* ── product line cards — same visual language as the Sales panel's
+       transaction chips (Bill/Paid/Due), so "products sold" and "pending
+       order items" read the same way everywhere in the ERP (16 Sep 2026,
+       2nd pass): a named card per product, qty/rate as a muted sub-line,
+       and colored chips for the numbers that matter. ── */
+    .pcard { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:9px 10px; margin-bottom:7px; }
+    .pcard:last-child { margin-bottom:0; }
+    .pcard-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px; }
+    .pcard-name { font-size:12.5px; font-weight:700; line-height:1.3; }
+    .pcard-sub { display:block; font-size:10px; color:var(--sub2); font-weight:500; margin-top:2px; }
+    .pcard-chips { display:flex; gap:6px; }
+    .pchip { flex:1; text-align:center; padding:5px 3px; border-radius:6px; min-width:0; }
+    .pchip-lbl { font-size:8px; color:var(--sub2); text-transform:uppercase; letter-spacing:.3px; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pchip-val { font-weight:800; font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pchip-b { background:#e7f5fd; color:var(--blue-d); }
+    .pchip-p { background:#ebfbee; color:var(--green); }
+    .pchip-d { background:#fff5f5; color:var(--red); }
     .rate-pill { display:inline-block; padding:3px 8px; border-radius:20px; font-size:11px; font-weight:800; }
     .rate-hi  { background:#e4f8f0; color:var(--green); }
     .rate-mid { background:#e7f5fd; color:var(--blue-d); }
@@ -369,8 +408,8 @@
 <div class="section" id="perf-section" style="display:none; padding-top:14px;">
   <div class="sec-hdr"><span class="sec-title">Salesman Performance</span><span class="chart-s">tap a row for full detail</span></div>
   <div class="sc-total" id="perf-total"></div>
-  <div class="expand-btn" id="perf-toggle" onclick="toggleCollapsible('perf-tbl','perf-toggle','Compare all sellers','Hide seller comparison')">
-    <span>Compare all sellers</span><span class="arrow">▾</span>
+  <div class="expand-btn blue" id="perf-toggle" onclick="toggleCollapsible('perf-tbl','perf-toggle','Seller Information','Hide seller information')">
+    <span>Seller Information</span><span class="arrow">▾</span>
   </div>
   <div class="seller-list collapsible" id="perf-tbl"></div>
 </div>
@@ -1127,18 +1166,31 @@
         + '<div class="pf-stat"><div class="l">Collection</div><div class="v '+collCls+'">'+(collPct===null?'—':collPct+'%')+'</div></div>'
         + '<div class="pf-stat"><div class="l">Achieved (mo.)</div><div class="v">'+achieved+'</div></div>'
         + '<div class="pf-stat"><div class="l">Target (mo.)</div><div class="v '+achvCls+'">'+achv+'</div></div>'
-        + '<div class="pf-stat"><div class="l">Incentive (mo.)</div><div class="v">'+inc+'</div></div>'
+        + '<div class="pf-stat"><div class="l">Incentive (100%)</div><div class="v">'+inc+'</div></div>'
         + '</div>'
         + (t ? '<div class="sc-foot">Full detail ›</div>' : '')
         + '</div>';
     });
     document.getElementById('perf-tbl').innerHTML = listH || '<div class="pend-empty">No sales in this range.</div>';
-    document.getElementById('perf-total').innerHTML = 'Team total in range: <b>'+tk(tSales)+'</b> sales &middot; <b>'+(tSales?Math.round(tPaid/tSales*100):0)+'%</b> collected &middot; <b>'+totC.size+'</b> clients'
+    // Cards instead of a text line (16 Sep 2026, 2nd pass) — Chayan: "you
+    // don't have to make a line, rather you can make boxes or cards."
+    document.getElementById('perf-total').innerHTML = '<div class="team-tiles">'
+        + '<div class="gtile"><div class="gtile-l">Sales</div><div class="gtile-v">'+tk(tSales)+'</div></div>'
+        + '<div class="gtile"><div class="gtile-l">Collected</div><div class="gtile-v">'+(tSales?Math.round(tPaid/tSales*100):0)+'%</div></div>'
+        + '<div class="gtile"><div class="gtile-l">Clients</div><div class="gtile-v">'+totC.size+'</div></div>'
+      + '</div>'
+      // "Incentive (100%)" is what a seller would earn if they hit 100% of
+      // target this month, NOT a guaranteed payout — Chayan: "it seems like
+      // the salesman is gonna get that money whatever happens, which is not
+      // true." Actual gated payout is in Full Detail (Incentive Earned).
+      + '<div class="pf-note">Incentive (100%) is what a seller earns only if 100% of target is met this month. Actual payout is under Full Detail &rsaquo; Incentive Earned.</div>'
       + (window._teamLoadError
-          ? '<div class="pf-err">Target % and Incentive did not load — most likely the Salesman API script needs a fresh deploy.</div>'
+          ? (window._teamAuthError
+              ? '<div class="pf-err">Target % and Incentive did not load — this login is not on the Salesman API approver list, ask Chayan to add it in the Access sheet.</div>'
+              : '<div class="pf-err">Target % and Incentive did not load — most likely the Salesman API script needs a fresh deploy.</div>')
           : '');
     document.getElementById('perf-section').style.display = 'block';
-    applyCollapseState('perf-tbl','perf-toggle','Compare all sellers','Hide seller comparison');
+    applyCollapseState('perf-tbl','perf-toggle','Seller Information','Hide seller information');
   };
 
   (function initAnalytics() {
@@ -1225,7 +1277,7 @@
     if (!PEND_SORTED.length) {
       h += '<div class="pend-empty">Nothing pending. Every note has been delivered or cleared.</div>';
     } else {
-      h += '<div class="expand-btn" id="pend-toggle" onclick="toggleCollapsible(\'pend-list\',\'pend-toggle\',\'View '+PEND_SORTED.length+' pending order'+(PEND_SORTED.length===1?'':'s')+'\',\'Hide pending orders\')">'
+      h += '<div class="expand-btn amber" id="pend-toggle" onclick="toggleCollapsible(\'pend-list\',\'pend-toggle\',\'View '+PEND_SORTED.length+' pending order'+(PEND_SORTED.length===1?'':'s')+'\',\'Hide pending orders\')">'
         + '<span>View '+PEND_SORTED.length+' pending order'+(PEND_SORTED.length===1?'':'s')+'</span><span class="arrow">▾</span></div>';
       h += '<div class="collapsible" id="pend-list">';
       PEND_SORTED.forEach((n,i) => {
@@ -1342,6 +1394,21 @@
   async function loadTeamPerformance() {
     try {
       const js = await fetch(SALESMAN_AS_URL + '?action=getTeamPerformance&approverId=' + encodeURIComponent(userId) + '&t=' + Date.now()).then(r => r.json());
+      // FIX (16 Sep 2026, 2nd time): "not authorized" is a completely different
+      // problem from a broken/undeployed script — the backend is reachable and
+      // working, it just says this logged-in id isn't allowed to see the team
+      // table. Confirmed live: a non-approver id got a clean, fast
+      // {ok:false,error:'not authorized'} response while an approver id (same
+      // moment, same deployment) got full data — so the deploy is fine. The
+      // old code threw both cases into the same bucket and showed "needs a
+      // fresh deploy" either way, which sent Chayan chasing a redeploy that
+      // was never the actual cause.
+      if (js && js.ok === false && js.error === 'not authorized') {
+        window._teamLoaded = true;
+        window._teamLoadError = true;
+        window._teamAuthError = true;
+        return;
+      }
       if (!js || !js.ok) throw new Error((js && js.error) || 'bad response');
       TEAM_PERF = js.team || [];
       const map = {};
@@ -1349,10 +1416,12 @@
       TEAM_BY_NAME = map;
       window._teamLoaded = true;
       window._teamLoadError = false;
+      window._teamAuthError = false;
     } catch(e) {
       console.error('team performance:', e);
       window._teamLoaded = true;
       window._teamLoadError = true;
+      window._teamAuthError = false;
     }
   }
 
@@ -1373,9 +1442,17 @@
     if (!n) return;
     const c = CLIENTS_BY_DET[n.client] || null;
     const displayName = (c && c.name) ? c.name : (n.client || 'Unknown client');
-    const prodHtml = '<div class="ov-prod">' + (n.products||[]).map(p =>
-      '<div class="ov-prod-line"><span>'+p.qty+' × '+p.product+(p.gift==='YES'?' (gift)':'')+'</span><span>'+fmt(p.qty*p.price - p.discount)+' tk</span></div>'
-    ).join('') + '</div>';
+    // Product cards instead of a plain line (16 Sep 2026, 2nd pass) —
+    // same pattern as Seller Information's product list and the Sales
+    // panel's chip rows, so it's clear what was ordered and for how much.
+    const prodHtml = (n.products||[]).map(p =>
+      '<div class="pcard"><div class="pcard-top"><span class="pcard-name">'+p.product+(p.gift==='YES'?' (Gift)':'')+'</span></div>'
+      + '<div class="pcard-chips">'
+      + '<div class="pchip pchip-b"><div class="pchip-lbl">Qty</div><div class="pchip-val">'+p.qty+'</div></div>'
+      + '<div class="pchip pchip-b"><div class="pchip-lbl">Rate</div><div class="pchip-val">'+fmt(p.price)+' tk</div></div>'
+      + '<div class="pchip pchip-p"><div class="pchip-lbl">Amount</div><div class="pchip-val">'+fmt(p.qty*p.price - p.discount)+' tk</div></div>'
+      + '</div></div>'
+    ).join('');
     let contactHtml = '';
     if (c && c.phone) {
       contactHtml = '<div class="ov-row"><span class="k">Phone</span><span class="v tel-icons" style="justify-content:flex-end">'
@@ -1392,6 +1469,7 @@
       + '<div class="ov-row"><span class="k">Deadline</span><span class="v">'+fmtNoteDeadline(n.deadline)+'</span></div>'
       + '<div class="ov-row"><span class="k">Value</span><span class="v">'+tk(n.subtotal)+'</span></div>'
       + (n.comment ? '<div class="ov-row"><span class="k">Comment</span><span class="v">'+n.comment+'</span></div>' : '')
+      + '<div class="sec-title" style="margin:14px 0 8px;display:block">Order Items</div>'
       + prodHtml;
     document.getElementById('pendOv').style.display = 'flex';
     lockScroll();
@@ -1407,11 +1485,21 @@
   function openSellerDetail(name) {
     const t = TEAM_BY_NAME[String(name||'').trim().toLowerCase()];
     if (!t) return;
+    // Product cards instead of a plain table (16 Sep 2026, 2nd pass) —
+    // matches the Sales panel's own product-line chip pattern (Bill/Paid/
+    // Due) so "what's written here" reads the same way across the ERP.
     const prodHtml = (t.products && t.products.length)
-      ? '<div class="ov-prod">' + t.products.map(p =>
-          '<div class="ov-prod-line"><span>'+fmt(p.qty)+' × '+p.product+'</span><span>'+tk(p.salesValue)+' · '+Math.round((p.commPct||0)*100)+'%</span></div>'
-        ).join('') + '</div>'
+      ? t.products.map(p =>
+          '<div class="pcard"><div class="pcard-top"><span class="pcard-name">'+p.product+'<span class="pcard-sub">'+fmt(p.qty)+' pcs sold</span></span></div>'
+          + '<div class="pcard-chips">'
+          + '<div class="pchip pchip-b"><div class="pchip-lbl">Sales Value</div><div class="pchip-val">'+tk(p.salesValue)+'</div></div>'
+          + '<div class="pchip pchip-d"><div class="pchip-lbl">Comm. Rate</div><div class="pchip-val">'+Math.round((p.commPct||0)*100)+'%</div></div>'
+          + '<div class="pchip pchip-p"><div class="pchip-lbl">Availed</div><div class="pchip-val">'+tk(p.availed)+'</div></div>'
+          + '</div></div>'
+        ).join('')
       : '<div class="pend-empty">No products sold this month yet.</div>';
+    const dueCls2 = t.mDue > 0 ? 'neg-t' : '';
+    const achCls2 = t.target>0 ? (t.achievementPct>=100 ? 'pos-t' : (t.achievementPct<70 ? 'neg-t' : '')) : '';
     document.getElementById('sellerSheet').innerHTML =
         '<div class="ov-hd"><span class="ov-title">'+t.name+'</span>'
       + '<span class="ov-x" onclick="closeSellerDetail()">✕</span></div>'
@@ -1421,13 +1509,13 @@
       + '</div>'
       + '<div class="ov-row"><span class="k">Sales this month</span><span class="v">'+tk(t.mSales)+'</span></div>'
       + '<div class="ov-row"><span class="k">Collected this month</span><span class="v">'+tk(t.mPaid)+'</span></div>'
-      + '<div class="ov-row"><span class="k">Due this month</span><span class="v">'+tk(t.mDue)+'</span></div>'
+      + '<div class="ov-row"><span class="k">Due this month</span><span class="v '+dueCls2+'">'+tk(t.mDue)+'</span></div>'
       + '<div class="ov-row"><span class="k">Target</span><span class="v">'+(t.target>0 ? tk(t.target) : 'Not set')+'</span></div>'
-      + (t.target>0 ? '<div class="ov-row"><span class="k">Target achieved</span><span class="v">'+Math.round(t.achievementPct)+'%'+(t.targetMet?' (met)':'')+'</span></div>' : '')
+      + (t.target>0 ? '<div class="ov-row"><span class="k">Target achieved</span><span class="v '+achCls2+'">'+Math.round(t.achievementPct)+'%'+(t.targetMet?' (met)':'')+'</span></div>' : '')
       + '<div class="ov-row"><span class="k">Collection rate</span><span class="v">'+Math.round((t.collectionPct||0)*100)+'%</span></div>'
-      + '<div class="ov-row"><span class="k">Commission if target met</span><span class="v">'+tk(t.availed)+'</span></div>'
+      + '<div class="ov-row"><span class="k">Commission if 100% target met</span><span class="v">'+tk(t.availed)+'</span></div>'
       + '<div class="ov-row"><span class="k">Lifetime sales</span><span class="v">'+tk(t.allSales)+'</span></div>'
-      + '<div class="sec-title" style="margin:14px 0 6px;display:block">Products sold this month</div>'
+      + '<div class="sec-title" style="margin:14px 0 8px;display:block">Products sold this month</div>'
       + prodHtml;
     document.getElementById('sellerOv').style.display = 'flex';
     lockScroll();

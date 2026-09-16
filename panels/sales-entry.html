@@ -257,6 +257,15 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .nc-fwd-btn:active{transform:scale(.97)}
 .n-add-btn{width:100%;padding:13px;background:#e7f5ff;border:2px dashed var(--blue);border-radius:var(--r);color:var(--blue);font-size:14px;font-weight:800;cursor:pointer;text-align:center;margin-bottom:12px;transition:.15s}
 .n-add-btn:active{background:#d0ebff}
+.n-summary-btn{width:100%;padding:11px;background:var(--card);border:1.5px solid var(--blue);border-radius:var(--r);color:var(--blue);font-size:13px;font-weight:800;cursor:pointer;text-align:center;margin-bottom:12px;transition:.15s}
+.n-summary-btn:active{background:#e7f5ff}
+.ps-total-bar{display:flex;justify-content:space-between;align-items:center;background:var(--gbg);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-weight:800}
+.ps-total-bar span:last-child{color:var(--g);font-size:16px}
+.ps-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ps-row:last-child{border-bottom:none}
+.ps-name{font-size:13px;font-weight:700;flex:1}
+.ps-qty{font-size:11px;color:var(--muted);margin-top:2px}
+.ps-val{font-size:13px;font-weight:800;color:var(--blue);white-space:nowrap}
 .n-empty{text-align:center;padding:40px 20px;color:var(--muted)}
 .n-empty-icon{font-size:38px;margin-bottom:10px}
 .n-empty-txt{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
@@ -515,6 +524,7 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   <!-- ===== ORDER NOTES ===== -->
   <div id="notesSection">
     <button class="n-add-btn" onclick="openNoteDrawer()">＋ New Order Note</button>
+    <button class="n-summary-btn" onclick="openProdSummary()">📦 Product Summary</button>
     <div style="font-size:13px;font-weight:700;color:var(--muted);margin:6px 0 10px">⏳ <span id="nst-pending">—</span> Pending <span style="color:var(--border)">·</span> Total <span id="nst-total">৳0</span></div>
     <div id="noteCards"></div>
   </div>
@@ -693,6 +703,21 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   </div>
 </div>
 
+<!-- Product Summary Drawer -->
+<div class="overlay" id="prodSumOverlay">
+  <div class="drawer">
+    <div class="handle"></div>
+    <div class="d-hdr">
+      <div class="d-hdr-left">
+        <div class="d-title">📦 Pending Product Summary</div>
+        <div class="d-sub" id="psSub"></div>
+      </div>
+      <button class="d-close" onclick="closeProdSummary()">×</button>
+    </div>
+    <div class="d-body" id="psBody"></div>
+  </div>
+</div>
+
 <!-- Delete Confirm Dialog -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box">
@@ -769,6 +794,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const histOverlay = document.getElementById('histOverlay');
   const dBody       = document.getElementById('dBody');
   histOverlay.addEventListener('click', e => { if (e.target === histOverlay) closeHistory(); });
+  document.getElementById('prodSumOverlay').addEventListener('click', e => { if (e.target.id === 'prodSumOverlay') closeProdSummary(); });
 
   const ncOverlay = document.getElementById('ncOverlay');
   ncOverlay.addEventListener('click', e => { if (e.target === ncOverlay) closeNewClient(); });
@@ -2460,6 +2486,17 @@ function renderNoteCards() {
 
   document.getElementById('nst-pending').textContent = list.length;
 
+  let grandTotal = 0;
+  list.forEach(n => {
+    (n.products||[]).forEach(p => {
+      if (String(p.gift||'').trim().toUpperCase() === 'YES') return;
+      const qty  = Number(p.qty)||0;
+      const rate = Number(p.price)||0;
+      grandTotal += Math.max(0, rate*qty - (+p.discount||0));
+    });
+  });
+  document.getElementById('nst-total').textContent = '৳' + grandTotal.toLocaleString('en-IN');
+
   const el = document.getElementById('noteCards');
   if (!list.length) {
     el.innerHTML = `<div class="n-empty"><div class="n-empty-icon">⏳</div><div class="n-empty-txt">No pending notes</div><div style="font-size:12px;color:var(--muted)">Tap + to log a deal</div></div>`;
@@ -2511,6 +2548,57 @@ function renderNoteCards() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ── PRODUCT SUMMARY (aggregated across all pending order notes) ─
+// Independent of any single note — groups every product line from allNotes
+// (already pending-only) by product name, summing qty and line value
+// (rate×qty − discount, gifts excluded from value but still counted in qty).
+function buildProductSummary() {
+  const byProduct = {}; // name -> { qty, val }
+  let grandVal = 0, grandQty = 0;
+  allNotes.forEach(n => {
+    (n.products || []).forEach(p => {
+      const name = String(p.product || 'Unnamed');
+      const qty  = Number(p.qty) || 0;
+      const rate = Number(p.price) || 0;
+      const isGift = String(p.gift || '').trim().toUpperCase() === 'YES';
+      const val  = isGift ? 0 : Math.max(0, rate * qty - (+p.discount || 0));
+      if (!byProduct[name]) byProduct[name] = { qty: 0, val: 0 };
+      byProduct[name].qty += qty;
+      byProduct[name].val += val;
+      grandQty += qty;
+      grandVal += val;
+    });
+  });
+  const rows = Object.keys(byProduct)
+    .map(name => ({ name, qty: byProduct[name].qty, val: byProduct[name].val }))
+    .sort((a, b) => b.val - a.val);
+  return { rows, grandVal, grandQty };
+}
+
+function openProdSummary() {
+  const { rows, grandVal, grandQty } = buildProductSummary();
+  document.getElementById('psSub').textContent =
+    allNotes.length + ' pending note' + (allNotes.length === 1 ? '' : 's') + ' · ' + rows.length + ' product' + (rows.length === 1 ? '' : 's');
+
+  const body = document.getElementById('psBody');
+  if (!rows.length) {
+    body.innerHTML = `<div class="n-empty"><div class="n-empty-icon">📦</div><div class="n-empty-txt">No pending products</div></div>`;
+  } else {
+    const totalBar = `<div class="ps-total-bar"><span>Total (${grandQty} pcs)</span><span>৳${grandVal.toLocaleString('en-IN')}</span></div>`;
+    const list = rows.map(r => `
+      <div class="ps-row">
+        <div><div class="ps-name">${r.name}</div><div class="ps-qty">${r.qty} pcs</div></div>
+        <div class="ps-val">৳${r.val.toLocaleString('en-IN')}</div>
+      </div>`).join('');
+    body.innerHTML = totalBar + list;
+  }
+  ovOpen('prodSumOverlay');
+}
+
+function closeProdSummary() {
+  ovClose('prodSumOverlay');
 }
 
 // ── GIFT HELPER ───────────────────────────────────────────────
@@ -2955,12 +3043,13 @@ function fmtNoteDate(ts) {
 // this panel instead of jumping to the first panel.
 window.__erpHandleBack = function() {
   const isOpen = id => { const el = document.getElementById(id); return el && el.classList.contains('open'); };
-  if (isOpen('invOverlay'))     { closeInvoice();    return true; } // invoice sits above history
-  if (isOpen('confirmOverlay')) { closeConfirm();    return true; }
-  if (isOpen('histOverlay'))    { closeHistory();    return true; }
-  if (isOpen('ncOverlay'))      { closeNewClient();  return true; }
-  if (isOpen('noteOverlay'))    { closeNoteDrawer(); return true; }
-  if (isOpen('csDd'))           { closeDd();         return true; }
+  if (isOpen('invOverlay'))     { closeInvoice();      return true; } // invoice sits above history
+  if (isOpen('confirmOverlay')) { closeConfirm();      return true; }
+  if (isOpen('histOverlay'))    { closeHistory();      return true; }
+  if (isOpen('ncOverlay'))      { closeNewClient();    return true; }
+  if (isOpen('noteOverlay'))    { closeNoteDrawer();   return true; }
+  if (isOpen('prodSumOverlay')) { closeProdSummary();  return true; }
+  if (isOpen('csDd'))           { closeDd();           return true; }
   return false;
 };
 </script>
