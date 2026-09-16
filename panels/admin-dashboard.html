@@ -204,34 +204,33 @@
     .chart-panel .state { padding:70px 20px; color:rgba(255,255,255,.55); }
     .chart-panel .spin { border-color:rgba(255,255,255,.2); border-top-color:#fff; }
 
-    /* ── table ── */
-    .tbl-card {
-      background:var(--card); border-radius:var(--r);
-      box-shadow:var(--sh); margin-bottom:16px; overflow:hidden;
-    }
-    .tbl-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .perf-tbl { width:100%; min-width:680px; border-collapse:collapse; font-size:12px; }
-    .perf-tbl tr[onclick] { cursor:pointer; }
-    .perf-tbl th {
-      text-align:right; padding:11px 10px; font-size:9px; font-weight:800;
-      text-transform:uppercase; letter-spacing:.6px; color:rgba(255,255,255,.85);
-      white-space:nowrap; background:#0f3552; border-bottom:none;
-    }
-    .perf-tbl th:first-child, .perf-tbl td:first-child { text-align:left; padding-left:14px; }
-    .perf-tbl td {
-      padding:11px 10px; text-align:right; font-weight:600;
-      border-bottom:1px solid #f3f5f8; white-space:nowrap;
-    }
-    .perf-tbl tr:last-child td { border-bottom:none; }
-    .seller-cell { display:flex; align-items:center; gap:8px; }
+    /* ── Salesman Performance — vertical card list (16 Sep 2026 rebuild) ──
+       Was a wide table needing a right-hand scroll Chayan explicitly said he
+       doesn't want. Cards stack top-to-bottom only, key numbers wrap onto
+       more rows on a narrow phone instead of forcing sideways scroll, and
+       the whole card is the "button" into the full popup. */
+    .sc-total { background:var(--card); border-radius:12px; box-shadow:var(--sh); padding:10px 14px; margin-bottom:10px; font-size:12px; color:var(--sub2); }
+    .sc-total b { color:var(--text); }
+    .seller-list { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+    .seller-card { background:var(--card); border-radius:14px; box-shadow:var(--sh); padding:12px 14px; cursor:pointer; }
+    .sc-top { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+    .seller-cell, .sc-top { display:flex; align-items:center; gap:8px; }
     .s-ava {
-      width:26px; height:26px; border-radius:50%; flex-shrink:0;
+      width:28px; height:28px; border-radius:50%; flex-shrink:0;
       background:#e7f5fd; color:var(--blue-d);
       display:flex; align-items:center; justify-content:center;
       font-size:10px; font-weight:800;
     }
-    .s-name { font-weight:700; max-width:110px; overflow:hidden; text-overflow:ellipsis; }
-    .perf-tbl .tot td { background:#e7f5fd; border-top:2px solid var(--blue); font-weight:800; }
+    .sc-top .s-name { flex:1; min-width:0; font-weight:700; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sc-rank { font-size:9.5px; font-weight:800; background:#e7f5fd; color:var(--blue-d); padding:3px 9px; border-radius:20px; flex-shrink:0; white-space:nowrap; }
+    /* .pf-grid (NOT .sc-grid) — .sc-grid is already the 3-col KPI tile grid
+       above; reusing that name here would silently break the KPI tiles. */
+    .pf-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+    @media(min-width:420px){ .pf-grid { grid-template-columns:repeat(4,1fr); } }
+    .pf-stat { background:var(--bg); border-radius:10px; padding:7px 9px; min-width:0; }
+    .pf-stat .l { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.3px; color:var(--sub2); margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pf-stat .v { font-size:12.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .sc-foot { display:flex; align-items:center; justify-content:flex-end; gap:3px; margin-top:9px; font-size:11px; font-weight:700; color:var(--blue-d); }
     .rate-pill { display:inline-block; padding:3px 8px; border-radius:20px; font-size:11px; font-weight:800; }
     .rate-hi  { background:#e4f8f0; color:var(--green); }
     .rate-mid { background:#e7f5fd; color:var(--blue-d); }
@@ -326,9 +325,8 @@
 
 <div class="section" id="perf-section" style="display:none; padding-top:14px;">
   <div class="sec-hdr"><span class="sec-title">Salesman Performance</span><span class="chart-s">tap a row for full detail</span></div>
-  <div class="tbl-card"><div class="tbl-scroll">
-    <table class="perf-tbl" id="perf-tbl"></table>
-  </div></div>
+  <div class="sc-total" id="perf-total"></div>
+  <div class="seller-list" id="perf-tbl"></div>
 </div>
 
 <div class="section" id="pend-section" style="padding-top:14px;">
@@ -1006,51 +1004,46 @@
     });
     const sellers = Object.keys(by).sort((a,b) => by[b].sales - by[a].sales);
 
-    function ratePill(sales, paid) {
-      if (!sales) return '<span class="rate-pill rate-mid">—</span>';
-      const p = Math.round(paid/sales*100);
-      const cls = p>=80 ? 'rate-hi' : p>=50 ? 'rate-mid' : 'rate-lo';
-      return '<span class="rate-pill '+cls+'">'+p+'%</span>';
-    }
-    function dueCell(v) {
-      if (v===0) return '<td>0</td>';
-      const inner = '<span class="amt">'+fmt(v)+'<span class="tk">tk</span></span>';
-      return v>0 ? '<td class="neg-t">'+inner+'</td>' : '<td class="pos-t">'+inner+'</td>';
-    }
-
     // Target % and Incentive always come from the Salesman API and are always
     // THIS MONTH's figures (that's the only period the backend tracks target
     // against) — independent of whatever date range is picked above for
-    // Sales/Coll./Due/Clients. Labelled "(mo.)" in the header so the two
-    // don't read as if they obey the same date range.
-    let h = '<thead><tr><th>Seller</th><th>Sales</th><th>Coll.</th><th>Due</th><th>Collection Rate</th><th>Clients</th>'
-      + '<th>Target % <span style="font-weight:600;text-transform:none;letter-spacing:0">(mo.)</span></th>'
-      + '<th>Incentive <span style="font-weight:600;text-transform:none;letter-spacing:0">(mo.)</span></th></tr></thead><tbody>';
+    // Sales/Coll./Due/Clients. Labelled "(mo.)" so the two don't read as if
+    // they obey the same date range.
+    //
+    // Rendered as a vertical stack of tappable cards (not a table) so the
+    // panel only ever scrolls top-to-bottom, never sideways — each card
+    // holds its own stat grid, and tapping one opens the full popup detail.
     let totC = new Set();
+    let listH = '';
     sellers.forEach(k => {
       const o = by[k];
       o.clients.forEach(c => totC.add(c));
       const t = TEAM_BY_NAME[k.trim().toLowerCase()];
-      const achv = t ? (t.target > 0 ? Math.round(t.achievementPct) + '%' : 'No target set') : (window._teamLoaded ? '—' : '…');
+      const achv = t ? (t.target > 0 ? Math.round(t.achievementPct) + '%' : 'No target') : (window._teamLoaded ? '—' : '…');
       const achvCls = t && t.target > 0 ? (t.achievementPct >= 100 ? 'pos-t' : (t.achievementPct < 70 ? 'neg-t' : '')) : '';
       const inc = t ? tk(t.finalCommission) : (window._teamLoaded ? '—' : '…');
-      const rowAttrs = t ? ' onclick="openSellerDetail(\''+k.replace(/'/g,"\\'")+'\')"' : '';
-      h += '<tr'+rowAttrs+'>'+
-        '<td><div class="seller-cell"><div class="s-ava">'+initials(k)+'</div><span class="s-name">'+k+'</span></div></td>'+
-        '<td>'+tk(o.sales)+'</td>'+
-        '<td>'+tk(o.paid)+'</td>'+
-        dueCell(o.sales - o.paid)+
-        '<td>'+ratePill(o.sales, o.paid)+'</td>'+
-        '<td>'+o.clients.size+'</td>'+
-        '<td class="'+achvCls+'">'+achv+'</td>'+
-        '<td>'+inc+'</td>'+
-      '</tr>';
+      const due2 = o.sales - o.paid;
+      const dueCls = due2 > 0 ? 'neg-t' : (due2 < 0 ? 'pos-t' : '');
+      const collPct = o.sales ? Math.round(o.paid/o.sales*100) : null;
+      const collCls = collPct===null ? '' : (collPct>=80 ? 'pos-t' : (collPct<50 ? 'neg-t' : ''));
+      const clickable = t ? ' onclick="openSellerDetail(\''+k.replace(/'/g,"\\'")+'\')"' : '';
+      listH += '<div class="seller-card"'+clickable+'>'
+        + '<div class="sc-top"><div class="s-ava">'+initials(k)+'</div><div class="s-name">'+k+'</div>'
+        + (t && t.rank ? '<div class="sc-rank">Rank #'+t.rank+'</div>' : '')+'</div>'
+        + '<div class="pf-grid">'
+        + '<div class="pf-stat"><div class="l">Sales</div><div class="v">'+tk(o.sales)+'</div></div>'
+        + '<div class="pf-stat"><div class="l">Collected</div><div class="v">'+tk(o.paid)+'</div></div>'
+        + '<div class="pf-stat"><div class="l">Due</div><div class="v '+dueCls+'">'+tk(due2)+'</div></div>'
+        + '<div class="pf-stat"><div class="l">Clients</div><div class="v">'+o.clients.size+'</div></div>'
+        + '<div class="pf-stat"><div class="l">Collection</div><div class="v '+collCls+'">'+(collPct===null?'—':collPct+'%')+'</div></div>'
+        + '<div class="pf-stat"><div class="l">Target (mo.)</div><div class="v '+achvCls+'">'+achv+'</div></div>'
+        + '<div class="pf-stat"><div class="l">Incentive (mo.)</div><div class="v">'+inc+'</div></div>'
+        + '</div>'
+        + (t ? '<div class="sc-foot">Full detail ›</div>' : '')
+        + '</div>';
     });
-    h += '<tr class="tot">'+
-      '<td>Total</td><td>'+tk(tSales)+'</td><td>'+tk(tPaid)+'</td>'+
-      dueCell(due)+'<td>'+ratePill(tSales, tPaid)+'</td><td>'+totC.size+'</td><td></td><td></td>'+
-    '</tr></tbody>';
-    document.getElementById('perf-tbl').innerHTML = h;
+    document.getElementById('perf-tbl').innerHTML = listH || '<div class="pend-empty">No sales in this range.</div>';
+    document.getElementById('perf-total').innerHTML = 'Team total in range: <b>'+tk(tSales)+'</b> sales &middot; <b>'+(tSales?Math.round(tPaid/tSales*100):0)+'%</b> collected &middot; <b>'+totC.size+'</b> clients';
     document.getElementById('perf-section').style.display = 'block';
   };
 
