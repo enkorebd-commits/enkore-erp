@@ -36,25 +36,41 @@
     body.booted { visibility:visible; }
 
     /* ── greeting ── */
-    /* brand navy — deep shades of the Enkore blue (#29ABE2) */
+    /* brand navy — deep shades of the Enkore blue (#29ABE2). Richer 4-stop
+       gradient + a second, brighter glow accent (16 Sep 2026: Chayan called
+       the old flat 3-stop version "very basic colors" — this is a first
+       pass toward "something good," the full brand-direction reskin he also
+       asked for (Red Bull/GoPro reference) is a separate, bigger call still
+       waiting on his answer). */
     .greeting {
-      background:linear-gradient(140deg,#0a1f30 0%,#0f3552 70%,#13507c 100%);
-      padding:18px 18px 22px;
+      background:linear-gradient(135deg,#081826 0%,#0d3050 38%,#0f5580 72%,#1583b3 100%);
+      padding:18px 18px 24px;
       color:#fff; position:relative; overflow:hidden;
     }
     .greeting::after {
-      content:''; position:absolute; right:-40px; top:-50px;
-      width:180px; height:180px; border-radius:50%;
-      background:rgba(255,255,255,.05);
+      content:''; position:absolute; right:-50px; top:-60px;
+      width:210px; height:210px; border-radius:50%;
+      background:radial-gradient(circle, rgba(99,205,255,.18) 0%, rgba(99,205,255,0) 70%);
     }
-    .g-date  { font-size:11px; color:rgba(255,255,255,.55); margin-bottom:4px; font-weight:600; letter-spacing:.3px; }
-    .g-name  { font-size:20px; font-weight:800; line-height:1.2; letter-spacing:-.3px; }
-    .g-quote { font-size:11px; color:rgba(255,255,255,.45); font-style:italic; margin-top:6px; line-height:1.5; max-width:300px; }
+    .greeting::before {
+      content:''; position:absolute; left:-30px; bottom:-70px;
+      width:160px; height:160px; border-radius:50%;
+      background:radial-gradient(circle, rgba(41,171,226,.14) 0%, rgba(41,171,226,0) 70%);
+    }
+    .g-date  { font-size:11px; color:rgba(255,255,255,.6); margin-bottom:4px; font-weight:600; letter-spacing:.3px; position:relative; }
+    .g-name  { font-size:21px; font-weight:800; line-height:1.2; letter-spacing:-.3px; position:relative; }
+    .g-quote { font-size:11px; color:rgba(255,255,255,.5); font-style:italic; margin-top:6px; line-height:1.5; max-width:300px; position:relative; }
 
     /* ══ INSIGHTS LAYER (hero · attention · trend) ══ */
-    .hero { background:linear-gradient(150deg,#0a1f30 0%,#123a58 58%,#155b8a 100%);
-      border-radius:var(--r); padding:16px; color:#fff; margin-bottom:12px;
-      box-shadow:0 6px 22px rgba(10,31,48,.3); border:1px solid rgba(41,171,226,.3); }
+    .hero { background:linear-gradient(150deg,#0a1f30 0%,#123a58 50%,#166ba0 100%);
+      border-radius:var(--r); padding:16px; color:#fff; margin-bottom:12px; position:relative; overflow:hidden;
+      box-shadow:0 8px 26px rgba(10,31,48,.35); border:1px solid rgba(99,205,255,.35); }
+    .hero::before {
+      content:''; position:absolute; right:-40px; top:-40px; width:150px; height:150px;
+      border-radius:50%; background:radial-gradient(circle, rgba(99,205,255,.16) 0%, rgba(99,205,255,0) 70%);
+      pointer-events:none;
+    }
+    .hero-row, .hero-note, .hero-foot { position:relative; }
     .hero-row { display:flex; align-items:center; gap:15px; }
     .ringwrap { position:relative; width:114px; height:114px; flex-shrink:0; }
     .ringsvg { width:114px; height:114px; transform:rotate(-90deg); }
@@ -126,8 +142,15 @@
     .amt .tk { font-size:.55em; font-weight:700; color:var(--sub2); padding-bottom:1px; }
 
     /* ── compact YTD stats ── */
-    .ytd-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-    @media(min-width:560px){ .ytd-grid { grid-template-columns:repeat(7,1fr); } }
+    .ytd-hero {
+      background:linear-gradient(135deg,var(--blue-d),#0f6690); border-radius:14px;
+      padding:14px 16px; margin-bottom:8px; color:#fff;
+      box-shadow:0 6px 16px rgba(21,131,179,.28);
+    }
+    .yh-l { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:rgba(255,255,255,.75); }
+    .yh-v { font-size:24px; font-weight:800; margin-top:3px; letter-spacing:-.4px; }
+    .ytd-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    @media(min-width:560px){ .ytd-grid { grid-template-columns:repeat(6,1fr); } }
     .ystat {
       background:var(--card); border-radius:12px; padding:9px 8px 8px;
       box-shadow:var(--sh); text-align:left;
@@ -153,15 +176,17 @@
     .ccard-name { font-size:10px; color:var(--sub2); font-weight:600; line-height:1.2; }
     .ccard-val  { font-size:15px; font-weight:800; color:var(--text); margin-top:1px; }
 
-    /* ═══ SALES VS COLLECTION — distinct dark card ═══ */
+    /* ═══ SALES VS COLLECTION — now a light card, matching everything else
+       (16 Sep 2026: Chayan asked for the dark background here to go, "make
+       it match with the previous cards") ═══ */
     .sc-wrap {
-      background:linear-gradient(140deg,#0a1f30 0%,#0f3552 70%,#13507c 100%);
+      background:var(--card);
       border-radius:18px; padding:14px 12px 12px;
-      box-shadow:0 6px 20px rgba(10,31,48,.3);
-      color:#fff;
+      box-shadow:var(--sh);
+      color:var(--text);
     }
-    .sc-title { font-size:10px; font-weight:800; letter-spacing:1.2px; color:rgba(255,255,255,.55); text-transform:uppercase; margin-bottom:10px; }
-    .sc-wrap .amt .tk { color:rgba(255,255,255,.45); }
+    .sc-title { font-size:10px; font-weight:800; letter-spacing:1.2px; color:var(--sub2); text-transform:uppercase; margin-bottom:10px; }
+    .sc-wrap .amt .tk { color:var(--sub2); }
 
     .range-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
     .dwrap {
@@ -182,27 +207,25 @@
       position:absolute; inset:0; width:100%; height:100%;
       cursor:pointer; opacity:0;
     }
-    .range-arrow { font-size:12px; color:rgba(255,255,255,.5); flex-shrink:0; font-weight:700; }
+    .range-arrow { font-size:12px; color:var(--sub2); flex-shrink:0; font-weight:700; }
 
     .sc-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:10px; }
     .gtile {
-      background:rgba(255,255,255,.17); border:1px solid rgba(255,255,255,.24);
+      background:var(--bg); border:1px solid var(--border);
       border-radius:12px; padding:9px 10px;
-      box-shadow:0 4px 12px rgba(5,18,29,.35);
     }
-    .gtile-l { font-size:9px; color:rgba(255,255,255,.7); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .gtile-v { font-size:14px; font-weight:800; line-height:1; white-space:nowrap; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.25); }
-    .gtile-v.pos { color:#4ef0b6; }
-    .gtile-v.neg { color:#ff9494; }
-    .sc-wrap .amt .tk { color:rgba(255,255,255,.6); }
+    .gtile-l { font-size:9px; color:var(--sub2); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .gtile-v { font-size:14px; font-weight:800; line-height:1; white-space:nowrap; color:var(--text); }
+    .gtile-v.pos { color:var(--green); }
+    .gtile-v.neg { color:var(--red); }
 
     .chart-panel {
-      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.07);
+      background:var(--bg); border:1px solid var(--border);
       border-radius:14px; padding:10px 8px 6px;
       position:relative; height:225px;
     }
-    .chart-panel .state { padding:70px 20px; color:rgba(255,255,255,.55); }
-    .chart-panel .spin { border-color:rgba(255,255,255,.2); border-top-color:#fff; }
+    .chart-panel .state { padding:70px 20px; color:var(--sub2); }
+    .chart-panel .spin { border-color:var(--border); border-top-color:var(--blue-d); }
 
     /* ── Salesman Performance — vertical card list (16 Sep 2026 rebuild) ──
        Was a wide table needing a right-hand scroll Chayan explicitly said he
@@ -231,6 +254,17 @@
     .pf-stat .l { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.3px; color:var(--sub2); margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .pf-stat .v { font-size:12.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .sc-foot { display:flex; align-items:center; justify-content:flex-end; gap:3px; margin-top:9px; font-size:11px; font-weight:700; color:var(--blue-d); }
+    .pf-err { margin-top:6px; color:var(--red); font-weight:700; font-size:11px; }
+    .expand-btn {
+      display:flex; align-items:center; justify-content:center; gap:5px;
+      background:var(--card); box-shadow:var(--sh); border-radius:12px;
+      padding:10px; margin-bottom:12px; font-size:12px; font-weight:800;
+      color:var(--blue-d); cursor:pointer; user-select:none;
+    }
+    .expand-btn .arrow { transition:transform .2s; display:inline-block; }
+    .expand-btn.open .arrow { transform:rotate(180deg); }
+    .collapsible { display:none; }
+    .collapsible.open { display:block; }
     .rate-pill { display:inline-block; padding:3px 8px; border-radius:20px; font-size:11px; font-weight:800; }
     .rate-hi  { background:#e4f8f0; color:var(--green); }
     .rate-mid { background:#e7f5fd; color:var(--blue-d); }
@@ -326,7 +360,10 @@
 <div class="section" id="perf-section" style="display:none; padding-top:14px;">
   <div class="sec-hdr"><span class="sec-title">Salesman Performance</span><span class="chart-s">tap a row for full detail</span></div>
   <div class="sc-total" id="perf-total"></div>
-  <div class="seller-list" id="perf-tbl"></div>
+  <div class="expand-btn" id="perf-toggle" onclick="toggleCollapsible('perf-tbl','perf-toggle','Compare all sellers','Hide seller comparison')">
+    <span>Compare all sellers</span><span class="arrow">▾</span>
+  </div>
+  <div class="seller-list collapsible" id="perf-tbl"></div>
 </div>
 
 <div class="section" id="pend-section" style="padding-top:14px;">
@@ -455,10 +492,9 @@
     h += '<div class="section" id="ins-acts"></div>';
     h += '<div class="section" id="ins-chart"></div>';
     h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div><div id="ytd-container"><div class="state"><div class="spin"></div>Computing YTD...</div></div></div>';
-    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Cash in Hand</span></div><div class="cash-grid">'+
-      '<div class="ccard"><div class="c-ava">MC</div><div><div class="ccard-name">Mahedi Islam Chayan</div><div class="ccard-val">'+tk(data.cash.chayan)+'</div></div></div>'+
-      '<div class="ccard"><div class="c-ava">AR</div><div><div class="ccard-name">Anik Rahman</div><div class="ccard-val">'+tk(data.cash.anik)+'</div></div></div>'+
-      '</div></div>';
+    // Cash in Hand section removed from view (16 Sep 2026, Chayan asked for it
+    // gone) — the underlying data.cash figures are NOT dropped, they still
+    // feed the runway ring in the insights hero above (see renderInsights()).
     document.getElementById('dash-body').innerHTML = h;
 
     // refresh YTD, insights and P&L tiles now that expense data is here
@@ -622,10 +658,18 @@
       acts.push({lv:'bad', t:'Negative cash in hand recorded',
         s:'A negative balance means more was paid out or approved than recorded as received. Reconcile the Cash in Hand tab.'});
 
+    // Most urgent first (bad before warn), capped to the 5 that matter most
+    // so this stays a short "what to act on" list, not a long log (16 Sep
+    // 2026, Chayan asked for these to be "more relevant").
+    const lvRank = { bad:0, warn:1 };
+    acts.sort((a,b) => (lvRank[a.lv]??2) - (lvRank[b.lv]??2));
+    const shown = acts.slice(0, 5);
+    const hidden = acts.length - shown.length;
     actsEl.innerHTML = '<div class="sec-hdr"><span class="sec-title">Needs your attention</span></div>'
       + (acts.length
-          ? '<div class="acts">'+acts.map((a,i)=>'<div class="act '+a.lv+'"><div class="act-n">'+(i+1)+'</div>'
+          ? '<div class="acts">'+shown.map((a,i)=>'<div class="act '+a.lv+'"><div class="act-n">'+(i+1)+'</div>'
               +'<div class="act-t"><b>'+a.t+'</b><span>'+a.s+'</span></div></div>').join('')+'</div>'
+            + (hidden>0 ? '<div class="chart-hint">+'+hidden+' more lower-priority item'+(hidden===1?'':'s')+'</div>' : '')
           : '<div class="all-clear">Nothing urgent. Cash, collections and spend are all within range.</div>');
 
     // ── TREND CHART ──
@@ -655,7 +699,10 @@
       + '<path d="'+smoothPath(pS)+' L'+pS[n-1].x.toFixed(1)+','+base+' L'+pS[0].x.toFixed(1)+','+base+' Z" fill="url(#insFill)"/>'
       + '<path d="'+smoothPath(pN)+'" fill="none" stroke="#16b07c" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round" opacity=".9"/>'
       + '<path d="'+smoothPath(pS)+'" fill="none" stroke="#29ABE2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'
-      + '<circle cx="'+pS[n-1].x.toFixed(1)+'" cy="'+pS[n-1].y.toFixed(1)+'" r="4" fill="#29ABE2" stroke="#fff" stroke-width="2"/>';
+      + '<circle cx="'+pS[n-1].x.toFixed(1)+'" cy="'+pS[n-1].y.toFixed(1)+'" r="4" fill="#29ABE2" stroke="#fff" stroke-width="2"/>'
+      // Latest month's number sits right on the graph — Chayan asked to
+      // "put numbers in it if possible" instead of only showing on tap.
+      + '<text x="'+(pS[n-1].x-4).toFixed(1)+'" y="'+(pS[n-1].y-8).toFixed(1)+'" font-size="9.5" font-weight="800" fill="#1583b3" text-anchor="end">'+shortTk(S[n-1].sales)+'</text>';
 
     const sel = (INS_SEL!=null && INS_SEL>=0 && INS_SEL<n) ? INS_SEL : null;
     if (sel != null) {
@@ -710,6 +757,26 @@
     if (el) el.outerHTML = insChart(INS_SERIES);
   }
 
+  // FIX (16 Sep 2026): tapping the month-by-month graph opened its detail
+  // popup, but tapping anywhere ELSE on the page never closed it — Chayan
+  // reported "when I click other than this graph, the popup should be gone."
+  // A tap on a bar is handled by insTap() above (inline onclick, inside
+  // #insChart) — this only fires for taps OUTSIDE it.
+  document.addEventListener('click', function(e) {
+    if (INS_SEL != null && !e.target.closest('#insChart')) insTap(INS_SEL);
+  });
+  // Same complaint applies to the Chart.js "Sales vs Collection" tooltip:
+  // on a touch device, tapping outside the canvas fires no Chart.js event at
+  // all, so its last tooltip/hover state can stay stuck on screen. Force it
+  // to clear whenever a tap lands outside that canvas.
+  document.addEventListener('click', function(e) {
+    if (trendChart && !e.target.closest('#trendChart')) {
+      trendChart.setActiveElements([]);
+      trendChart.tooltip.setActiveElements([], {x:0,y:0});
+      trendChart.update();
+    }
+  });
+
   // ── YTD computed live from Sale Entry rows ──
   function renderYTD() {
     if (!AN_ROWS.length) return;
@@ -730,7 +797,6 @@
     const np = gp - exp;
 
     const stats = [
-      { lbl:'Sales',           val:tk(tSales),           cls:'blu' },
       { lbl:'Paid',            val:tk(tPaid),             cls:'pos' },
       { lbl:'Collection Rate', val:fmtPct(clrPct),       cls: clrPct>=0.8?'pos':'blu' },
       { lbl:'Due',             val:tk(due),               cls: due>0?'neg':'pos' },
@@ -739,9 +805,13 @@
       { lbl:'Net Pft',         val:expReady?tk(np):'—',   cls:numClass(np) },
     ];
 
+    // Total Sales pulled out of the small tile grid into its own prominent
+    // card (16 Sep 2026, Chayan asked for it in "a good card" of its own,
+    // not buried as one of seven equal-sized tiles).
     const el = document.getElementById('ytd-container');
     if (!el) return;
-    el.innerHTML = '<div class="ytd-grid">'+
+    el.innerHTML = '<div class="ytd-hero"><div class="yh-l">Total Sales (YTD)</div><div class="yh-v">'+tk(tSales)+'</div></div>'+
+      '<div class="ytd-grid">'+
       stats.map(s =>
         '<div class="ystat"><div class="ystat-l">'+s.lbl+'</div>'+
         '<div class="ystat-v '+s.cls+'">'+s.val+'</div></div>'
@@ -955,7 +1025,8 @@
       ['k-exp','k-np','k-npp'].forEach(id => setTile(id,'—',''));
     }
 
-    // chart — dark panel styling
+    // chart — light panel styling, matching the rest of the dashboard
+    // (16 Sep 2026: was styled for the dark .sc-wrap card that no longer exists)
     document.getElementById('an-state').style.display = 'none';
     const cv = document.getElementById('trendChart');
     cv.style.display = 'block';
@@ -965,21 +1036,22 @@
         labels: labels,
         datasets: [
           { type:'bar',  label:'Sales',      data:salesArr,
-            backgroundColor:'rgba(99,205,255,0.55)', hoverBackgroundColor:'rgba(99,205,255,0.85)',
+            backgroundColor:'rgba(21,131,179,0.55)', hoverBackgroundColor:'rgba(21,131,179,0.85)',
             borderRadius:4, order:2 },
           { type:'line', label:'Collection', data:paidArr,
-            borderColor:'#3fe0a8', backgroundColor:'rgba(63,224,168,0.12)',
+            borderColor:'#16b07c', backgroundColor:'rgba(22,176,124,0.12)',
             fill:true, tension:0.35, pointRadius:2, pointHoverRadius:5,
-            pointBackgroundColor:'#3fe0a8', borderWidth:2, order:1 }
+            pointBackgroundColor:'#16b07c', borderWidth:2, order:1 }
         ]
       },
       options: {
         responsive:true, maintainAspectRatio:false, animation:false,
         interaction:{ mode:'index', intersect:false },
         plugins:{
-          legend:{ labels:{ boxWidth:10, color:'rgba(255,255,255,.75)', font:{ family:'Inter', size:10, weight:'700' } } },
+          legend:{ labels:{ boxWidth:10, color:'#828791', font:{ family:'Inter', size:10, weight:'700' } } },
           tooltip:{
-            backgroundColor:'#0d1b29', titleColor:'#fff', bodyColor:'rgba(255,255,255,.8)',
+            backgroundColor:'#fff', titleColor:'#16181d', bodyColor:'#16181d',
+            borderColor:'#eceff3', borderWidth:1,
             callbacks:{
               title: items => items.length ? fullDates[items[0].dataIndex] : '',
               label: ctx => ' '+ctx.dataset.label+': '+fmt(ctx.parsed.y)+' tk'
@@ -987,8 +1059,8 @@
           }
         },
         scales:{
-          x:{ grid:{ display:false }, ticks:{ color:'rgba(255,255,255,.5)', font:{ family:'Inter', size:9 }, maxRotation:0, autoSkip:true, maxTicksLimit:8 } },
-          y:{ beginAtZero:true, grid:{ color:'rgba(255,255,255,.07)' }, ticks:{ color:'rgba(255,255,255,.5)', font:{ family:'Inter', size:9 }, callback:v => v>=1000 ? (v/1000)+'k' : v } }
+          x:{ grid:{ display:false }, ticks:{ color:'#828791', font:{ family:'Inter', size:9 }, maxRotation:0, autoSkip:true, maxTicksLimit:8 } },
+          y:{ beginAtZero:true, grid:{ color:'#eceff3' }, ticks:{ color:'#828791', font:{ family:'Inter', size:9 }, callback:v => v>=1000 ? (v/1000)+'k' : v } }
         }
       }
     });
@@ -1043,8 +1115,12 @@
         + '</div>';
     });
     document.getElementById('perf-tbl').innerHTML = listH || '<div class="pend-empty">No sales in this range.</div>';
-    document.getElementById('perf-total').innerHTML = 'Team total in range: <b>'+tk(tSales)+'</b> sales &middot; <b>'+(tSales?Math.round(tPaid/tSales*100):0)+'%</b> collected &middot; <b>'+totC.size+'</b> clients';
+    document.getElementById('perf-total').innerHTML = 'Team total in range: <b>'+tk(tSales)+'</b> sales &middot; <b>'+(tSales?Math.round(tPaid/tSales*100):0)+'%</b> collected &middot; <b>'+totC.size+'</b> clients'
+      + (window._teamLoadError
+          ? '<div class="pf-err">Target % and Incentive did not load — most likely the Salesman API script needs a fresh deploy.</div>'
+          : '');
     document.getElementById('perf-section').style.display = 'block';
+    applyCollapseState('perf-tbl','perf-toggle','Compare all sellers','Hide seller comparison');
   };
 
   (function initAnalytics() {
@@ -1092,6 +1168,31 @@
     return Math.floor((new Date() - d) / 86400000);
   }
 
+  // Row list is collapsible so the section reads as "count + value awaiting,
+  // then details on demand" (16 Sep 2026, Chayan's ask) — the two summary
+  // tiles stay visible always, the row list hides behind a button.
+  const COLLAPSE_STATE = {};
+  function toggleCollapsible(contentId, btnId, closedLabel, openLabel) {
+    const c = document.getElementById(contentId), b = document.getElementById(btnId);
+    if (!c || !b) return;
+    const nowOpen = !c.classList.contains('open');
+    c.classList.toggle('open', nowOpen);
+    b.classList.toggle('open', nowOpen);
+    const s = b.querySelector('span'); if (s) s.textContent = nowOpen ? openLabel : closedLabel;
+    COLLAPSE_STATE[contentId] = nowOpen;
+  }
+  // Re-applies whatever open/closed state the user left a section in, after
+  // a re-render — without this, every 20s live refresh would silently snap
+  // an opened section shut again while Chayan is still reading it.
+  function applyCollapseState(contentId, btnId, closedLabel, openLabel) {
+    const isOpen = !!COLLAPSE_STATE[contentId];
+    const c = document.getElementById(contentId), b = document.getElementById(btnId);
+    if (!c || !b) return;
+    c.classList.toggle('open', isOpen);
+    b.classList.toggle('open', isOpen);
+    const s = b.querySelector('span'); if (s) s.textContent = isOpen ? openLabel : closedLabel;
+  }
+
   function renderPendingOrders() {
     const el = document.getElementById('pend-wrap');
     if (!el) return;
@@ -1106,6 +1207,9 @@
     if (!PEND_SORTED.length) {
       h += '<div class="pend-empty">Nothing pending. Every note has been delivered or cleared.</div>';
     } else {
+      h += '<div class="expand-btn" id="pend-toggle" onclick="toggleCollapsible(\'pend-list\',\'pend-toggle\',\'View '+PEND_SORTED.length+' pending order'+(PEND_SORTED.length===1?'':'s')+'\',\'Hide pending orders\')">'
+        + '<span>View '+PEND_SORTED.length+' pending order'+(PEND_SORTED.length===1?'':'s')+'</span><span class="arrow">▾</span></div>';
+      h += '<div class="collapsible" id="pend-list">';
       PEND_SORTED.forEach((n,i) => {
         const age = noteAgeDays(n.ts);
         const ageTxt = age===null ? '' : (age<=0 ? 'today' : age+'d old');
@@ -1120,8 +1224,10 @@
           + '<div class="pr-age'+(age!==null && age>7 ? ' old':'')+'">'+ageTxt+'</div></div>'
           + '</div>';
       });
+      h += '</div>';
     }
     el.innerHTML = h;
+    if (PEND_SORTED.length) applyCollapseState('pend-list','pend-toggle','View '+PEND_SORTED.length+' pending order'+(PEND_SORTED.length===1?'':'s'),'Hide pending orders');
   }
 
   // ── CLIENTS INFO — full name/shop/location/zone/phone, joined by "det" ──
@@ -1179,6 +1285,15 @@
   // tracks target against. ──
   let TEAM_PERF = [], TEAM_BY_NAME = {};
   window._teamLoaded = false;
+  window._teamLoadError = false;
+  // FIX (16 Sep 2026): on a failed fetch, _teamLoaded used to stay false
+  // FOREVER, so every seller card showed "…" (the "still loading" symbol)
+  // permanently instead of an honest error — this is almost certainly what
+  // Chayan saw as "I just see three dots, why am I not getting the numbers."
+  // Most likely cause: EnkoreSalesman_API.gs hasn't been redeployed since
+  // getTeamPerformance was added — the live Web App doesn't know that action
+  // yet. Now a failure still flips _teamLoaded so the UI can tell "loading"
+  // apart from "tried and failed."
   async function loadTeamPerformance() {
     try {
       const js = await fetch(SALESMAN_AS_URL + '?action=getTeamPerformance&approverId=' + encodeURIComponent(userId) + '&t=' + Date.now()).then(r => r.json());
@@ -1188,7 +1303,12 @@
       TEAM_PERF.forEach(t => { map[String(t.name||'').trim().toLowerCase()] = t; });
       TEAM_BY_NAME = map;
       window._teamLoaded = true;
-    } catch(e) { console.error('team performance:', e); }
+      window._teamLoadError = false;
+    } catch(e) {
+      console.error('team performance:', e);
+      window._teamLoaded = true;
+      window._teamLoadError = true;
+    }
   }
 
   // ── shared popup scroll-lock — fixes "popup open, but scrolling moves the
