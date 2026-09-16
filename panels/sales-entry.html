@@ -257,15 +257,21 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .nc-fwd-btn:active{transform:scale(.97)}
 .n-add-btn{width:100%;padding:13px;background:#e7f5ff;border:2px dashed var(--blue);border-radius:var(--r);color:var(--blue);font-size:14px;font-weight:800;cursor:pointer;text-align:center;margin-bottom:12px;transition:.15s}
 .n-add-btn:active{background:#d0ebff}
-.n-summary-btn{width:100%;padding:11px;background:var(--card);border:1.5px solid var(--blue);border-radius:var(--r);color:var(--blue);font-size:13px;font-weight:800;cursor:pointer;text-align:center;margin-bottom:12px;transition:.15s}
+.n-summary-btn{width:100%;display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--card);border:1.5px solid var(--blue);border-radius:var(--r);cursor:pointer;text-align:left;margin-bottom:12px;transition:.15s}
 .n-summary-btn:active{background:#e7f5ff}
+.ps-btn-icon{font-size:22px;flex-shrink:0}
+.ps-btn-text{flex:1;display:flex;flex-direction:column;min-width:0}
+.ps-btn-title{font-size:14px;font-weight:800;color:var(--blue)}
+.ps-btn-sub{font-size:12px;font-weight:700;color:var(--muted);margin-top:2px}
+.ps-btn-arrow{font-size:20px;color:var(--border);flex-shrink:0}
 .ps-total-bar{display:flex;justify-content:space-between;align-items:center;background:var(--gbg);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-weight:800}
 .ps-total-bar span:last-child{color:var(--g);font-size:16px}
 .ps-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
 .ps-row:last-child{border-bottom:none}
 .ps-name{font-size:13px;font-weight:700;flex:1}
-.ps-qty{font-size:11px;color:var(--muted);margin-top:2px}
-.ps-val{font-size:13px;font-weight:800;color:var(--blue);white-space:nowrap}
+.ps-right{text-align:right;flex-shrink:0}
+.ps-qty-big{font-size:15px;font-weight:900;color:var(--orange)}
+.ps-val{font-size:11px;color:var(--muted);margin-top:2px}
 .n-empty{text-align:center;padding:40px 20px;color:var(--muted)}
 .n-empty-icon{font-size:38px;margin-bottom:10px}
 .n-empty-txt{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
@@ -524,8 +530,14 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   <!-- ===== ORDER NOTES ===== -->
   <div id="notesSection">
     <button class="n-add-btn" onclick="openNoteDrawer()">＋ New Order Note</button>
-    <button class="n-summary-btn" onclick="openProdSummary()">📦 Product Summary</button>
-    <div style="font-size:13px;font-weight:700;color:var(--muted);margin:6px 0 10px">⏳ <span id="nst-pending">—</span> Pending <span style="color:var(--border)">·</span> Total <span id="nst-total">৳0</span></div>
+    <button class="n-summary-btn" onclick="openProdSummary()">
+      <span class="ps-btn-icon">📦</span>
+      <span class="ps-btn-text">
+        <span class="ps-btn-title">Product Summary</span>
+        <span class="ps-btn-sub">⏳ <span id="nst-pending">—</span> Pending · Total <span id="nst-total">৳0</span></span>
+      </span>
+      <span class="ps-btn-arrow">›</span>
+    </button>
     <div id="noteCards"></div>
   </div>
 
@@ -2571,14 +2583,19 @@ function buildProductSummary() {
       grandVal += val;
     });
   });
+  // Sorted by qty (pieces to deliver) descending — that's the number sir acts
+  // on; summing qty ACROSS different products (grandQty) mixes units (bottles
+  // + sprays + sealants of different sizes) and isn't a meaningful figure, so
+  // it's deliberately not shown anywhere — only per-product qty, and the
+  // product count, are.
   const rows = Object.keys(byProduct)
     .map(name => ({ name, qty: byProduct[name].qty, val: byProduct[name].val }))
-    .sort((a, b) => b.val - a.val);
+    .sort((a, b) => b.qty - a.qty);
   return { rows, grandVal, grandQty };
 }
 
 function openProdSummary() {
-  const { rows, grandVal, grandQty } = buildProductSummary();
+  const { rows, grandVal } = buildProductSummary();
   document.getElementById('psSub').textContent =
     allNotes.length + ' pending note' + (allNotes.length === 1 ? '' : 's') + ' · ' + rows.length + ' product' + (rows.length === 1 ? '' : 's');
 
@@ -2586,11 +2603,18 @@ function openProdSummary() {
   if (!rows.length) {
     body.innerHTML = `<div class="n-empty"><div class="n-empty-icon">📦</div><div class="n-empty-txt">No pending products</div></div>`;
   } else {
-    const totalBar = `<div class="ps-total-bar"><span>Total (${grandQty} pcs)</span><span>৳${grandVal.toLocaleString('en-IN')}</span></div>`;
+    // Piece count is the number sir needs for delivery — shown big, first.
+    // Value stays underneath, small, for context only. No combined piece
+    // total (meaningless across different products) — total is value only,
+    // alongside how many distinct products are involved.
+    const totalBar = `<div class="ps-total-bar"><span>${rows.length} Products</span><span>৳${grandVal.toLocaleString('en-IN')}</span></div>`;
     const list = rows.map(r => `
       <div class="ps-row">
-        <div><div class="ps-name">${r.name}</div><div class="ps-qty">${r.qty} pcs</div></div>
-        <div class="ps-val">৳${r.val.toLocaleString('en-IN')}</div>
+        <div class="ps-name">${r.name}</div>
+        <div class="ps-right">
+          <div class="ps-qty-big">${r.qty} pcs</div>
+          <div class="ps-val">৳${r.val.toLocaleString('en-IN')}</div>
+        </div>
       </div>`).join('');
     body.innerHTML = totalBar + list;
   }
