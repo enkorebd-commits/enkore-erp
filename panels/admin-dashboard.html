@@ -1091,7 +1091,11 @@
       const o = by[k];
       o.clients.forEach(c => totC.add(c));
       const t = TEAM_BY_NAME[k.trim().toLowerCase()];
-      const achv = t ? (t.target > 0 ? Math.round(t.achievementPct) + '%' : 'No target') : (window._teamLoaded ? '—' : '…');
+      // Achieved shows the actual taka sold this month (t.mSales) — the number
+      // itself, not just the percentage of target it represents (16 Sep 2026,
+      // Chayan asked "what amount they have achieved already").
+      const achieved = t ? tk(t.mSales) : (window._teamLoaded ? '—' : '…');
+      const achv = t ? (t.target > 0 ? tk(t.target)+' ('+Math.round(t.achievementPct)+'%)' : 'No target') : (window._teamLoaded ? '—' : '…');
       const achvCls = t && t.target > 0 ? (t.achievementPct >= 100 ? 'pos-t' : (t.achievementPct < 70 ? 'neg-t' : '')) : '';
       const inc = t ? tk(t.finalCommission) : (window._teamLoaded ? '—' : '…');
       const due2 = o.sales - o.paid;
@@ -1108,6 +1112,7 @@
         + '<div class="pf-stat"><div class="l">Due</div><div class="v '+dueCls+'">'+tk(due2)+'</div></div>'
         + '<div class="pf-stat"><div class="l">Clients</div><div class="v">'+o.clients.size+'</div></div>'
         + '<div class="pf-stat"><div class="l">Collection</div><div class="v '+collCls+'">'+(collPct===null?'—':collPct+'%')+'</div></div>'
+        + '<div class="pf-stat"><div class="l">Achieved (mo.)</div><div class="v">'+achieved+'</div></div>'
         + '<div class="pf-stat"><div class="l">Target (mo.)</div><div class="v '+achvCls+'">'+achv+'</div></div>'
         + '<div class="pf-stat"><div class="l">Incentive (mo.)</div><div class="v">'+inc+'</div></div>'
         + '</div>'
