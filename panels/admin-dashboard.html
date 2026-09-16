@@ -248,6 +248,37 @@
       white-space:nowrap; z-index:60; transition:margin-top .18s ease; pointer-events:none; }
     #ptrIndicator .ptr-spin { width:15px; height:15px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; display:inline-block; }
     #ptrIndicator.ptr-loading .ptr-spin { animation:spin .7s linear infinite; }
+
+    /* ── PENDING ORDERS (Due Deliveries) ── */
+    .pend-wrap { background:var(--card); border-radius:var(--r); box-shadow:var(--sh); padding:14px; margin-bottom:16px; }
+    .pend-sum { display:flex; gap:8px; margin-bottom:10px; }
+    .pend-sum .ptile { flex:1; background:#fff4e2; border-radius:12px; padding:9px 10px; }
+    .pend-sum .ptile.val { background:#e7f5fd; }
+    .pend-sum .pl { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--sub2); }
+    .pend-sum .pv { font-size:15px; font-weight:800; margin-top:2px; }
+    .pend-row { display:flex; align-items:center; gap:10px; padding:10px 4px; border-bottom:1px solid var(--border); cursor:pointer; }
+    .pend-row:last-child { border-bottom:none; }
+    .pend-row .pr-ava { width:28px; height:28px; border-radius:50%; flex-shrink:0; background:#fff4e2; color:#b7791f; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; }
+    .pend-row .pr-main { flex:1; min-width:0; }
+    .pend-row .pr-client { font-size:13px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .pend-row .pr-sub { font-size:11px; color:var(--sub2); margin-top:2px; }
+    .pend-row .pr-val { font-size:13px; font-weight:800; color:var(--blue-d); flex-shrink:0; white-space:nowrap; }
+    .pend-row .pr-age { font-size:9.5px; font-weight:700; margin-top:2px; text-align:right; color:var(--sub2); }
+    .pend-row .pr-age.old { color:var(--red); }
+    .pend-empty { text-align:center; padding:20px; color:var(--sub2); font-size:12.5px; }
+
+    /* ── popup (back-button contract, CLAUDE.md §6.1) ── */
+    .ov { position:fixed; inset:0; background:rgba(15,20,30,.55); z-index:500; display:flex; align-items:flex-end; }
+    .ov-sheet { background:#fff; width:100%; max-height:86vh; overflow-y:auto; border-radius:18px 18px 0 0; padding:16px 16px 26px; }
+    .ov-hd { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .ov-title { font-size:15px; font-weight:800; max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .ov-x { width:28px; height:28px; border-radius:50%; background:#f1f3f6; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--sub2); cursor:pointer; flex-shrink:0; }
+    .ov-row { display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:7px 0; border-bottom:1px solid var(--border); }
+    .ov-row:last-child { border-bottom:none; }
+    .ov-row .k { color:var(--sub2); font-weight:600; flex-shrink:0; }
+    .ov-row .v { font-weight:700; text-align:right; }
+    .ov-prod { background:var(--bg); border-radius:10px; padding:8px 10px; margin-top:8px; font-size:12px; }
+    .ov-prod-line { display:flex; justify-content:space-between; padding:3px 0; }
   </style>
 </head>
 <body>
@@ -297,6 +328,20 @@
   <div class="tbl-card"><div class="tbl-scroll">
     <table class="perf-tbl" id="perf-tbl"></table>
   </div></div>
+</div>
+
+<div class="section" id="pend-section" style="padding-top:14px;">
+  <div class="sec-hdr"><span class="sec-title">Due Deliveries (Pending Orders)</span></div>
+  <div class="pend-wrap" id="pend-wrap"><div class="state"><div class="spin"></div>Loading pending orders...</div></div>
+</div>
+
+<!-- Pending-order detail popup. Full 3-part back-button contract below:
+     open -> parent.__erpOv(); close-by-tap -> parent.__erpOvClose();
+     window.__erpHandleBack closes it on Android Back. This panel had zero
+     popups before (see KNOWN-BUGS.md item B) — this is the first one, done
+     to the contract on purpose. -->
+<div class="ov" id="pendOv" style="display:none" onclick="if(event.target===this) closePendDetail()">
+  <div class="ov-sheet" id="pendSheet"></div>
 </div>
 
 <script>
@@ -1000,11 +1045,114 @@
     document.getElementById('de-show').textContent = fmtDate(now);
   })();
 
-  // ── STALE-WHILE-REVALIDATE (1-hour freshness) ──
-  // Show the last loaded data instantly; only pull fresh live data (with a
-  // minimal top bar) when the cache is older than one hour.
+  // ── PENDING ORDERS (Due Deliveries) — every seller's Sales Notes, not just one ──
+  // getOrderNotes in the Sales Note Apps Script only ever filtered by seller_id,
+  // so nobody but the seller who wrote a note could see it (Chayan's report,
+  // 16 Sep 2026). getAllOrderNotes is the new read-only action that removes
+  // that filter; this panel is the first caller. 'Forwarded' = already turned
+  // into a real sale in Sale Entry, so only 'Pending' counts as still due.
+  const NOTES_AS_URL = 'https://script.google.com/macros/s/AKfycbzrSZWi3slmIrFl-OtstzU2GOBtQaYg0Ufdk9s5x0whmaLcifXd3wmBaEDqEcZCW-MHmA/exec';
+  let PEND_NOTES = [], PEND_SORTED = [];
+  window._pendLoaded = false;
+
+  async function loadPendingOrders() {
+    try {
+      const js = await fetch(NOTES_AS_URL + '?action=getAllOrderNotes&t=' + Date.now()).then(r => r.json());
+      if (!js || !js.success) throw new Error((js && js.error) || 'bad response');
+      PEND_NOTES = (js.notes || []).filter(n => n.status === 'Pending');
+      window._pendLoaded = true;
+      renderPendingOrders();
+    } catch(e) {
+      console.error('pending orders:', e);
+      if (!window._pendLoaded) {
+        const el = document.getElementById('pend-wrap');
+        if (el) el.innerHTML = '<div class="state">⚠️ Could not load pending orders.</div>';
+      }
+    }
+  }
+
+  function noteAgeDays(ts) {
+    const d = new Date(String(ts||'').trim().replace(' ','T'));
+    if (isNaN(d.getTime())) return null;
+    return Math.floor((new Date() - d) / 86400000);
+  }
+
+  function renderPendingOrders() {
+    const el = document.getElementById('pend-wrap');
+    if (!el) return;
+    const totalVal = PEND_NOTES.reduce((t,n) => t + (Number(n.subtotal)||0), 0);
+    PEND_SORTED = PEND_NOTES.slice().sort((a,b) => String(a.ts).localeCompare(String(b.ts))); // oldest first = most overdue first
+
+    let h = '<div class="pend-sum">'
+      + '<div class="ptile"><div class="pl">Pending Orders</div><div class="pv">'+PEND_NOTES.length+'</div></div>'
+      + '<div class="ptile val"><div class="pl">Value Awaiting Delivery</div><div class="pv">'+tk(totalVal)+'</div></div>'
+      + '</div>';
+
+    if (!PEND_SORTED.length) {
+      h += '<div class="pend-empty">Nothing pending. Every note has been delivered or cleared.</div>';
+    } else {
+      PEND_SORTED.forEach((n,i) => {
+        const age = noteAgeDays(n.ts);
+        const ageTxt = age===null ? '' : (age<=0 ? 'today' : age+'d old');
+        const itemN = (n.products||[]).length;
+        h += '<div class="pend-row" onclick="openPendDetail('+i+')">'
+          + '<div class="pr-ava">'+initials(n.sellerName||n.seller||'?')+'</div>'
+          + '<div class="pr-main"><div class="pr-client">'+(n.client||'Unknown client')+'</div>'
+          + '<div class="pr-sub">'+(n.sellerName||'Unassigned')+' · '+itemN+' item'+(itemN===1?'':'s')+'</div></div>'
+          + '<div><div class="pr-val">'+tk(n.subtotal)+'</div>'
+          + '<div class="pr-age'+(age!==null && age>7 ? ' old':'')+'">'+ageTxt+'</div></div>'
+          + '</div>';
+      });
+    }
+    el.innerHTML = h;
+  }
+
+  // ── Popup — full 3-part back-button contract ──
+  function openPendDetail(i) {
+    const n = PEND_SORTED[i];
+    if (!n) return;
+    const prodHtml = '<div class="ov-prod">' + (n.products||[]).map(p =>
+      '<div class="ov-prod-line"><span>'+p.qty+' × '+p.product+(p.gift==='YES'?' (gift)':'')+'</span><span>'+fmt(p.qty*p.price - p.discount)+' tk</span></div>'
+    ).join('') + '</div>';
+    document.getElementById('pendSheet').innerHTML =
+        '<div class="ov-hd"><span class="ov-title">'+(n.client||'Unknown client')+'</span>'
+      + '<span class="ov-x" onclick="closePendDetail()">✕</span></div>'
+      + '<div class="ov-row"><span class="k">Seller</span><span class="v">'+(n.sellerName||'Unassigned')+'</span></div>'
+      + '<div class="ov-row"><span class="k">Logged</span><span class="v">'+(n.ts||'—')+'</span></div>'
+      + '<div class="ov-row"><span class="k">Deadline</span><span class="v">'+(n.deadline||'—')+'</span></div>'
+      + '<div class="ov-row"><span class="k">Value</span><span class="v">'+tk(n.subtotal)+'</span></div>'
+      + (n.comment ? '<div class="ov-row"><span class="k">Comment</span><span class="v">'+n.comment+'</span></div>' : '')
+      + prodHtml;
+    document.getElementById('pendOv').style.display = 'flex';
+    parent.__erpOv();                 // 1. announce the popup opened
+  }
+  function closePendDetail() {
+    document.getElementById('pendOv').style.display = 'none';
+    parent.__erpOvClose();            // 2. announce it closed by tap
+  }
+  // 3. let Android Back close it — must close only the topmost popup and
+  // return true, per CLAUDE.md §6.1 (this panel had none of these before).
+  window.__erpHandleBack = function () {
+    const ov = document.getElementById('pendOv');
+    if (ov && ov.style.display !== 'none') { ov.style.display = 'none'; return true; }
+    return false;
+  };
+
+  // ── LIVE DASHBOARD (fixed 16 Sep 2026) ──
+  // Old behaviour only re-pulled live data on a brand-new cache or a fresh
+  // login, so a phone left signed in for days kept showing days-old numbers
+  // while another device open right after login showed current ones — the
+  // "numbers don't match" bug. Fix: paint the cache instantly for zero
+  // flicker, but ALWAYS pull live data the moment the panel opens, then keep
+  // pulling every LIVE_REFRESH_MS while the panel stays on screen, paused
+  // when the tab/app is in the background. This is the fastest safe cadence
+  // against Google's gviz endpoint and the Sales Note Apps Script — true
+  // instant push isn't possible off a Google Sheet without a bigger backend
+  // change (e.g. a websocket relay), so this is the practical ceiling.
   const DASH_CACHE_KEY = 'enkore_dash_cache_v1';
+  const LIVE_REFRESH_MS = 20000; // 20s — sir asked for "every moment"; this is as fast as it's safe to poll
   let _dashRefreshing = false;
+  let _liveTimer = null;
 
   function saveDashCache() {
     if (!window._financeLoaded || !window._anLoaded) return; // cache only a complete load
@@ -1035,27 +1183,34 @@
   async function refreshDashLive() {
     if (_dashRefreshing) return;
     _dashRefreshing = true;
-    await Promise.allSettled([loadFinance(), loadAnalytics()]);
+    await Promise.allSettled([loadFinance(), loadAnalytics(), loadPendingOrders()]);
     saveDashCache();
     _dashRefreshing = false;
   }
 
   (function startDashboard() {
-    const loginToken = sessionStorage.getItem('erp_login_token') || '';
-    const doneToken  = sessionStorage.getItem('dash_refreshed_token') || '';
-    const ts = hydrateDashCache();
+    hydrateDashCache();
     // Reveal now — cached content (or the first-load spinner) is painted in one step.
     document.body.classList.add('booted');
-    if (ts === null) {
-      refreshDashLive();                              // first ever load — full-screen loaders showing
-    } else if (loginToken && loginToken !== doneToken) {
-      forceRefresh();                                 // fresh login — auto-refresh once, cached shown meanwhile
-    }
-    // else (same session, cache present): show as-is; pull down for the latest
-    if (loginToken) sessionStorage.setItem('dash_refreshed_token', loginToken);
+    refreshDashLive();   // always pull live data on open, regardless of cache age
+    startLiveRefresh();
   })();
   // Safety net: never leave the page cloaked if something above throws.
   window.addEventListener('load', function(){ document.body.classList.add('booted'); });
+
+  function startLiveRefresh() {
+    if (_liveTimer) return;
+    _liveTimer = setInterval(refreshDashLive, LIVE_REFRESH_MS);
+  }
+  function stopLiveRefresh() {
+    if (_liveTimer) { clearInterval(_liveTimer); _liveTimer = null; }
+  }
+  // Don't poll a backgrounded tab/app — saves the phone's data and battery —
+  // but refresh immediately and resume polling the moment it's looked at again.
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) { stopLiveRefresh(); }
+    else { refreshDashLive(); startLiveRefresh(); }
+  });
 
   // ── PULL TO REFRESH / AUTO REFRESH (manual + on login) ──
   async function forceRefresh() {
