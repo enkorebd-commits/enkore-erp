@@ -9,7 +9,7 @@
   <style>
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     :root {
-      --blue:    #29ABE2;
+      --blue:    #1E9DD6;
       --blue-d:  #1583b3;
       --green:   #16b07c;
       --red:     #ef4444;
@@ -22,28 +22,41 @@
       --sh:      0 1px 3px rgba(18,22,33,.06), 0 0 1px rgba(18,22,33,.08);
     }
     html { background:#f4f6fa; }
+    /* 20 Sep 2026: root cause of "looks weak/dumb on desktop, fine on
+       mobile" — every section here is a direct child of body with no width
+       cap, so on a wide laptop screen the whole dashboard (including the
+       month-by-month SVG chart, which scales to its container's width)
+       stretches edge to edge, turning a normally-proportioned line chart
+       and card grid into something flat and thin. Capping body at a phone-
+       app width and centering it, same idea as sales-entry.html's own
+       560px cap, keeps every card and chart at its designed proportions on
+       any screen size, phone or desktop, instead of two different looks. */
     body {
       font-family:'Inter',sans-serif;
       background:var(--bg);
       color:var(--text);
       overflow-y:auto;
       min-height:100vh;
+      max-width:600px;
+      margin:0 auto;
+      box-shadow:0 0 24px rgba(18,22,33,.06);
       padding-bottom:28px;
       /* Cloak until the cached data is painted, so opening the panel shows the
          content in one step instead of flashing the loading placeholders. */
       visibility:hidden;
     }
+    @media(min-width:601px){ html { background:#e4e7ec; } }
     body.booted { visibility:visible; }
 
     /* ── greeting ── */
     /* 20 Sep 2026, 3rd pass: Chayan checked the live site (enkorebd.com) —
        it's flat solid color, no gradients anywhere. Confirmed direction:
-       keep brand Deep Blue (#1A3A8F) + Black (#09090D) exactly, no red/
+       keep brand Logo Blue (#1E9DD6) + Black (#09090D) exactly, no red/
        orange, but get "sporty/GoPro" energy from bold angular shapes
        instead of a smooth gradient blend. Flat blue field + a black
        diagonal speed-stripe wedge in the corner, no blur glows. */
     .greeting {
-      background:#1A3A8F;
+      background:#1E9DD6;
       padding:18px 18px 24px;
       color:#fff; position:relative; overflow:hidden;
     }
@@ -68,10 +81,10 @@
        across the two hero surfaces, bold contrast instead of a gradient. */
     .hero { background:#09090D;
       border-radius:var(--r); padding:16px; color:#fff; margin-bottom:12px; position:relative; overflow:hidden;
-      box-shadow:0 8px 26px rgba(9,9,13,.35); border:1px solid rgba(26,58,143,.45); }
+      box-shadow:0 8px 26px rgba(9,9,13,.35); border:1px solid rgba(30,157,214,.45); }
     .hero::before {
       content:''; position:absolute; right:0; top:0; width:120px; height:120px;
-      background:#1A3A8F; clip-path:polygon(100% 0, 100% 60%, 35% 0);
+      background:#1E9DD6; clip-path:polygon(100% 0, 100% 60%, 35% 0);
       pointer-events:none;
     }
     .hero-row, .hero-note, .hero-foot { position:relative; }
@@ -147,9 +160,9 @@
 
     /* ── compact YTD stats ── */
     .ytd-hero {
-      background:#1A3A8F; border-radius:14px; position:relative; overflow:hidden;
+      background:#1E9DD6; border-radius:14px; position:relative; overflow:hidden;
       padding:14px 16px; margin-bottom:8px; color:#fff;
-      box-shadow:0 6px 16px rgba(26,58,143,.32);
+      box-shadow:0 6px 16px rgba(30,157,214,.32);
     }
     .ytd-hero::after {
       content:''; position:absolute; right:0; top:0; width:46px; height:46px;
@@ -289,7 +302,7 @@
       padding:11px; margin-bottom:12px; font-size:12.5px; font-weight:800;
       color:#fff; cursor:pointer; user-select:none;
     }
-    .expand-btn.blue  { background:#1A3A8F; }
+    .expand-btn.blue  { background:#1E9DD6; }
     .expand-btn.amber { background:#b7791f; }
     .expand-btn:active { filter:brightness(1.06); }
     .expand-btn .arrow { transition:transform .2s; display:inline-block; }
@@ -427,6 +440,17 @@
 <div class="section" id="pend-section" style="padding-top:14px;">
   <div class="sec-hdr"><span class="sec-title">Due Deliveries (Pending Orders)</span></div>
   <div class="pend-wrap" id="pend-wrap"><div class="state"><div class="spin"></div>Loading pending orders...</div></div>
+</div>
+
+<!-- Product Demand — total qty per product across every still-Pending Sales
+     Note, whole team. Chayan's ask (20 Sep 2026): each salesman can already
+     see their own per-product totals in the Sales Panel, but the admin
+     dashboard never aggregated it across everyone. Same PEND_NOTES data
+     Due Deliveries already fetches, just grouped by product instead of by
+     note, so no new backend call or Apps Script redeploy needed. -->
+<div class="section" id="demand-section" style="padding-top:14px;">
+  <div class="sec-hdr"><span class="sec-title">Product Demand (Pending Orders)</span></div>
+  <div class="pend-wrap" id="demand-wrap"><div class="state"><div class="spin"></div>Loading product demand...</div></div>
 </div>
 
 <!-- Pending-order detail popup. Full 3-part back-button contract below:
@@ -1184,16 +1208,17 @@
     document.getElementById('perf-tbl').innerHTML = listH || '<div class="pend-empty">No sales in this range.</div>';
     // Cards instead of a text line (16 Sep 2026, 2nd pass) — Chayan: "you
     // don't have to make a line, rather you can make boxes or cards."
-    document.getElementById('perf-total').innerHTML = '<div class="team-tiles">'
-        + '<div class="gtile"><div class="gtile-l">Sales</div><div class="gtile-v">'+tk(tSales)+'</div></div>'
-        + '<div class="gtile"><div class="gtile-l">Collected</div><div class="gtile-v">'+(tSales?Math.round(tPaid/tSales*100):0)+'%</div></div>'
-        + '<div class="gtile"><div class="gtile-l">Clients</div><div class="gtile-v">'+totC.size+'</div></div>'
+    // Sales and Collected% used to repeat here (20 Sep 2026: Chayan flagged
+    // this as duplicate — those two numbers are already in the Sales vs
+    // Collection grid above). This card now shows only what's unique to
+    // Team Performance: distinct client count, tagged with the same date
+    // range so it doesn't read as a mystery number on its own.
+    document.getElementById('perf-total').innerHTML = '<div class="team-tiles" style="grid-template-columns:1fr;">'
+        + '<div class="gtile"><div class="gtile-l">Clients ('+document.getElementById('ds-show').textContent+' &ndash; '+document.getElementById('de-show').textContent+')</div><div class="gtile-v">'+totC.size+'</div></div>'
       + '</div>'
-      // "Incentive (100%)" is what a seller would earn if they hit 100% of
-      // target this month, NOT a guaranteed payout — Chayan: "it seems like
-      // the salesman is gonna get that money whatever happens, which is not
-      // true." Actual gated payout is in Full Detail (Incentive Earned).
-      + '<div class="pf-note">Incentive (100%) is what a seller earns only if 100% of target is met this month. Actual payout is under Full Detail &rsaquo; Incentive Earned.</div>'
+      // Reworded (20 Sep 2026) — Chayan said the old wording was a line he
+      // "didn't know what it means." Shorter, states the number plainly.
+      + '<div class="pf-note">Incentive (100%) shown per seller below is what they earn ONLY if they hit 100% of this month\'s target, not money already earned.</div>'
       + (window._teamLoadError
           ? (window._teamAuthError
               ? '<div class="pf-err">Target % and Incentive did not load — this login is not on the Salesman API approver list, ask Chayan to add it in the Access sheet.</div>'
@@ -1308,6 +1333,47 @@
     }
     el.innerHTML = h;
     if (PEND_SORTED.length) applyCollapseState('pend-list','pend-toggle','View '+PEND_SORTED.length+' pending order'+(PEND_SORTED.length===1?'':'s'),'Hide pending orders');
+    renderProductDemand();
+  }
+
+  // ── PRODUCT DEMAND — total qty per product across every still-Pending
+  // Sales Note, whole team, not just one salesman (Chayan's ask, 20 Sep
+  // 2026). Reuses PEND_NOTES already fetched by loadPendingOrders above,
+  // so this needs no new fetch and no Apps Script change — pure
+  // aggregation of data the dashboard already has in memory.
+  function renderProductDemand() {
+    const el = document.getElementById('demand-wrap');
+    if (!el) return;
+    const byProduct = {};
+    PEND_NOTES.forEach(n => {
+      (n.products || []).forEach(p => {
+        const key = String(p.product || 'Unknown').trim() || 'Unknown';
+        if (!byProduct[key]) byProduct[key] = { product: key, qty: 0, orders: 0, value: 0 };
+        byProduct[key].qty   += Number(p.qty) || 0;
+        byProduct[key].value += (Number(p.qty) || 0) * (Number(p.price) || 0) - (Number(p.discount) || 0);
+        byProduct[key].orders++;
+      });
+    });
+    const rows = Object.values(byProduct).sort((a, b) => b.qty - a.qty);
+
+    if (!rows.length) {
+      el.innerHTML = '<div class="pend-empty">No pending orders, nothing to plan production or stock for right now.</div>';
+      return;
+    }
+    let h = '<div class="expand-btn blue" id="demand-toggle" onclick="toggleCollapsible(\'demand-list\',\'demand-toggle\',\'View '+rows.length+' product'+(rows.length===1?'':'s')+'\',\'Hide product demand\')">'
+      + '<span>View '+rows.length+' product'+(rows.length===1?'':'s')+'</span><span class="arrow">▾</span></div>';
+    h += '<div class="collapsible" id="demand-list">';
+    rows.forEach(r => {
+      h += '<div class="pcard"><div class="pcard-top"><span class="pcard-name">'+r.product
+        + '<span class="pcard-sub">'+r.orders+' pending order'+(r.orders===1?'':'s')+'</span></span></div>'
+        + '<div class="pcard-chips">'
+        + '<div class="pchip pchip-b"><div class="pchip-lbl">Total Qty</div><div class="pchip-val">'+r.qty+'</div></div>'
+        + '<div class="pchip pchip-p"><div class="pchip-lbl">Value</div><div class="pchip-val">'+tk(r.value)+'</div></div>'
+        + '</div></div>';
+    });
+    h += '</div>';
+    el.innerHTML = h;
+    applyCollapseState('demand-list','demand-toggle','View '+rows.length+' product'+(rows.length===1?'':'s'),'Hide product demand');
   }
 
   // ── CLIENTS INFO — full name/shop/location/zone/phone, joined by "det" ──
