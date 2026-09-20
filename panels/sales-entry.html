@@ -494,6 +494,16 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
         <div class="fl">Comment</div>
         <input type="text" class="fi" id="comment" placeholder="Optional note…">
       </div>
+      <div class="fg">
+        <div class="fl">Courier</div>
+        <select class="fi" id="courier">
+          <option value="">None — pickup / no delivery</option>
+          <option value="Steadfast">Steadfast — books automatically</option>
+          <option value="Pathao">Pathao — log only</option>
+          <option value="RedX">RedX — log only</option>
+          <option value="Other">Other courier — log only</option>
+        </select>
+      </div>
       <!-- Hidden — user info still tracked for submission, just not shown as a card -->
       <div style="display:none">
         <span id="saleUserName">—</span>
@@ -2410,6 +2420,7 @@ async function submitEntry() {
       const sellerId = u.id   || '';
       const cashById = u.id   || '';
       const comment  = document.getElementById('comment').value;
+      const courier  = document.getElementById('courier').value;
       const prev     = selClient.due || 0;
       const totalFinal = prods.reduce((s,p) => s + Math.max(0, p.rate * p.qty - p.discount), 0);
       newDueVal = totalFinal + prev - paid;
@@ -2421,7 +2432,7 @@ async function submitEntry() {
       params = {
         action: 'addSaleEntry', submitId, date: dateStr, clientInfo: selClient.det,
         products: JSON.stringify(prods), paid, seller, cashReceivedBy: cashBy,
-        sellerId, cashById, comment
+        sellerId, cashById, comment, courier
       };
     } else {
       const paid     = +document.getElementById('pPaid').value || 0;
@@ -2487,6 +2498,7 @@ function resetForm() {
   document.getElementById('prodRows').innerHTML = '';
   prodRowCount = 0; addProdRow();
   ['paid','comment','pPaid','pComment'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('courier').value = '';
   window._pendingNoteId = null;
   calcAll(); calcPay();
 }
