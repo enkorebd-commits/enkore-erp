@@ -87,6 +87,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 #ptrIndicator.ptr-loading .ptr-spin{animation:ptr-rot .6s linear infinite}
 @keyframes ptr-rot{to{transform:rotate(360deg)}}
 select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer}
+.courier-select{font-weight:700;transition:border-color .15s,background-color .15s,color .15s}
+.courier-select.c-steadfast{border-color:var(--blue);background:#eaf3fb;color:var(--blue)}
+.courier-select.c-pathao{border-color:var(--orange);background:#fdf2e6;color:#b9600f}
+.courier-select.c-redx{border-color:var(--red);background:#fcebeb;color:var(--red)}
+.courier-select.c-other{border-color:var(--muted);background:#f1f2f3;color:#495057}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* QTY (main) */
@@ -496,7 +501,7 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
       </div>
       <div class="fg">
         <div class="fl">Courier</div>
-        <select class="fi" id="courier">
+        <select class="fi courier-select" id="courier" onchange="styleCourierSelect(this)">
           <option value="">None — pickup / no delivery</option>
           <option value="Steadfast">Steadfast — books automatically</option>
           <option value="Pathao">Pathao — log only</option>
@@ -2494,11 +2499,19 @@ async function submitEntry() {
 
 function resetBtn(btn, label) { btn.disabled = false; btn.innerHTML = label; }
 
+// Colors the Courier dropdown by its selected value (blue=Steadfast, orange=Pathao,
+// red=RedX, grey=Other) so a salesman can see at a glance which courier is picked
+// instead of missing a plain uncolored dropdown. See .courier-select CSS rules.
+function styleCourierSelect(el) {
+  el.className = 'fi courier-select' + (el.value ? ' c-' + el.value.toLowerCase() : '');
+}
+
 function resetForm() {
   document.getElementById('prodRows').innerHTML = '';
   prodRowCount = 0; addProdRow();
   ['paid','comment','pPaid','pComment'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('courier').value = '';
+  styleCourierSelect(document.getElementById('courier'));
   window._pendingNoteId = null;
   calcAll(); calcPay();
 }

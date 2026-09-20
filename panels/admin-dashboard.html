@@ -36,36 +36,42 @@
     body.booted { visibility:visible; }
 
     /* ── greeting ── */
-    /* Actual brand colors this time (16 Sep 2026, 2nd pass): Enkore's own
-       Deep Blue (#1A3A8F) and Black (#09090D), per [[enkore_brand]] — the
-       Round 4 gradient was blue-only navy shades, Chayan asked specifically
-       for black+blue like the logo, not another shade of blue. */
+    /* 20 Sep 2026, 3rd pass: Chayan checked the live site (enkorebd.com) —
+       it's flat solid color, no gradients anywhere. Confirmed direction:
+       keep brand Deep Blue (#1A3A8F) + Black (#09090D) exactly, no red/
+       orange, but get "sporty/GoPro" energy from bold angular shapes
+       instead of a smooth gradient blend. Flat blue field + a black
+       diagonal speed-stripe wedge in the corner, no blur glows. */
     .greeting {
-      background:linear-gradient(135deg,#09090D 0%,#111a3d 45%,#1A3A8F 100%);
+      background:#1A3A8F;
       padding:18px 18px 24px;
       color:#fff; position:relative; overflow:hidden;
     }
     .greeting::after {
-      content:''; position:absolute; right:-50px; top:-60px;
-      width:210px; height:210px; border-radius:50%;
-      background:radial-gradient(circle, rgba(99,205,255,.18) 0%, rgba(99,205,255,0) 70%);
+      content:''; position:absolute; right:0; top:0;
+      width:130px; height:130px;
+      background:#09090D;
+      clip-path:polygon(100% 0, 100% 65%, 30% 0);
     }
     .greeting::before {
-      content:''; position:absolute; left:-30px; bottom:-70px;
-      width:160px; height:160px; border-radius:50%;
-      background:radial-gradient(circle, rgba(41,171,226,.14) 0%, rgba(41,171,226,0) 70%);
+      content:''; position:absolute; left:-26px; bottom:-40px;
+      width:120px; height:120px; border-radius:50%;
+      background:rgba(255,255,255,.06);
     }
     .g-date  { font-size:11px; color:rgba(255,255,255,.6); margin-bottom:4px; font-weight:600; letter-spacing:.3px; position:relative; }
     .g-name  { font-size:21px; font-weight:800; line-height:1.2; letter-spacing:-.3px; position:relative; }
     .g-quote { font-size:11px; color:rgba(255,255,255,.5); font-style:italic; margin-top:6px; line-height:1.5; max-width:300px; position:relative; }
 
     /* ══ INSIGHTS LAYER (hero · attention · trend) ══ */
-    .hero { background:linear-gradient(150deg,#09090D 0%,#14205a 55%,#1A3A8F 100%);
+    /* Flat black card, blue angular stripe accent — mirrors .greeting's
+       flat-blue-with-black-wedge so the two brand colors trade places
+       across the two hero surfaces, bold contrast instead of a gradient. */
+    .hero { background:#09090D;
       border-radius:var(--r); padding:16px; color:#fff; margin-bottom:12px; position:relative; overflow:hidden;
-      box-shadow:0 8px 26px rgba(9,9,13,.35); border:1px solid rgba(99,205,255,.35); }
+      box-shadow:0 8px 26px rgba(9,9,13,.35); border:1px solid rgba(26,58,143,.45); }
     .hero::before {
-      content:''; position:absolute; right:-40px; top:-40px; width:150px; height:150px;
-      border-radius:50%; background:radial-gradient(circle, rgba(99,205,255,.16) 0%, rgba(99,205,255,0) 70%);
+      content:''; position:absolute; right:0; top:0; width:120px; height:120px;
+      background:#1A3A8F; clip-path:polygon(100% 0, 100% 60%, 35% 0);
       pointer-events:none;
     }
     .hero-row, .hero-note, .hero-foot { position:relative; }
@@ -141,9 +147,13 @@
 
     /* ── compact YTD stats ── */
     .ytd-hero {
-      background:linear-gradient(135deg,var(--blue-d),#0f6690); border-radius:14px;
+      background:#1A3A8F; border-radius:14px; position:relative; overflow:hidden;
       padding:14px 16px; margin-bottom:8px; color:#fff;
-      box-shadow:0 6px 16px rgba(21,131,179,.28);
+      box-shadow:0 6px 16px rgba(26,58,143,.32);
+    }
+    .ytd-hero::after {
+      content:''; position:absolute; right:0; top:0; width:46px; height:46px;
+      background:#09090D; clip-path:polygon(100% 0, 100% 100%, 0 0);
     }
     .yh-l { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:rgba(255,255,255,.75); }
     .yh-v { font-size:24px; font-weight:800; margin-top:3px; letter-spacing:-.4px; }
@@ -167,7 +177,7 @@
     }
     .c-ava {
       width:30px; height:30px; border-radius:50%; flex-shrink:0;
-      background:linear-gradient(135deg,#29ABE2,#1d6fa3); color:#fff;
+      background:var(--blue-d); color:#fff;
       display:flex; align-items:center; justify-content:center;
       font-size:11px; font-weight:800;
     }
@@ -193,7 +203,7 @@
        glance, per Chayan's ask (16 Sep 2026, 2nd pass). */
     .dwrap {
       position:relative; flex:1; min-width:0;
-      background:linear-gradient(135deg,#1a1a22,#09090D);
+      background:#09090D;
       border:1px solid rgba(255,255,255,.12);
       border-radius:12px; padding:10px 6px;
       font-size:13px; font-weight:700; color:#fff; text-align:center;
@@ -279,8 +289,8 @@
       padding:11px; margin-bottom:12px; font-size:12.5px; font-weight:800;
       color:#fff; cursor:pointer; user-select:none;
     }
-    .expand-btn.blue  { background:linear-gradient(135deg,var(--blue),var(--blue-d)); }
-    .expand-btn.amber { background:linear-gradient(135deg,#f0a83c,#b7791f); }
+    .expand-btn.blue  { background:#1A3A8F; }
+    .expand-btn.amber { background:#b7791f; }
     .expand-btn:active { filter:brightness(1.06); }
     .expand-btn .arrow { transition:transform .2s; display:inline-block; }
     .expand-btn.open .arrow { transform:rotate(180deg); }
