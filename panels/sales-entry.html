@@ -92,6 +92,10 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .courier-select.c-pathao{border-color:var(--orange);background:#fdf2e6;color:#b9600f}
 .courier-select.c-redx{border-color:var(--red);background:#fcebeb;color:var(--red)}
 .courier-select.c-other{border-color:var(--muted);background:#f1f2f3;color:#495057}
+/* Delivery charge (21 Sep 2026) — quote line under the field */
+.deliv-info{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.4}
+.deliv-info.free{color:var(--g);font-weight:700}
+.deliv-info.warn{color:var(--orange);font-weight:600}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* QTY (main) */
@@ -480,6 +484,7 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
       <div class="cr"><span class="cl">Total Bill</span><span class="cv" id="cBill">৳ 0</span></div>
       <div class="cr"><span class="cl">Total Discount</span><span class="cv">− <span id="cDisc">৳ 0</span></span></div>
       <div class="cr div"><span class="cl">Final Bill</span><span class="cv warn" id="cFinal">৳ 0</span></div>
+      <div class="cr hidden" id="cDelivRow"><span class="cl">Delivery</span><span class="cv" id="cDeliv">৳ 0</span></div>
       <div class="cr"><span class="cl">Prev. Due</span><span class="cv red" id="cPrev">৳ 0</span></div>
       <div class="cr div tot"><span class="cl">Total Payable</span><span class="cv big" id="cTotal">৳ 0</span></div>
     </div>
@@ -501,13 +506,23 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
       </div>
       <div class="fg">
         <div class="fl">Courier</div>
-        <select class="fi courier-select" id="courier" onchange="styleCourierSelect(this)">
+        <select class="fi courier-select" id="courier" onchange="styleCourierSelect(this); onCourierChange()">
           <option value="">None — pickup / no delivery</option>
           <option value="Steadfast">Steadfast — books automatically</option>
           <option value="Pathao">Pathao — log only</option>
           <option value="RedX">RedX — log only</option>
           <option value="Other">Other courier — log only</option>
         </select>
+      </div>
+      <!-- Delivery charge — only shown once a courier is picked. Pre-filled from
+           the server quote (weight x zone, free-delivery allowance), and the
+           salesman can still overwrite it; once he does, the quote stops
+           touching the field. -->
+      <div class="fg hidden" id="delivWrap">
+        <div class="fl">Delivery Charge (tk)</div>
+        <input type="number" class="fi" id="delivCharge" placeholder="0" min="0" inputmode="numeric"
+               oninput="_delivTouched = true; calcAll()">
+        <div class="deliv-info" id="delivInfo">Select products to get the delivery charge</div>
       </div>
       <!-- Hidden — user info still tracked for submission, just not shown as a card -->
       <div style="display:none">
@@ -1174,11 +1189,18 @@ function calcAll() {
   });
   const prev  = selClient?.due||0;
   const paid  = +document.getElementById('paid').value||0;
-  const total = totalFinal+prev;
+  const deliv = currentDelivCharge();
+  const total = totalFinal+deliv+prev;
   const newDue= total-paid;
   document.getElementById('cBill').textContent  = tk(totalBill);
   document.getElementById('cDisc').textContent  = tk(totalDisc);
   document.getElementById('cFinal').textContent = tk(totalFinal);
+  const dRow = document.getElementById('cDelivRow');
+  if (dRow) {
+    dRow.classList.toggle('hidden', !document.getElementById('courier')?.value);
+    document.getElementById('cDeliv').textContent = deliv > 0 ? tk(deliv) : 'Free';
+  }
+  scheduleDeliveryQuote(totalFinal);
   document.getElementById('cPrev').textContent  = tk(prev);
   document.getElementById('cTotal').textContent = tk(total);
   document.getElementById('newDue').value        = tk(newDue);
@@ -2427,9 +2449,12 @@ async function submitEntry() {
       const comment  = document.getElementById('comment').value;
       const courier  = document.getElementById('courier').value;
       const prev     = selClient.due || 0;
-      const totalFinal = prods.reduce((s,p) => s + Math.max(0, p.rate * p.qty - p.discount), 0);
-      newDueVal = totalFinal + prev - paid;
-      saleAmount = totalFinal; paidAmt = paid;
+      const totalFinal = prods.reduce((s,p) => s + (p.gift ? 0 : Math.max(0, p.rate * p.qty - p.discount)), 0);
+      const deliveryCharge = currentDelivCharge();
+      // Delivery is billed as its own line on the server, so it is part of
+      // what the customer owes and part of the client's running sales total.
+      newDueVal = totalFinal + deliveryCharge + prev - paid;
+      saleAmount = totalFinal + deliveryCharge; paidAmt = paid;
 
       if (!valid)  { toast('Fill all product details', 'err'); resetBtn(btn, 'Submit Sale Entry'); return; }
       if (!seller) { toast('Not logged in — refresh ERP', 'err'); resetBtn(btn, 'Submit Sale Entry'); return; }
@@ -2437,7 +2462,7 @@ async function submitEntry() {
       params = {
         action: 'addSaleEntry', submitId, date: dateStr, clientInfo: selClient.det,
         products: JSON.stringify(prods), paid, seller, cashReceivedBy: cashBy,
-        sellerId, cashById, comment, courier
+        sellerId, cashById, comment, courier, deliveryCharge
       };
     } else {
       const paid     = +document.getElementById('pPaid').value || 0;
@@ -2506,12 +2531,112 @@ function styleCourierSelect(el) {
   el.className = 'fi courier-select' + (el.value ? ' c-' + el.value.toLowerCase() : '');
 }
 
+// ── DELIVERY CHARGE (21 Sep 2026) ────────────────────────────
+// The quote comes from the server (getDeliveryQuote), never computed here.
+// Weights live in the Control tab where Chayan edits them, and the zone rules
+// and rate card live in EnkoreDelivery.gs. Copying that logic into the panel
+// would give two rate cards that drift apart — the exact problem the two
+// separate Control tabs already caused for commission.
+// Offline or on error, the salesman simply types the charge; the sale still
+// queues and saves, and the server still records weight and zone on save.
+let _delivTouched = false, _delivTimer = null, _delivSeq = 0, _delivKey = '';
+
+function currentDelivCharge() {
+  if (!document.getElementById('courier')?.value) return 0;   // pickup: no delivery
+  return Math.max(0, +document.getElementById('delivCharge')?.value || 0);
+}
+
+function onCourierChange() {
+  const on = !!document.getElementById('courier').value;
+  document.getElementById('delivWrap').classList.toggle('hidden', !on);
+  _delivKey = '';                       // courier changed: always re-quote
+  calcAll();
+}
+
+function saleProductsForQuote() {
+  const out = [];
+  document.querySelectorAll('#prodRows .prod-row').forEach(row => {
+    const product = row.querySelector('.prod-sel')?.value;
+    const qty     = +row.querySelector('.prod-qty')?.value || 0;
+    const gift    = row.dataset.gift === 'true';
+    if (product && qty > 0) out.push({ product, qty, gift });
+  });
+  return out;
+}
+
+function scheduleDeliveryQuote(orderValue) {
+  const courier = document.getElementById('courier')?.value;
+  const info = document.getElementById('delivInfo');
+  if (!courier || !info) return;
+  const prods = saleProductsForQuote();
+  if (!prods.length || !selClient) {
+    info.className = 'deliv-info';
+    info.textContent = !selClient ? 'Select a client to get the delivery charge'
+                                  : 'Select products to get the delivery charge';
+    return;
+  }
+  // Only re-quote when something that changes the answer has changed. Without
+  // this guard, the quote's own calcAll() would schedule another quote forever.
+  const paid = +document.getElementById('paid').value || 0;
+  const key = JSON.stringify([prods, selClient.det, courier, Math.round(orderValue)]);
+  if (key === _delivKey) return;
+  _delivKey = key;
+  clearTimeout(_delivTimer);
+  info.className = 'deliv-info';
+  info.textContent = 'Calculating delivery…';
+  _delivTimer = setTimeout(() => fetchDeliveryQuote(prods, orderValue, paid, courier), 450);
+}
+
+async function fetchDeliveryQuote(prods, orderValue, paid, courier) {
+  const seq = ++_delivSeq;
+  const info = document.getElementById('delivInfo');
+  try {
+    const qs = new URLSearchParams({
+      action: 'getDeliveryQuote', products: JSON.stringify(prods),
+      clientInfo: selClient?.det || '', orderValue: String(Math.round(orderValue)),
+      paid: String(paid), courier
+    }).toString();
+    const js = await fetch(`${AS_URL}?${qs}`).then(r => r.json());
+    if (seq !== _delivSeq) return;          // a newer quote is already on its way
+    if (!js || js.ok === false) throw new Error((js && js.error) || 'no quote');
+    if (!_delivTouched) document.getElementById('delivCharge').value = js.customerCharge;
+    const kg = (Math.round(js.weightKg * 10) / 10) + ' kg';
+    if (js.free) {
+      info.className = 'deliv-info free';
+      info.textContent = `✓ Free delivery · ${kg} · ${js.zoneLabel}`;
+    } else {
+      info.className = 'deliv-info';
+      info.textContent = `${kg} · ${js.zoneLabel} · suggested ৳${js.customerCharge}` +
+        (js.allowance > 0 ? ` (after ৳${js.allowance} allowance)` : '');
+    }
+    if (_delivTouched && +document.getElementById('delivCharge').value < js.customerCharge) {
+      info.className = 'deliv-info warn';
+      info.textContent += ` · entered below suggested`;
+    }
+    if (js.unknownProducts && js.unknownProducts.length) {
+      info.className = 'deliv-info warn';
+      info.textContent += ' · weight estimated for an unlisted product';
+    }
+    calcAll();
+  } catch (e) {
+    if (seq !== _delivSeq) return;
+    info.className = 'deliv-info warn';
+    info.textContent = 'Could not get a quote (offline?) — enter the delivery charge by hand';
+    _delivKey = '';                         // allow a retry on the next change
+  }
+}
+
 function resetForm() {
   document.getElementById('prodRows').innerHTML = '';
   prodRowCount = 0; addProdRow();
   ['paid','comment','pPaid','pComment'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('courier').value = '';
   styleCourierSelect(document.getElementById('courier'));
+  document.getElementById('delivCharge').value = '';
+  document.getElementById('delivWrap').classList.add('hidden');
+  document.getElementById('delivInfo').className = 'deliv-info';
+  document.getElementById('delivInfo').textContent = 'Select products to get the delivery charge';
+  _delivTouched = false; _delivKey = ''; _delivSeq++; clearTimeout(_delivTimer);
   window._pendingNoteId = null;
   calcAll(); calcPay();
 }
