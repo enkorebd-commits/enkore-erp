@@ -1,4 +1,4 @@
-const CACHE_NAME = 'enkore-erp-v66';
+const CACHE_NAME = 'enkore-erp-v67';
 const STATIC_FILES = [
   '/enkore-erp',
   '/enkore-erp.html',
@@ -12,6 +12,7 @@ const STATIC_FILES = [
   '/panels/drive.html',
   '/panels/sales-entry.html',
   '/panels/expense-entry.html',
+  '/panels/courier-import.html',
   '/panels/clients-due.html',
   '/panels/approval-s.html',
   '/panels/profile-s.html',
