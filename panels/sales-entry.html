@@ -88,6 +88,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 @keyframes ptr-rot{to{transform:rotate(360deg)}}
 select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23868e96' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer}
 .courier-select{font-weight:700;transition:border-color .15s,background-color .15s,color .15s}
+.prepaid-row{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;font-weight:600;color:#495057}
+.prepaid-row input{width:18px;height:18px;margin:0;flex:none}
+.deliv-info.danger{color:#c0392b;font-weight:700}
 .courier-select.c-steadfast{border-color:var(--blue);background:#eaf3fb;color:var(--blue)}
 .courier-select.c-pathao{border-color:var(--orange);background:#fdf2e6;color:#b9600f}
 .courier-select.c-redx{border-color:var(--red);background:#fcebeb;color:var(--red)}
@@ -514,15 +517,40 @@ select.nc-fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
           <option value="Other">Other courier — log only</option>
         </select>
       </div>
-      <!-- Delivery charge — only shown once a courier is picked. Pre-filled from
-           the server quote (weight x zone, free-delivery allowance), and the
-           salesman can still overwrite it; once he does, the quote stops
-           touching the field. -->
+      <!-- Delivery charge — only shown once a courier is picked. Pre-filled
+           from the server quote. As of 25 Sep 2026 the customer pays the
+           MARKET rate, two numbers per zone: inside Dhaka ৳60 standard and
+           ৳100 bulky, outside Dhaka ৳120 and ৳200, free above ৳5,000
+           nationwide. Parcel weight decides only which of the two applies,
+           at 4 kg, and the customer never sees weight or any formula.
+           Whatever that does not cover, Enkore absorbs on purpose, and the
+           quote reports it as deliverySubsidy. The salesman can overwrite
+           the charge; once he does, the quote stops touching the field. -->
       <div class="fg hidden" id="delivWrap">
         <div class="fl">Delivery Charge (tk)</div>
         <input type="number" class="fi" id="delivCharge" placeholder="0" min="0" inputmode="numeric"
                oninput="_delivTouched = true; calcAll()">
         <div class="deliv-info" id="delivInfo">Select products to get the delivery charge</div>
+        <!-- PREPAID — added 24 Sep 2026. The server refuses to book a courier
+             parcel whose COD comes out at zero on a non-zero order, because
+             that is how invoices 2254, 2257 and 2258 shipped with nothing to
+             collect. Tick this only when the customer really has already paid
+             in full and the rider must collect nothing at the door. -->
+        <label class="prepaid-row" id="prepaidWrap">
+          <input type="checkbox" id="prepaid" onchange="onPrepaidChange()">
+          <span>Already paid in full — courier collects nothing</span>
+        </label>
+        <div class="deliv-info" id="prepaidInfo"></div>
+        <!-- FORCE BOOKING — added 25 Sep 2026. The server refuses to book a
+             second parcel to a phone that already received one in the last 10
+             days, because invoices 2249, 2250 and 2251 were each booked twice:
+             once by hand in the Steadfast app, then again by this form. Tick
+             this only when it really is a separate order. -->
+        <label class="prepaid-row" id="forceWrap">
+          <input type="checkbox" id="forceBook" onchange="onForceChange()">
+          <span>Force booking — customer already got a recent parcel</span>
+        </label>
+        <div class="deliv-info" id="forceInfo"></div>
       </div>
       <!-- Hidden — user info still tracked for submission, just not shown as a card -->
       <div style="display:none">
@@ -2462,7 +2490,9 @@ async function submitEntry() {
       params = {
         action: 'addSaleEntry', submitId, date: dateStr, clientInfo: selClient.det,
         products: JSON.stringify(prods), paid, seller, cashReceivedBy: cashBy,
-        sellerId, cashById, comment, courier, deliveryCharge
+        sellerId, cashById, comment, courier, deliveryCharge,
+        prepaid:   document.getElementById('prepaid')?.checked   ? '1' : '',
+        forceBook: document.getElementById('forceBook')?.checked ? '1' : ''
       };
     } else {
       const paid     = +document.getElementById('pPaid').value || 0;
@@ -2512,7 +2542,18 @@ async function submitEntry() {
     queueEntry(qs);
     fetch(`${AS_URL}?${qs}`)
       .then(r => r.json())
-      .then(js => { if (js.success) dequeueEntry(qs); })
+      .then(js => {
+        if (js.success) dequeueEntry(qs);
+        /* The sale saving and the parcel being booked are two different
+           things. Before 24 Sep 2026 a failed booking was completely silent:
+           green tick, no parcel, nobody knew until the customer called. */
+        const b = js && js.delivery && js.delivery.booking;
+        if (b && b.status && b.status !== 'in_review' && !b.booked) {
+          alert('SALE SAVED, BUT THE PARCEL WAS NOT BOOKED\n\n' +
+                b.status + '\n\n' + (b.error || '') +
+                '\n\nBook it by hand in the courier app, or fix the entry and try again.');
+        }
+      })
       .catch(() => {}); // stays in queue — will retry when online
 
   } catch(e) {
@@ -2550,6 +2591,10 @@ function onCourierChange() {
   const on = !!document.getElementById('courier').value;
   document.getElementById('delivWrap').classList.toggle('hidden', !on);
   _delivKey = '';                       // courier changed: always re-quote
+  const pp = document.getElementById('prepaid');
+  if (pp) { pp.checked = false; onPrepaidChange(); }
+  const fb = document.getElementById('forceBook');
+  if (fb) { fb.checked = false; onForceChange(); }
   calcAll();
 }
 
@@ -2606,8 +2651,17 @@ async function fetchDeliveryQuote(prods, orderValue, paid, courier) {
       info.textContent = `✓ Free delivery · ${kg} · ${js.zoneLabel}`;
     } else {
       info.className = 'deliv-info';
-      info.textContent = `${kg} · ${js.zoneLabel} · suggested ৳${js.customerCharge}` +
-        (js.allowance > 0 ? ` (after ৳${js.allowance} allowance)` : '');
+      info.textContent = `${kg} · ${js.zoneLabel} · ${js.bulky ? 'bulky' : 'standard'} ৳${js.customerCharge}`
+        + (js.freeAbove ? ` · free above ৳${js.freeAbove}` : '');
+    }
+    /* THE SUBSIDY. Internal only, never shown to the customer.
+       Enkore charges the market rate and eats the rest on purpose, so this is
+       not an error and it does not block anything. It is here so the salesman
+       knows the real number, and so it can be totalled every month instead of
+       disappearing into the expense sheet. */
+    if (js.deliverySubsidy > 0) {
+      info.className = 'deliv-info warn';
+      info.textContent += ` · ${js.lossWarning}`;
     }
     if (_delivTouched && +document.getElementById('delivCharge').value < js.customerCharge) {
       info.className = 'deliv-info warn';
@@ -2626,7 +2680,35 @@ async function fetchDeliveryQuote(prods, orderValue, paid, courier) {
   }
 }
 
+/* Prepaid is only meaningful on a courier order, and it is dangerous to leave
+   ticked by accident, so it is cleared whenever the courier changes. */
+function onPrepaidChange() {
+  const on = document.getElementById('prepaid')?.checked;
+  const el = document.getElementById('prepaidInfo');
+  if (!el) return;
+  el.className = on ? 'deliv-info danger' : 'deliv-info';
+  el.textContent = on
+    ? 'The rider will collect ৳0. Only tick this if the money is already in hand.'
+    : '';
+}
+
+/* Force booking is dangerous to leave ticked, so it clears with the form and
+   with every courier change, exactly like Prepaid. */
+function onForceChange() {
+  const on = document.getElementById('forceBook')?.checked;
+  const el = document.getElementById('forceInfo');
+  if (!el) return;
+  el.className = on ? 'deliv-info danger' : 'deliv-info';
+  el.textContent = on
+    ? 'The duplicate check is OFF for this submission. Make sure this is not the same order twice.'
+    : '';
+}
+
 function resetForm() {
+  const fb = document.getElementById('forceBook');
+  if (fb) { fb.checked = false; onForceChange(); }
+  const pp = document.getElementById('prepaid');
+  if (pp) { pp.checked = false; onPrepaidChange(); }
   document.getElementById('prodRows').innerHTML = '';
   prodRowCount = 0; addProdRow();
   ['paid','comment','pPaid','pComment'].forEach(id => document.getElementById(id).value = '');

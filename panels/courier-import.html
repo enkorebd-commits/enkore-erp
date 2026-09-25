@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Courier Import — Enkore</title>
+<style>
+:root{
+  --b:#1971c2;--bbg:#e7f1fb;--red:#e03131;--green:#2b8a3e;--gbg:#ebfbee;--amber:#e8590c;--abg:#fff4e6;
+  --text:#1a1a2e;--muted:#868e96;--border:#dee2e6;--bg:#f4f6f8;--card:#fff;--r:12px;
+  --sh:0 2px 8px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);
+  color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior-y:contain}
+.hdr{background:var(--b);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,.2);display:flex;justify-content:space-between;align-items:center}
+.hdr-t{font-size:15px;font-weight:800}
+.hdr-u{font-size:11px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);
+  padding:4px 10px;border-radius:20px;font-weight:700;max-width:150px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.body{padding:12px;max-width:560px;margin:0 auto;padding-bottom:110px}
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.card-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.tab{padding:11px 8px;border-radius:9px;border:1.5px solid var(--border);background:#fff;
+  font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;text-align:center}
+.tab.on{border-color:var(--b);background:var(--bbg);color:var(--b)}
+.fg{margin-bottom:10px}.fg:last-child{margin-bottom:0}
+.fl{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.fi{width:100%;padding:12px 13px;font-size:15px;border:1.5px solid var(--border);border-radius:8px;
+  outline:none;background:#fff;color:var(--text);font-weight:500}
+.fi:focus{border-color:var(--b)}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45}
+.drop{border:2px dashed var(--border);border-radius:10px;padding:26px 14px;text-align:center;
+  background:#fbfcfd;cursor:pointer}
+.drop.on{border-color:var(--b);background:var(--bbg)}
+.drop .big{font-size:14px;font-weight:800;color:var(--b)}
+.drop .sm{font-size:11px;color:var(--muted);margin-top:5px}
+.check{border-radius:8px;padding:10px 12px;font-size:13px;font-weight:700;margin-top:10px;line-height:1.45;white-space:pre-wrap}
+.check.ok{background:var(--gbg);color:var(--green)}
+.check.bad{background:#fff5f5;color:var(--red)}
+.check.warn{background:var(--abg);color:var(--amber)}
+.check.idle{background:#f1f3f5;color:var(--muted);font-weight:600}
+.kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f1f3f5;font-size:13px}
+.kv:last-child{border-bottom:none}
+.kv b{font-weight:800}
+.kv.big{font-size:15px;padding-top:10px}
+.log{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;line-height:1.55;color:#495057;
+  background:#f8f9fa;border-radius:8px;padding:10px;max-height:240px;overflow:auto;white-space:pre-wrap;margin-top:10px}
+.sub-btn{width:100%;padding:15px;border:none;border-radius:10px;background:var(--b);color:#fff;
+  font-size:15px;font-weight:800;cursor:pointer;margin-top:10px}
+.sub-btn.alt{background:#fff;color:var(--b);border:1.5px solid var(--b)}
+.sub-btn:disabled{opacity:.5;cursor:default}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(90px);z-index:500;
+  background:#212529;color:#fff;padding:11px 18px;border-radius:24px;font-size:13px;font-weight:700;
+  transition:transform .22s;max-width:92vw;text-align:center}
+.toast.on{transform:translateX(-50%) translateY(0)}
+.toast.err{background:var(--red)}.toast.ok{background:var(--green)}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-t">Courier Import</div><div class="hdr-u" id="who">—</div></div>
+
+<div class="body">
+
+  <div class="tabs">
+    <div class="tab on" id="tabP" onclick="setMode('parcels')">Nightly parcels</div>
+    <div class="tab"    id="tabS" onclick="setMode('statement')">Payment statement</div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl" id="modeLbl">Consignment export</div>
+    <div class="drop" id="drop" onclick="document.getElementById('file').click()">
+      <div class="big">Choose the Excel file</div>
+      <div class="sm" id="dropSub">Steadfast → Consignments → Export parcels → Downloads</div>
+    </div>
+    <input type="file" id="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="onFile(this)">
+    <div class="check idle" id="fileInfo">No file chosen yet.</div>
+
+    <div id="stmtFields" style="display:none;margin-top:10px">
+      <div class="r2">
+        <div class="fg">
+          <div class="fl">Statement number</div>
+          <input type="text" class="fi" id="ref" placeholder="e.g. 32143686">
+        </div>
+        <div class="fg">
+          <div class="fl">Payout date</div>
+          <input type="date" class="fi" id="pdate">
+        </div>
+      </div>
+      <div class="hint">The statement number is on the Steadfast Payments page. It keeps the expense
+        idempotent, so importing the same statement twice cannot double count.</div>
+    </div>
+  </div>
+
+  <div class="card" id="preview" style="display:none">
+    <div class="card-lbl">What is in this file</div>
+    <div id="pvBody"></div>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none">
+    <div class="card-lbl" id="resLbl">Result</div>
+    <div id="resBody"></div>
+    <div class="log" id="resLog" style="display:none"></div>
+  </div>
+
+  <button class="sub-btn alt" id="dryBtn" onclick="run(true)"  disabled>Check first, change nothing</button>
+  <button class="sub-btn"     id="goBtn"  onclick="run(false)" disabled>Import</button>
+  <div class="hint" style="text-align:center;margin-top:8px">
+    Always check first. The check reads the file and tells you exactly what would change,
+    without writing a single cell.
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const AS_URL = 'https://script.google.com/macros/s/AKfycbzNbCaVCEC0X1NewgiyqYnkaTD-BYl5_SaejXj5bBDo6UvtJKq7AC_zF3aMMv067E16ZQ/exec';
+
+/* The 18 fields the backend expects, in order. Each entry lists the header
+   spellings Steadfast has used, lower-cased with everything but letters and
+   digits stripped. Steadfast has renamed columns before, so matching is loose
+   and anything unmatched is reported rather than guessed at. */
+const FIELDS = [
+  ['createdAt',      ['createdat']],
+  ['approvedAt',     ['approvedat']],
+  ['orderId',        ['orderid','consignmentid']],
+  ['tracking',       ['trackingcode','trackingid']],
+  ['invoice',        ['invoice','invoiceno']],
+  ['name',           ['recipientname','customername','name']],
+  ['phone',          ['recipientphone','customerphone','phone']],
+  ['address',        ['recipientaddress','address']],
+  ['deliveryStatus', ['deliverystatus','status']],
+  ['approvalStatus', ['approvalstatus']],
+  ['deliveryTime',   ['deliverytime']],
+  ['rider',          ['rider','ridername']],
+  ['riderPhone',     ['ridersphone','riderphone']],
+  ['cod',            ['codamount','cod']],
+  ['shipping',       ['shippingcharge','deliverycharge']],
+  ['codCharge',      ['codcharge','codfee']],
+  ['paymentStatus',  ['paymentstatus']],
+  ['note',           ['note','notes']]
+];
+const REQUIRED = ['orderId','deliveryStatus','cod','shipping'];
+
+let MODE = 'parcels';
+let ROWS = null;
+
+function qs(){ return new URLSearchParams(location.search); }
+function getUser(){ return { name: qs().get('name') || '', id: qs().get('userId') || '' }; }
+document.getElementById('who').textContent = getUser().name || '—';
+document.getElementById('pdate').value = new Date().toISOString().slice(0,10);
+
+function toast(m, k){
+  const t = document.getElementById('toast');
+  t.textContent = m; t.className = 'toast on ' + (k || '');
+  clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 2600);
+}
+const norm = s => String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]/g, '');
+const tk = n => '৳' + Math.round(n).toLocaleString('en-IN');
+
+function setMode(m){
+  MODE = m;
+  document.getElementById('tabP').className = 'tab' + (m === 'parcels'   ? ' on' : '');
+  document.getElementById('tabS').className = 'tab' + (m === 'statement' ? ' on' : '');
+  document.getElementById('modeLbl').textContent =
+    m === 'parcels' ? 'Consignment export' : 'Payment statement';
+  document.getElementById('dropSub').textContent = m === 'parcels'
+    ? 'Steadfast → Consignments → Export parcels → Downloads'
+    : 'Steadfast → Payments → open a payout → Download Excel';
+  document.getElementById('stmtFields').style.display = m === 'statement' ? 'block' : 'none';
+  reset();
+}
+
+function reset(){
+  ROWS = null;
+  document.getElementById('preview').style.display = 'none';
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('dryBtn').disabled = true;
+  document.getElementById('goBtn').disabled = true;
+  document.getElementById('fileInfo').className = 'check idle';
+  document.getElementById('fileInfo').textContent = 'No file chosen yet.';
+  document.getElementById('file').value = '';
+}
+
+function onFile(el){
+  const f = el.files && el.files[0];
+  if (!f) return;
+  const fi = document.getElementById('fileInfo');
+  fi.className = 'check idle'; fi.textContent = 'Reading ' + f.name + ' …';
+
+  const fr = new FileReader();
+  fr.onload = ev => {
+    try {
+      const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+      parseAoa(aoa, f.name);
+    } catch (e) {
+      fi.className = 'check bad';
+      fi.textContent = 'Could not read that file: ' + e.message;
+    }
+  };
+  fr.readAsArrayBuffer(f);
+}
+
+function parseAoa(aoa, fname){
+  const fi = document.getElementById('fileInfo');
+  if (!aoa || aoa.length < 2){ fi.className='check bad'; fi.textContent='That file has no rows.'; return; }
+
+  /* The header is not always row 1: an exported statement can carry a title
+     row above it. Take the first row that matches at least three known
+     headers, so a cosmetic change at the top of the file cannot break this. */
+  let hRow = -1, map = null;
+  for (let r = 0; r < Math.min(8, aoa.length); r++){
+    const cand = matchHeader(aoa[r]);
+    if (cand && cand.hits >= 3){ hRow = r; map = cand.map; break; }
+  }
+  if (hRow === -1){
+    fi.className = 'check bad';
+    fi.textContent = 'This does not look like a Steadfast export. No recognisable header row found in the first 8 lines.';
+    return;
+  }
+
+  const missing = REQUIRED.filter(k => map[k] === undefined);
+  if (missing.length){
+    fi.className = 'check bad';
+    fi.textContent = 'The file is missing columns this import needs: ' + missing.join(', ') +
+      '.\nIf Steadfast renamed a column, tell Claude the new name.';
+    return;
+  }
+
+  const rows = [];
+  for (let r = hRow + 1; r < aoa.length; r++){
+    const src = aoa[r];
+    if (!src || !String(src[map.orderId] == null ? '' : src[map.orderId]).trim()) continue;
+    rows.push(FIELDS.map(f => map[f[0]] === undefined ? '' : (src[map[f[0]]] == null ? '' : src[map[f[0]]])));
+  }
+  if (!rows.length){
+    fi.className = 'check bad'; fi.textContent = 'No parcel rows found under the header.'; return;
+  }
+
+  ROWS = rows;
+  const unmatched = FIELDS.filter(f => map[f[0]] === undefined).map(f => f[0]);
+  fi.className = 'check ok';
+  fi.textContent = fname + '\n' + rows.length + ' parcels read' +
+    (unmatched.length ? '\nColumns not present, left blank: ' + unmatched.join(', ') : '');
+
+  showPreview(rows);
+  document.getElementById('dryBtn').disabled = false;
+  document.getElementById('goBtn').disabled  = false;
+}
+
+function matchHeader(row){
+  if (!row) return null;
+  const cells = row.map(norm);
+  const map = {}; let hits = 0;
+  FIELDS.forEach(([key, names]) => {
+    for (let i = 0; i < cells.length; i++){
+      if (!cells[i]) continue;
+      if (names.indexOf(cells[i]) > -1){ map[key] = i; hits++; return; }
+    }
+  });
+  return { map, hits };
+}
+
+const I = {}; FIELDS.forEach((f, i) => I[f[0]] = i);
+const num = v => { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g,'')); return isNaN(n)?0:n; };
+
+function showPreview(rows){
+  let cod = 0, ship = 0, fee = 0, delivered = 0, failed = 0, flight = 0;
+  const FAIL = ['cancelled','canceled','return','returned','lost','damaged'];
+  rows.forEach(r => {
+    cod  += num(r[I.cod]); ship += num(r[I.shipping]); fee += num(r[I.codCharge]);
+    const s = String(r[I.deliveryStatus] || '').toLowerCase();
+    if (s.indexOf('delivered') > -1) delivered++;
+    else if (FAIL.indexOf(s) > -1)   failed++;
+    else                             flight++;
+  });
+  const pct = cod > 0 ? Math.round(ship / cod * 1000) / 10 : 0;
+  let h = '';
+  const kv = (k, v, big) => h += '<div class="kv' + (big ? ' big' : '') + '"><span>' + k + '</span><b>' + v + '</b></div>';
+  kv('Parcels', rows.length);
+  kv('Delivered', delivered);
+  if (failed) kv('Returned, cancelled or lost', failed);
+  if (flight) kv('Still in transit', flight);
+  kv('COD in the file', tk(cod));
+  kv('Delivery charge', tk(ship));
+  if (fee) kv('COD charge', tk(fee));
+  kv('Freight as % of COD', pct + '%');
+  if (MODE === 'statement') kv('Net you should receive', tk(cod - ship - fee), true);
+  document.getElementById('pvBody').innerHTML = h;
+  document.getElementById('preview').style.display = 'block';
+}
+
+async function run(dry){
+  if (!ROWS) return;
+  const d = document.getElementById('dryBtn'), g = document.getElementById('goBtn');
+  d.disabled = true; g.disabled = true;
+  g.textContent = dry ? 'Import' : 'Importing…';
+
+  const u = getUser();
+  const body = {
+    action: MODE === 'parcels' ? 'importParcels' : 'importPaymentStatement',
+    rows: JSON.stringify(ROWS),
+    dryRun: dry ? '1' : '',
+    byName: u.name, byId: u.id
+  };
+  if (MODE === 'statement'){
+    body.reference  = document.getElementById('ref').value.trim();
+    body.payoutDate = document.getElementById('pdate').value;
+  }
+
+  try {
+    /* text/plain so the Apps Script Web App does not get a CORS preflight,
+       which it answers with a redirect and the browser then blocks. */
+    const res = await fetch(AS_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body)
+    });
+    const js = await res.json();
+    showResult(js, dry);
+  } catch (e) {
+    showResult({ ok: false, error: 'Could not reach the server: ' + e.message }, dry);
+  } finally {
+    d.disabled = false; g.disabled = false; g.textContent = 'Import';
+  }
+}
+
+function showResult(js, dry){
+  const card = document.getElementById('resultCard');
+  const lbl  = document.getElementById('resLbl');
+  const b    = document.getElementById('resBody');
+  const log  = document.getElementById('resLog');
+  card.style.display = 'block';
+  log.style.display = 'none'; log.textContent = '';
+
+  if (!js || js.ok === false){
+    lbl.textContent = 'Failed';
+    b.innerHTML = '<div class="check bad">' + ((js && js.error) || 'Unknown error') + '</div>';
+    toast('Import failed', 'err');
+    return;
+  }
+
+  lbl.textContent = dry ? 'What would change' : 'Done';
+  let h = '';
+  const kv = (k, v, big) => h += '<div class="kv' + (big ? ' big' : '') + '"><span>' + k + '</span><b>' + v + '</b></div>';
+
+  if (MODE === 'parcels'){
+    kv('Parcels updated',            dry ? js.wouldUpdate : js.updated);
+    kv('Dead ids relinked',          dry ? js.wouldLink   : js.linked);
+    kv('New rows for unknown parcels', dry ? js.wouldCreate : js.created);
+    kv('Already correct',            js.unchanged);
+    if (!dry && js.saleEntryUpdated !== undefined) kv('Sale Entry rows given real freight', js.saleEntryUpdated);
+    if (js.detail && js.detail.length){ log.style.display = 'block'; log.textContent = js.detail.join('\n'); }
+  } else {
+    kv('Parcels in this payout', js.parcels);
+    kv('COD collected',   tk(js.cod));
+    kv('Delivery charge', tk(js.freight));
+    kv('COD charge',      tk(js.codFee));
+    kv('Total deducted',  tk(js.deduction));
+    kv('Net to your account', tk(js.net), true);
+    if (!dry){
+      kv('Parcels stamped as paid', js.stamped);
+      kv('Expense posted', js.expense || '—');
+    }
+  }
+
+  b.innerHTML = h + (dry
+    ? '<div class="check warn">Nothing was written. Press Import to apply this.</div>'
+    : '<div class="check ok">Saved.</div>');
+  toast(dry ? 'Check complete' : 'Imported', 'ok');
+}
+
+/* Drag and drop, because a nightly job on a laptop is faster that way. */
+const drop = document.getElementById('drop');
+['dragenter','dragover'].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault(); drop.classList.add('on'); }));
+['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault(); drop.classList.remove('on'); }));
+drop.addEventListener('drop', ev => {
+  const f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+  if (!f) return;
+  const dt = new DataTransfer(); dt.items.add(f);
+  const el = document.getElementById('file'); el.files = dt.files; onFile(el);
+});
+</script>
+</body>
+</html>

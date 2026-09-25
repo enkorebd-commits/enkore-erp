@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Courier Payout — Enkore</title>
+<style>
+:root{
+  --b:#1971c2;--bbg:#e7f1fb;--red:#e03131;--green:#2b8a3e;--gbg:#ebfbee;--amber:#e8590c;--abg:#fff4e6;
+  --text:#1a1a2e;--muted:#868e96;--border:#dee2e6;--bg:#f4f6f8;--card:#fff;--r:12px;
+  --sh:0 2px 8px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);
+  color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior-y:contain}
+.hdr{background:var(--b);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,.2);display:flex;justify-content:space-between;align-items:center}
+.hdr-t{font-size:15px;font-weight:800}
+.hdr-u{font-size:11px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);
+  padding:4px 10px;border-radius:20px;font-weight:700;max-width:150px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+
+/* pull to refresh — compact pill, never a full width bar */
+#ptr{position:fixed;top:8px;left:50%;transform:translateX(-50%) scale(.7);z-index:400;
+  background:#fff;border:1px solid var(--border);border-radius:20px;padding:6px 14px;
+  font-size:11px;font-weight:700;color:var(--b);box-shadow:0 4px 14px rgba(0,0,0,.14);
+  opacity:0;transition:opacity .18s,transform .18s;pointer-events:none}
+#ptr.on{opacity:1;transform:translateX(-50%) scale(1)}
+#ptr .sp{display:inline-block;width:10px;height:10px;border:2px solid var(--bbg);
+  border-top-color:var(--b);border-radius:50%;vertical-align:-1px;margin-right:6px;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.body{padding:12px;max-width:560px;margin:0 auto;padding-bottom:110px}
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.card-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;
+  display:flex;justify-content:space-between;align-items:center}
+.fg{margin-bottom:10px}.fg:last-child{margin-bottom:0}
+.fl{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.fi{width:100%;padding:12px 13px;font-size:15px;border:1.5px solid var(--border);border-radius:8px;
+  outline:none;background:#fff;color:var(--text);font-weight:500}
+.fi:focus{border-color:var(--b)}
+.fi:disabled{background:#f1f3f5;color:var(--muted)}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.35}
+
+.check{border-radius:8px;padding:10px 12px;font-size:13px;font-weight:700;margin-top:10px;line-height:1.4}
+.check.ok{background:var(--gbg);color:var(--green)}
+.check.bad{background:#fff5f5;color:var(--red)}
+.check.idle{background:#f1f3f5;color:var(--muted);font-weight:600}
+
+.linkbtn{background:none;border:none;color:var(--b);font-weight:800;font-size:11px;cursor:pointer;padding:0}
+.parcel{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f1f3f5}
+.parcel:last-child{border-bottom:none}
+.parcel input[type=checkbox]{width:20px;height:20px;margin-top:2px;accent-color:var(--b);flex:none}
+.p-main{flex:1;min-width:0}
+.p-top{display:flex;justify-content:space-between;gap:8px;font-weight:700}
+.p-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.p-warn{font-size:11px;color:var(--amber);font-weight:700;margin-top:3px}
+.p-col{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--muted)}
+.p-col input{width:96px;padding:6px 8px;font-size:13px;border:1.5px solid var(--border);border-radius:6px}
+.empty{color:var(--muted);text-align:center;padding:18px 6px;font-size:13px;line-height:1.5}
+
+.selbar{position:sticky;top:52px;z-index:50;background:#1a1a2e;color:#fff;border-radius:10px;
+  padding:10px 12px;margin-bottom:10px;display:flex;justify-content:space-between;font-weight:800;font-size:13px}
+.selbar.ok{background:var(--green)}
+.selbar.bad{background:#c92a2a}
+
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sum div{background:#f8f9fa;border-radius:8px;padding:9px 6px;text-align:center}
+.sum b{display:block;font-size:15px;font-weight:900}
+.sum span{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+
+.go{position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(transparent,var(--bg) 30%)}
+.go button{display:block;width:100%;max-width:560px;margin:0 auto;padding:15px;border:none;border-radius:12px;
+  background:var(--b);color:#fff;font-size:16px;font-weight:800;box-shadow:0 4px 14px rgba(25,113,194,.35)}
+.go button:disabled{background:#adb5bd;box-shadow:none}
+
+.ro-note{display:none;background:var(--abg);color:var(--amber);font-weight:700;font-size:12px;border-radius:8px;
+  padding:9px 12px;margin-bottom:10px}
+.ro-note.show{display:block}
+.done{display:none}
+.done.show{display:block}
+.done h3{font-size:15px;margin-bottom:8px;color:var(--green)}
+.done .line{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px dashed #eee}
+.done .line:last-child{border-bottom:none}
+
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#1a1a2e;color:#fff;
+  padding:10px 16px;border-radius:10px;font-size:13px;font-weight:700;opacity:0;transition:all .2s;z-index:500;
+  max-width:92%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:var(--red)}
+</style>
+</head>
+<body>
+<div id="ptr"><span class="sp"></span>Refreshing…</div>
+
+<div class="hdr">
+  <div class="hdr-t">🚚 Courier Payout</div>
+  <div class="hdr-u" id="userChip">—</div>
+</div>
+
+<div class="body">
+  <div class="ro-note" id="roNote">Read only — you can view, but not settle payouts.</div>
+
+  <!-- Result after a successful settle -->
+  <div class="card done" id="doneCard">
+    <h3>✓ Payout settled</h3>
+    <div id="doneLines"></div>
+    <button class="linkbtn" style="margin-top:10px" onclick="startOver()">Enter another payout</button>
+  </div>
+
+  <div id="formArea">
+    <div class="card">
+      <div class="card-lbl">From the courier's invoice</div>
+      <div class="r2">
+        <div class="fg">
+          <div class="fl">Courier</div>
+          <select class="fi" id="fCourier" onchange="loadParcels()">
+            <option value="Steadfast">Steadfast</option>
+            <option value="Pathao">Pathao</option>
+            <option value="RedX">RedX</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="fg">
+          <div class="fl">Payout date</div>
+          <input type="date" class="fi" id="fDate">
+        </div>
+      </div>
+      <div class="fg">
+        <div class="fl">Invoice / reference no.</div>
+        <input type="text" class="fi" id="fRef" placeholder="As printed on the invoice">
+      </div>
+      <div class="r2">
+        <div class="fg">
+          <div class="fl">Amount delivered</div>
+          <input type="number" class="fi" id="fDelivered" inputmode="numeric" placeholder="0" oninput="onMoney(true)">
+        </div>
+        <div class="fg">
+          <div class="fl">Delivery charge</div>
+          <input type="number" class="fi" id="fDelivery" inputmode="numeric" placeholder="0" oninput="onMoney()">
+        </div>
+        <div class="fg">
+          <div class="fl">COD charge</div>
+          <input type="number" class="fi" id="fCod" inputmode="numeric" placeholder="0" oninput="onMoney()">
+        </div>
+        <div class="fg">
+          <div class="fl">Net received</div>
+          <input type="number" class="fi" id="fNet" inputmode="numeric" placeholder="0" oninput="onMoney()">
+        </div>
+      </div>
+      <div class="check idle" id="moneyCheck">Type the four amounts exactly as the invoice shows them.</div>
+      <div class="fg" style="margin-top:10px">
+        <div class="fl">Money received into</div>
+        <select class="fi" id="fInto">
+          <option value="Bank">Bank</option>
+          <option value="bKash">bKash</option>
+          <option value="Nagad">Nagad</option>
+          <option value="Cash">Cash</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="selbar" id="selBar"><span id="selText">Selected ৳0</span><span id="selOf">of ৳0</span></div>
+
+    <div class="card">
+      <div class="card-lbl">
+        <span>Parcels this payout covers</span>
+        <button class="linkbtn" id="autoBtn" onclick="autoPick(true)">Auto-select</button>
+      </div>
+      <div id="parcelList"><div class="empty">Loading delivered parcels…</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-lbl">What happens when you settle</div>
+      <div class="sum">
+        <div><b id="sKept">৳0</b><span>Courier kept</span></div>
+        <div><b id="sNet">৳0</b><span>You received</span></div>
+        <div><b id="sCount">0</b><span>Customers cleared</span></div>
+      </div>
+      <div class="hint" style="margin-top:8px">
+        Each ticked customer's due is cleared, credited to the salesman who made the sale.
+        What the courier kept is booked as a delivery expense automatically. Do not also
+        enter these payments by hand.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="go" id="goBar"><button id="btnGo" disabled onclick="submitPayout()">Settle payout</button></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   Courier Payout panel — 22 Sep 2026
+   Backend: CourierPayout.gs in the Sales Panel Apps Script project.
+   Actions: getUnsettledParcels, submitCourierPayout.
+   ===================================================================== */
+const AS_URL = 'https://script.google.com/macros/s/AKfycbzNbCaVCEC0X1NewgiyqYnkaTD-BYl5_SaejXj5bBDo6UvtJKq7AC_zF3aMMv067E16ZQ/exec';
+const TOL = 2;   // taka of rounding allowed, same as the server
+
+const qp = new URLSearchParams(location.search);
+function sessionUser() {
+  try { return JSON.parse(window.parent?.sessionStorage?.getItem('erp_user') || 'null') || {}; }
+  catch (_) { return {}; }
+}
+const su = sessionUser();
+const USER = {
+  id:   qp.get('userId') || su.id   || '',
+  name: qp.get('name')   || su.name || '',
+  ro:   qp.get('readonly') === '1'
+};
+const $ = id => document.getElementById(id);
+$('userChip').textContent = USER.name || 'Not logged in';
+
+if (USER.ro) {
+  $('roNote').classList.add('show');
+  ['fCourier','fDate','fRef','fDelivered','fDelivery','fCod','fNet','fInto']
+    .forEach(id => { $(id).disabled = true; });
+  $('btnGo').textContent = 'Read only';
+}
+
+/* Back button contract (CLAUDE.md §6.1). This panel opens no popups, so it
+   never consumes Back — the shell handles it. */
+window.__erpHandleBack = function () { return false; };
+
+const money = n => '৳' + (Math.round(n) || 0).toLocaleString('en-IN');
+const num = id => Math.max(0, +$(id).value || 0);
+let toastT;
+function toast(msg, err) {
+  const t = $('toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(toastT); toastT = setTimeout(() => t.className = 'toast', 3200);
+}
+function todayISO() {
+  const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+/* Sale Entry dates are written as "22 Sep, 26" everywhere else. */
+function sheetDate(iso) {
+  const d = iso ? new Date(iso + 'T00:00:00') : new Date();
+  const mos = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getDate()} ${mos[d.getMonth()]}, ${String(d.getFullYear()).slice(-2)}`;
+}
+$('fDate').value = todayISO();
+
+/* ----------------------------- parcels ----------------------------- */
+let PARCELS = [];          // [{row, invoice, customer, cod, ..., sel, collected}]
+let loading = false;
+
+async function loadParcels() {
+  if (loading) return;
+  loading = true;
+  $('parcelList').innerHTML = '<div class="empty">Loading delivered parcels…</div>';
+  try {
+    const courier = $('fCourier').value;
+    const js = await fetch(`${AS_URL}?action=getUnsettledParcels&courier=${encodeURIComponent(courier)}&t=${Date.now()}`)
+      .then(r => r.json());
+    if (!js.ok) throw new Error(js.error || 'Could not load parcels');
+    PARCELS = js.parcels.map(p => Object.assign(p, { sel: false, collected: p.cod }));
+    renderParcels();
+    if (num('fDelivered') > 0) autoPick(false);
+  } catch (e) {
+    $('parcelList').innerHTML = `<div class="empty">Could not load parcels (${e.message}).<br>Pull down to retry.</div>`;
+    PARCELS = [];
+  } finally {
+    loading = false;
+    refresh();
+  }
+}
+
+function renderParcels() {
+  if (!PARCELS.length) {
+    $('parcelList').innerHTML = `<div class="empty">No delivered, unsettled ${$('fCourier').value} parcels.<br>
+      Parcels appear here once the courier marks them delivered.</div>`;
+    return;
+  }
+  $('parcelList').innerHTML = PARCELS.map((p, i) => `
+    <div class="parcel">
+      <input type="checkbox" id="pc${i}" ${p.sel ? 'checked' : ''} ${USER.ro ? 'disabled' : ''}
+             onchange="PARCELS[${i}].sel=this.checked; refresh()">
+      <div class="p-main">
+        <label for="pc${i}" style="display:block">
+          <div class="p-top"><span class="p-name">${esc(p.customer || p.address)}</span><span>${money(p.cod)}</span></div>
+          <div class="p-sub">Inv ${esc(p.invoice)} · ${esc(p.date)} · ${esc(p.status || '')}${p.cid ? ' · ' + esc(p.cid) : ''}</div>
+          ${p.likelyPaid ? `<div class="p-warn">⚠ Customer's due (${money(p.clientDue)}) is below this parcel — probably already paid by hand</div>` : ''}
+          ${/partial/i.test(p.status) ? `<div class="p-warn">Partial delivery — set the amount actually collected</div>` : ''}
+        </label>
+        <div class="p-col">Collected <input type="number" inputmode="numeric" value="${p.collected}" ${USER.ro ? 'disabled' : ''}
+             oninput="PARCELS[${i}].collected=Math.max(0,+this.value||0); refresh()"></div>
+      </div>
+    </div>`).join('');
+}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* Ticks the parcels that add up EXACTLY to Amount Delivered. Oldest first,
+   skipping anything that looks already paid; if the oldest run does not land
+   on the total, a subset search finds a combination that does. A courier
+   usually pays out everything delivered since the last payout, so the
+   oldest-first run is right most of the time. */
+function autoPick(announce) {
+  const target = Math.round(num('fDelivered'));
+  if (!target || !PARCELS.length) { if (announce) toast('Enter Amount Delivered first', true); return; }
+  PARCELS.forEach(p => p.sel = false);
+
+  // Pass 1 leaves out parcels flagged as probably already paid by hand.
+  // Pass 2, only if pass 1 cannot land on the total, lets them back in and
+  // says so loudly: the courier's own total is saying that customer's cash
+  // really did come through the courier, so someone may have entered it by
+  // hand as well. The salesman sees the warning before anything is saved.
+  const all   = PARCELS.map((p, i) => ({ i, v: Math.round(p.collected) })).filter(x => x.v > 0);
+  const clean = all.filter(x => !PARCELS[x.i].likelyPaid);
+  let pick = matchFor(clean, target), flagged = false;
+  if (!pick && clean.length !== all.length) {
+    pick = matchFor(all, target);
+    flagged = !!(pick && pick.some(i => PARCELS[i].likelyPaid));
+  }
+  if (pick && pick.length) {
+    pick.forEach(i => PARCELS[i].sel = true);
+    if (flagged) toast('Ticked a parcel flagged as possibly already paid — check that customer before settling', true);
+    else if (announce) toast(`Ticked ${pick.length} parcel${pick.length > 1 ? 's' : ''} that add up to ${money(target)}`);
+  } else if (announce) {
+    toast('No combination of parcels adds up to that amount — tick them by hand', true);
+  }
+  renderParcels(); refresh();
+}
+/* Oldest-first run, falling back to a subset search. */
+function matchFor(pool, target) {
+  let run = 0; const pick = [];
+  for (const x of pool) {
+    if (run + x.v <= target + TOL) { run += x.v; pick.push(x.i); }
+    if (Math.abs(run - target) <= TOL) return pick;
+  }
+  return subsetFor(pool, target);
+}
+/* Classic subset-sum over integer taka, oldest parcels preferred. */
+function subsetFor(pool, target) {
+  if (target > 500000 || pool.length > 60) return null;
+  const from = new Map([[0, -1]]);        // sum -> index in pool that reached it
+  const prevSum = new Map();
+  for (let k = 0; k < pool.length; k++) {
+    const add = [];
+    for (const [s] of from) {
+      const n = s + pool[k].v;
+      if (n <= target + TOL && !from.has(n)) add.push([n, s]);
+    }
+    for (const [n, s] of add) { from.set(n, k); prevSum.set(n, s); }
+    for (let t = target - TOL; t <= target + TOL; t++) {
+      if (from.has(t) && t !== 0) {
+        const out = []; let s = t;
+        while (s !== 0) { const k2 = from.get(s); out.push(pool[k2].i); s = prevSum.get(s); }
+        return out;
+      }
+    }
+  }
+  return null;
+}
+
+/* --------------------------- money checks -------------------------- */
+function onMoney(deliveredChanged) {
+  refresh();
+  if (deliveredChanged && PARCELS.length) autoPick(false);
+}
+
+function refresh() {
+  const d = num('fDelivered'), dc = num('fDelivery'), cod = num('fCod'), net = num('fNet');
+  const any = d || dc || cod || net;
+  const expect = d - dc - cod;
+  const mc = $('moneyCheck');
+  let moneyOk = false;
+  if (!any) { mc.className = 'check idle'; mc.textContent = 'Type the four amounts exactly as the invoice shows them.'; }
+  else if (!d || !$('fNet').value) { mc.className = 'check idle'; mc.textContent = `${money(d)} − ${money(dc)} − ${money(cod)} = ${money(expect)}`; }
+  else if (Math.abs(expect - net) <= TOL) { mc.className = 'check ok'; mc.textContent = `✓ ${money(d)} − ${money(dc)} − ${money(cod)} = ${money(net)} — matches`; moneyOk = true; }
+  else { mc.className = 'check bad'; mc.textContent = `✗ ${money(d)} − ${money(dc)} − ${money(cod)} = ${money(expect)}, but Net says ${money(net)}. Re-check the invoice.`; }
+
+  const sel = PARCELS.filter(p => p.sel);
+  const selSum = sel.reduce((s, p) => s + (+p.collected || 0), 0);
+  $('selText').textContent = `Selected ${money(selSum)} · ${sel.length} parcel${sel.length === 1 ? '' : 's'}`;
+  $('selOf').textContent = `of ${money(d)}`;
+  const selOk = d > 0 && sel.length > 0 && Math.abs(selSum - d) <= TOL;
+  $('selBar').className = 'selbar' + (d > 0 && sel.length ? (selOk ? ' ok' : ' bad') : '');
+
+  $('sKept').textContent  = money(dc + cod);
+  $('sNet').textContent   = money(net);
+  $('sCount').textContent = sel.length;
+
+  $('btnGo').disabled = USER.ro || !USER.id || !moneyOk || !selOk;
+}
+
+/* ------------------------------ submit ----------------------------- */
+let busy = false;
+async function submitPayout() {
+  if (busy || $('btnGo').disabled) return;
+  const sel = PARCELS.filter(p => p.sel);
+  if (!confirmSettle(sel)) return;
+  busy = true;
+  const btn = $('btnGo');
+  btn.disabled = true; btn.textContent = 'Settling…';
+  try {
+    const params = new URLSearchParams({
+      action: 'submitCourierPayout',
+      submitId: 'cp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      courier: $('fCourier').value,
+      payoutDate: sheetDate($('fDate').value),
+      ref: $('fRef').value.trim(),
+      delivered: num('fDelivered'), deliveryCharge: num('fDelivery'),
+      codCharge: num('fCod'), net: num('fNet'),
+      receivedInto: $('fInto').value,
+      receiverId: USER.id, receiverName: USER.name,
+      parcels: JSON.stringify(sel.map(p => ({ row: p.row, invoice: p.invoice, collected: +p.collected || 0 })))
+    });
+    const js = await fetch(`${AS_URL}?${params.toString()}`).then(r => r.json());
+    if (!js.ok) throw new Error(js.error || 'Not saved');
+    showDone(js);
+  } catch (e) {
+    toast('❌ ' + e.message, true);
+    btn.textContent = 'Settle payout';
+    refresh();
+  } finally {
+    busy = false;
+  }
+}
+/* A settlement writes many rows at once and cannot be undone from the phone,
+   so it asks once. The shell has no dialog of its own, and a native confirm()
+   is used deliberately here rather than a custom sheet: it needs no Back
+   button handling and it cannot be dismissed by a stray tap. */
+function confirmSettle(sel) {
+  return window.confirm(`Settle ${$('fCourier').value} payout of ${money(num('fNet'))}?\n\n` +
+    `This clears ${sel.length} customer${sel.length === 1 ? '' : 's'} and books ${money(num('fDelivery') + num('fCod'))} as delivery expense.`);
+}
+
+function showDone(js) {
+  const lines = [
+    ['Customers cleared', js.parcels],
+    ['Courier kept (booked as expense)', money(js.kept)],
+    ['You received', money(js.net)],
+    ['Expense entry', js.duplicate ? 'already saved' : (js.expense || '')]
+  ];
+  if (js.varianceVsEstimate !== null && js.varianceVsEstimate !== undefined) {
+    const v = js.varianceVsEstimate;
+    lines.push(['Courier charge vs our estimate', v === 0 ? 'exactly as estimated' : (v > 0 ? `${money(v)} more than estimated` : `${money(-v)} less than estimated`)]);
+  }
+  $('doneLines').innerHTML = lines.map(([a, b]) => `<div class="line"><span>${a}</span><b>${esc(b)}</b></div>`).join('');
+  $('doneCard').classList.add('show');
+  $('formArea').style.display = 'none';
+  $('goBar').style.display = 'none';
+  if (String(js.expense || '').indexOf('FAILED') === 0) toast('Payout saved, but the expense did not post. Tell Chayan to run retryPayoutExpenses().', true);
+  else toast('✅ Payout settled');
+  window.scrollTo(0, 0);
+}
+function startOver() {
+  ['fRef','fDelivered','fDelivery','fCod','fNet'].forEach(id => $(id).value = '');
+  $('fDate').value = todayISO();
+  $('doneCard').classList.remove('show');
+  $('formArea').style.display = '';
+  $('goBar').style.display = '';
+  $('btnGo').textContent = USER.ro ? 'Read only' : 'Settle payout';
+  loadParcels();
+}
+
+/* ------------------------ pull to refresh (pill) ------------------- */
+(function () {
+  let y0 = 0, pulling = false;
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY > 0 || busy) { pulling = false; return; }
+    y0 = e.touches[0].clientY; pulling = true;
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    if (e.touches[0].clientY - y0 > 70) $('ptr').classList.add('on');
+  }, { passive: true });
+  document.addEventListener('touchend', async () => {
+    if (!pulling) return; pulling = false;
+    if (!$('ptr').classList.contains('on')) return;
+    await loadParcels();
+    $('ptr').classList.remove('on');
+  });
+})();
+
+loadParcels();
+refresh();
+</script>
+</body>
+</html>
