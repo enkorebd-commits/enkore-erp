@@ -61,6 +61,8 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   text-decoration:underline;cursor:pointer;padding:0;white-space:nowrap}
 #lifeWrap{display:none;margin-top:8px;background:#fff9db;border:1.5px dashed #f59f00;border-radius:10px;padding:10px}
 #lifeWrap.show{display:block}
+#recvWrap{display:none;margin-top:8px}
+#recvWrap.show{display:block}
 .hint{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.45}
 
 /* recent list */
@@ -171,6 +173,13 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <div class="hint">This is an <b>asset</b>, not a cost. It goes on the balance sheet and is
         written off a little each month over its life. Subscriptions are never assets.</div>
     </div>
+
+    <div id="recvWrap">
+      <div class="fl">Received By <span class="req">*</span></div>
+      <select class="fi" id="fRecv"><option value="">Select…</option></select>
+      <div class="hint">Who actually got the money. Required for Salary &amp; Wages/PIB, or it
+        will not show up in Salary_Register at all.</div>
+    </div>
   </div>
 
   <div class="card">
@@ -218,7 +227,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
    Replace AS_URL below with the deployed /exec URL, then bump BUILD in
    enkore-erp.html and CACHE_NAME in sw.js before pushing.
    ===================================================================== */
-const AS_URL = 'https://script.google.com/macros/s/AKfycbw1pwieBzfD3_GkCevmm2LDwhgVQGLGoPVXxrLNBDjls-bNrtFcM30hWbvQQlfqQJDvCQ/exec';
+const AS_URL = 'https://script.google.com/macros/s/AKfycbxxZe8JQNn9sFLEUth9GELES3nYow3DLKnjTHYl8UmpPx64wSYyJ79xSlspIRQBuIW0KQ/exec';
 
 const QKEY  = 'enkore_exp_queue';
 const CKEY  = 'enkore_exp_cache';
@@ -237,7 +246,7 @@ $('userChip').textContent = USER.name || 'Not logged in';
 /* ---------- readonly mode: render everything, disable writes ---------- */
 if (USER.ro) {
   $('roNote').classList.add('show');
-  ['fDate','fSpend','fCat','fDesc','fPrice','fQty','fAmt','fCom','fLife','btnGo']
+  ['fDate','fSpend','fCat','fDesc','fPrice','fQty','fAmt','fCom','fLife','fRecv','btnGo']
     .forEach(id => { const el = $(id); if (el) el.disabled = true; });
   $('btnGo').textContent = 'Read only';
 }
@@ -285,11 +294,14 @@ const money = n => (Math.round(n) || 0).toLocaleString('en-IN');
 const tagCls = n => 'tag t-' + String(n).split(' ')[0].replace('Pre-operative', 'Pre');
 
 /* ---------------------- meta: dropdowns & rules -------------------- */
-let META = { categories: [], spenders: [], help: {}, capexThreshold: 500 };
+let META = { categories: [], spenders: [], receivers: [], roster: [], help: {}, capexThreshold: 500 };
+// Category that requires Received By, must match EnkoreFinance.gs's NEVER_CAPEX /
+// buildSalaryRegister() exact string, or the field shows for the wrong category.
+const SALARY_CAT = 'Salary & Wages / PIB';
 
 function paintMeta(m) {
   META = Object.assign(META, m);
-  const cat = $('fCat'), sp = $('fSpend');
+  const cat = $('fCat'), sp = $('fSpend'), rc = $('fRecv');
   if (!cat.dataset.filled && m.categories && m.categories.length) {
     m.categories.forEach(c => cat.add(new Option(c, c)));
     cat.dataset.filled = '1';
@@ -299,6 +311,16 @@ function paintMeta(m) {
     sp.dataset.filled = '1';
     const mine = m.spenders.find(s => USER.name.toLowerCase().includes(String(s).toLowerCase()));
     if (mine) sp.value = mine;
+  }
+  if (!rc.dataset.filled) {
+    // Roster (fixed 7-person list) first, then any historical name not on
+    // it yet, so nobody is ever unselectable.
+    const names = (m.roster || []).slice();
+    (m.receivers || []).forEach(r => { if (!names.includes(r)) names.push(r); });
+    if (names.length) {
+      names.forEach(n => rc.add(new Option(n, n)));
+      rc.dataset.filled = '1';
+    }
   }
   const hb = $('helpBody');
   hb.innerHTML = '';
@@ -347,7 +369,14 @@ function applyNature(n) {
   $('lifeWrap').classList.toggle('show', cap);
   if (n === 'Pre-operative') $('fLife').value = '5';
 }
+// Received By shows for Category, not Nature — a salary payment is always
+// this one category, whatever bucket it lands in.
+function updateRecvVisibility() {
+  $('recvWrap').classList.toggle('show', $('fCat').value === SALARY_CAT);
+}
 ['fCat','fDesc','fAmt'].forEach(id => { $(id).addEventListener('input', previewNature); });
+$('fCat').addEventListener('input', updateRecvVisibility);
+$('fCat').addEventListener('change', updateRecvVisibility);
 $('fCat').addEventListener('change', previewNature);
 
 function recalc() {
@@ -392,7 +421,7 @@ function showDetail(it) {
     ['Description', it.description], ['Spend by', it.spendBy],
     ['Unit price', it.unitPrice ? money(it.unitPrice) : '—'],
     ['Qty', it.qty || '—'], ['Amount', money(it.amount) + ' tk'],
-    ['Comment', it.comment || '—']
+    ['Comment', it.comment || '—'], ['Received by', it.receivedBy || '—']
   ].map(p => '<div class="dl"><span>' + esc(p[0]) + '</span><span>' + esc(p[1]) + '</span></div>').join('');
   sheetOpen('shDetail');
 }
@@ -472,23 +501,34 @@ function showQ() {
 async function flushQ() {
   const q = readQ();
   if (!q.length) return;
+  // Fixed 26 Sep 2026: a permanent server-side rejection (bad data, not a
+  // network problem) used to "break" here, which silently stranded every
+  // queued item BEHIND it forever with no error shown. Now only a thrown
+  // network error stops the loop (offline, no point trying the rest); a
+  // definite rejection is skipped so later items still get their turn, and
+  // it is reported instead of hidden.
+  let stuck = 0;
   for (const item of [...q]) {
     try {
       const js = await fetch(AS_URL + '?' + item.qs).then(r => r.json());
       if (js.success || js.ok) writeQ(readQ().filter(e => e.qs !== item.qs));
-      else break;
+      else stuck++;
     } catch (e) { break; }
   }
   showQ();
+  if (stuck) toast(stuck + ' queued item(s) failed to save, check Recent Expenses', true);
 }
 
 /* ------------------------------- submit ------------------------------- */
 function buildQS() {
   const amt = parseFloat($('fAmt').value);
   if (!$('fDate').value)                return { err: 'Date is required' };
+  if (!$('fSpend').value)               return { err: 'Select who spent it' };
   if (!$('fCat').value)                 return { err: 'Select a category' };
   if ($('fDesc').value.trim().length < 3) return { err: 'Description needs at least 3 characters' };
   if (!(amt > 0))                       return { err: 'Enter a valid amount' };
+  const isSalary = $('fCat').value === SALARY_CAT;
+  if (isSalary && !$('fRecv').value)    return { err: 'Select who received it (Received By)' };
   const cap = (lastNat === 'CapEx' || lastNat === 'Pre-operative');
   return { qs: new URLSearchParams({
     action: 'addExpense',
@@ -503,6 +543,7 @@ function buildQS() {
     comment: $('fCom').value.trim(),
     nature: lastNat || '',
     usefulLife: cap ? $('fLife').value : '',
+    receivedBy: isSalary ? $('fRecv').value : '',
     person: USER.name, personId: USER.id
   }).toString() };
 }
@@ -532,9 +573,11 @@ $('btnGo').onclick = () => {
 
   ['fDesc','fPrice','fQty','fAmt','fCom'].forEach(id => $(id).value = '');
   $('fCat').value = '';
+  $('fRecv').value = '';
   applyNature('');
   $('natChip').textContent = '—';
   $('lifeWrap').classList.remove('show');
+  $('recvWrap').classList.remove('show');
 
   syncExpense(b.qs, optimistic);
 };
