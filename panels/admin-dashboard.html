@@ -22,15 +22,6 @@
       --sh:      0 1px 3px rgba(18,22,33,.06), 0 0 1px rgba(18,22,33,.08);
     }
     html { background:#f4f6fa; }
-    /* 20 Sep 2026: root cause of "looks weak/dumb on desktop, fine on
-       mobile" — every section here is a direct child of body with no width
-       cap, so on a wide laptop screen the whole dashboard (including the
-       month-by-month SVG chart, which scales to its container's width)
-       stretches edge to edge, turning a normally-proportioned line chart
-       and card grid into something flat and thin. Capping body at a phone-
-       app width and centering it, same idea as sales-entry.html's own
-       560px cap, keeps every card and chart at its designed proportions on
-       any screen size, phone or desktop, instead of two different looks. */
     body {
       font-family:'Inter',sans-serif;
       background:var(--bg);
@@ -41,20 +32,12 @@
       margin:0 auto;
       box-shadow:0 0 24px rgba(18,22,33,.06);
       padding-bottom:28px;
-      /* Cloak until the cached data is painted, so opening the panel shows the
-         content in one step instead of flashing the loading placeholders. */
       visibility:hidden;
     }
     @media(min-width:601px){ html { background:#e4e7ec; } }
     body.booted { visibility:visible; }
 
     /* ── greeting ── */
-    /* 20 Sep 2026, 3rd pass: Chayan checked the live site (enkorebd.com) —
-       it's flat solid color, no gradients anywhere. Confirmed direction:
-       keep brand Logo Blue (#1E9DD6) + Black (#09090D) exactly, no red/
-       orange, but get "sporty/GoPro" energy from bold angular shapes
-       instead of a smooth gradient blend. Flat blue field + a black
-       diagonal speed-stripe wedge in the corner, no blur glows. */
     .greeting {
       background:#1E9DD6;
       padding:18px 18px 24px;
@@ -76,9 +59,6 @@
     .g-quote { font-size:11px; color:rgba(255,255,255,.5); font-style:italic; margin-top:6px; line-height:1.5; max-width:300px; position:relative; }
 
     /* ══ INSIGHTS LAYER (hero · attention · trend) ══ */
-    /* Flat black card, blue angular stripe accent — mirrors .greeting's
-       flat-blue-with-black-wedge so the two brand colors trade places
-       across the two hero surfaces, bold contrast instead of a gradient. */
     .hero { background:#09090D;
       border-radius:var(--r); padding:16px; color:#fff; margin-bottom:12px; position:relative; overflow:hidden;
       box-shadow:0 8px 26px rgba(9,9,13,.35); border:1px solid rgba(30,157,214,.45); }
@@ -96,7 +76,7 @@
       transition:stroke-dashoffset .8s cubic-bezier(.25,.46,.45,.94); }
     .ringtxt { position:absolute; inset:0; display:flex; flex-direction:column;
       align-items:center; justify-content:center; }
-    .ringv { font-size:25px; font-weight:800; letter-spacing:-1px; line-height:1; }
+    .ringv { font-size:23px; font-weight:800; letter-spacing:-1px; line-height:1; }
     .ringv span { font-size:12px; margin-left:1px; }
     .ringl { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
       color:rgba(255,255,255,.6); margin-top:3px; text-align:center; }
@@ -144,8 +124,8 @@
     .cd-hd { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
     .cd-m { font-size:13px; font-weight:800; color:#0f5680; }
     .cd-x { font-size:9.5px; font-weight:700; color:#6c9cbc; letter-spacing:.4px; }
-    .cd-row { display:flex; gap:7px; }
-    .cd-b { flex:1; text-align:center; background:#fff; border-radius:9px; padding:8px 3px; }
+    .cd-row { display:flex; gap:7px; flex-wrap:wrap; }
+    .cd-b { flex:1; min-width:64px; text-align:center; background:#fff; border-radius:9px; padding:8px 3px; }
     .cd-l { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--sub2); }
     .cd-v { font-size:12.5px; font-weight:800; margin-top:2px; }
     .cd-note { font-size:11px; font-weight:600; color:#0f5680; margin-top:8px; text-align:center; line-height:1.45; }
@@ -154,11 +134,9 @@
     .sec-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
     .sec-title { font-size:10px; font-weight:800; letter-spacing:1.2px; color:var(--sub2); text-transform:uppercase; }
 
-    /* ── amounts with tk unit ── */
     .amt { display:inline-flex; align-items:flex-end; gap:2px; }
     .amt .tk { font-size:.55em; font-weight:700; color:var(--sub2); padding-bottom:1px; }
 
-    /* ── compact YTD stats ── */
     .ytd-hero {
       background:#1E9DD6; border-radius:14px; position:relative; overflow:hidden;
       padding:14px 16px; margin-bottom:8px; color:#fff;
@@ -171,7 +149,7 @@
     .yh-l { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:rgba(255,255,255,.75); }
     .yh-v { font-size:24px; font-weight:800; margin-top:3px; letter-spacing:-.4px; }
     .ytd-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-    @media(min-width:560px){ .ytd-grid { grid-template-columns:repeat(6,1fr); } }
+    @media(min-width:560px){ .ytd-grid { grid-template-columns:repeat(4,1fr); } }
     .ystat {
       background:var(--card); border-radius:12px; padding:9px 8px 8px;
       box-shadow:var(--sh); text-align:left; border-top:3px solid var(--blue);
@@ -181,25 +159,9 @@
     .ystat-v.pos { color:var(--green); }
     .ystat-v.neg { color:var(--red); }
     .ystat-v.blu { color:var(--blue); }
+    .ystat-note { font-size:10.5px; color:var(--sub2); font-weight:600; margin-top:8px; line-height:1.4; }
 
-    /* ── cash ── */
-    .cash-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .ccard {
-      background:var(--card); border-radius:12px; padding:10px 12px;
-      box-shadow:var(--sh); display:flex; align-items:center; gap:10px;
-    }
-    .c-ava {
-      width:30px; height:30px; border-radius:50%; flex-shrink:0;
-      background:var(--blue-d); color:#fff;
-      display:flex; align-items:center; justify-content:center;
-      font-size:11px; font-weight:800;
-    }
-    .ccard-name { font-size:10px; color:var(--sub2); font-weight:600; line-height:1.2; }
-    .ccard-val  { font-size:15px; font-weight:800; color:var(--text); margin-top:1px; }
-
-    /* ═══ SALES VS COLLECTION — now a light card, matching everything else
-       (16 Sep 2026: Chayan asked for the dark background here to go, "make
-       it match with the previous cards") ═══ */
+    /* ═══ SALES VS COLLECTION ═══ */
     .sc-wrap {
       background:var(--card);
       border-radius:18px; padding:14px 12px 12px;
@@ -210,10 +172,6 @@
     .sc-wrap .amt .tk { color:var(--sub2); }
 
     .range-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-    /* Black, not green — this section's own identity color (YTD = blue,
-       Sales vs Collection = black, per the logo's two colors) so the two
-       "everything is just white" grids read as different sections at a
-       glance, per Chayan's ask (16 Sep 2026, 2nd pass). */
     .dwrap {
       position:relative; flex:1; min-width:0;
       background:#09090D;
@@ -234,7 +192,7 @@
     }
     .range-arrow { font-size:12px; color:var(--sub2); flex-shrink:0; font-weight:700; }
 
-    .sc-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:10px; }
+    .sc-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:6px; }
     .gtile {
       background:var(--card); border:1px solid var(--border);
       border-radius:12px; padding:9px 10px;
@@ -244,6 +202,8 @@
     .gtile-v { font-size:14px; font-weight:800; line-height:1; white-space:nowrap; color:var(--text); }
     .gtile-v.pos { color:var(--green); }
     .gtile-v.neg { color:var(--red); }
+    .gtile-v.dim { color:var(--sub2); font-weight:700; font-size:12px; }
+    .sc-hint { font-size:10.5px; color:var(--sub2); font-weight:600; text-align:center; margin:4px 0 10px; line-height:1.4; }
 
     .chart-panel {
       background:var(--bg); border:1px solid var(--border);
@@ -253,20 +213,12 @@
     .chart-panel .state { padding:70px 20px; color:var(--sub2); }
     .chart-panel .spin { border-color:var(--border); border-top-color:var(--blue-d); }
 
-    /* ── Salesman Performance — vertical card list (16 Sep 2026 rebuild) ──
-       Was a wide table needing a right-hand scroll Chayan explicitly said he
-       doesn't want. Cards stack top-to-bottom only, key numbers wrap onto
-       more rows on a narrow phone instead of forcing sideways scroll, and
-       the whole card is the "button" into the full popup. */
+    /* ── Salesman Performance ── */
     .sc-total { margin-bottom:10px; }
-    /* Team total as cards, not a text line (16 Sep 2026, 2nd pass) — blue
-       top accent ties this section visually to Team Performance/Seller
-       Information (see .expand-btn.blue below), same blue/black coding as
-       the YTD (blue) vs Sales-vs-Collection (black) grids above. */
     .team-tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
     .team-tiles .gtile { border-top-color:var(--blue); }
     .pf-note { font-size:10.5px; color:var(--sub2); font-style:italic; margin-top:8px; line-height:1.4; }
-    .seller-list { display:flex; flex-direction:column; gap:14px; margin-bottom:16px; }
+    .seller-list { display:flex; flex-direction:column; gap:14px; }
     .seller-card { background:var(--card); border-radius:14px; box-shadow:0 3px 10px rgba(18,22,33,.09), 0 0 1px rgba(18,22,33,.1); border:1px solid var(--border); padding:12px 14px; cursor:pointer; }
     .sc-top { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
     .seller-cell, .sc-top { display:flex; align-items:center; gap:8px; }
@@ -278,8 +230,6 @@
     }
     .sc-top .s-name { flex:1; min-width:0; font-weight:700; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .sc-rank { font-size:9.5px; font-weight:800; background:#e7f5fd; color:var(--blue-d); padding:3px 9px; border-radius:20px; flex-shrink:0; white-space:nowrap; }
-    /* .pf-grid (NOT .sc-grid) — .sc-grid is already the 3-col KPI tile grid
-       above; reusing that name here would silently break the KPI tiles. */
     .pf-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
     @media(min-width:420px){ .pf-grid { grid-template-columns:repeat(4,1fr); } }
     .pf-stat { background:var(--bg); border-radius:10px; padding:7px 9px; min-width:0; }
@@ -287,46 +237,40 @@
     .pf-stat .v { font-size:12.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .sc-foot { display:flex; align-items:center; justify-content:flex-end; gap:3px; margin-top:9px; font-size:11px; font-weight:700; color:var(--blue-d); }
     .pf-err { margin-top:6px; color:var(--red); font-weight:700; font-size:11px; }
-    /* Filled, colored expand/collapse buttons (16 Sep 2026, 2nd pass) —
-       Chayan's exact ask: "apply a color connected with that button so
-       everyone understands that button is responsible for this whole
-       information." A plain white link-style button didn't read as a
-       button at all. Each toggle's fill color matches the section it
-       reveals — .blue for Seller Information (ties to Team Performance's
-       blue accent above), .amber for Due Deliveries (ties to its existing
-       orange pending-order tiles). Same arrow-flip and open/closed label
-       swap as before, just with real color now. */
-    .expand-btn {
-      display:flex; align-items:center; justify-content:center; gap:5px;
-      box-shadow:0 3px 10px rgba(18,22,33,.14); border-radius:12px;
-      padding:11px; margin-bottom:12px; font-size:12.5px; font-weight:800;
-      color:#fff; cursor:pointer; user-select:none;
-    }
-    .expand-btn.blue  { background:#1E9DD6; }
-    .expand-btn.amber { background:#b7791f; }
-    .expand-btn:active { filter:brightness(1.06); }
-    .expand-btn .arrow { transition:transform .2s; display:inline-block; }
-    .expand-btn.open .arrow { transform:rotate(180deg); }
-    .collapsible { display:none; }
-    .collapsible.open { display:block; }
 
-    /* ── product line cards — same visual language as the Sales panel's
-       transaction chips (Bill/Paid/Due), so "products sold" and "pending
-       order items" read the same way everywhere in the ERP (16 Sep 2026,
-       2nd pass): a named card per product, qty/rate as a muted sub-line,
-       and colored chips for the numbers that matter. ── */
+    /* ── global accordion nav (replaces independent per-section toggles) ── */
+    .nav-list { display:flex; flex-direction:column; gap:8px; }
+    .nav-btn {
+      display:flex; align-items:center; gap:9px;
+      background:var(--card); border-radius:13px; box-shadow:var(--sh);
+      padding:12px 13px; cursor:pointer; user-select:none; border-left:4px solid var(--blue);
+    }
+    .nav-btn.blk  { border-left-color:#09090D; }
+    .nav-btn.amb  { border-left-color:#b7791f; }
+    .nav-ico { font-size:15px; flex-shrink:0; width:20px; text-align:center; }
+    .nav-lbl { flex:1; min-width:0; font-size:13px; font-weight:800; }
+    .nav-sub { font-size:10.5px; color:var(--sub2); font-weight:600; margin-top:1px; }
+    .nav-badge { font-size:10px; font-weight:800; background:#e7f5fd; color:var(--blue-d); padding:2px 8px; border-radius:20px; flex-shrink:0; }
+    .nav-btn.amb .nav-badge { background:#fff4e2; color:#b7791f; }
+    .nav-arrow { font-size:12px; color:var(--sub2); flex-shrink:0; transition:transform .2s; }
+    .nav-btn.open .nav-arrow { transform:rotate(180deg); color:var(--text); }
+    .acc-panel { display:none; margin-top:8px; }
+    .acc-panel.open { display:block; }
+
+    /* ── product / invoice line cards ── */
     .pcard { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:9px 10px; margin-bottom:7px; }
     .pcard:last-child { margin-bottom:0; }
     .pcard-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px; }
     .pcard-name { font-size:12.5px; font-weight:700; line-height:1.3; }
     .pcard-sub { display:block; font-size:10px; color:var(--sub2); font-weight:500; margin-top:2px; }
-    .pcard-chips { display:flex; gap:6px; }
-    .pchip { flex:1; text-align:center; padding:5px 3px; border-radius:6px; min-width:0; }
+    .pcard-chips { display:flex; gap:6px; flex-wrap:wrap; }
+    .pchip { flex:1; min-width:58px; text-align:center; padding:5px 3px; border-radius:6px; min-width:0; }
     .pchip-lbl { font-size:8px; color:var(--sub2); text-transform:uppercase; letter-spacing:.3px; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .pchip-val { font-weight:800; font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .pchip-b { background:#e7f5fd; color:var(--blue-d); }
     .pchip-p { background:#ebfbee; color:var(--green); }
     .pchip-d { background:#fff5f5; color:var(--red); }
+    .pchip-n { background:#f1f3f6; color:var(--text); }
     .rate-pill { display:inline-block; padding:3px 8px; border-radius:20px; font-size:11px; font-weight:800; }
     .rate-hi  { background:#e4f8f0; color:var(--green); }
     .rate-mid { background:#e7f5fd; color:var(--blue-d); }
@@ -334,10 +278,17 @@
     .pos-t { color:var(--green); }
     .neg-t { color:var(--red); }
 
+    /* ── month stepper (shared by All Invoices + Product Performance) ── */
+    .mstep { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+    .mstep-btn { width:32px; height:32px; border-radius:9px; background:#09090D; color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; cursor:pointer; flex-shrink:0; }
+    .mstep-btn:active { filter:brightness(1.2); }
+    .mstep-lbl { flex:1; text-align:center; font-size:13px; font-weight:800; background:var(--bg); border-radius:9px; padding:8px 6px; }
+    .mstep-tiles { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin-bottom:10px; }
+    @media(min-width:420px){ .mstep-tiles { grid-template-columns:repeat(4,1fr); } }
+
     .state { text-align:center; padding:30px 20px; color:var(--sub2); font-size:13px; }
     .spin { width:22px; height:22px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    /* pull-to-refresh indicator */
     #ptrIndicator { position:fixed; top:8px; left:50%; transform:translateX(-50%); display:flex; align-items:center; justify-content:center; gap:8px;
       height:40px; padding:0 18px; margin-top:-60px; font-size:12px; font-weight:600; color:var(--sub2);
       background:rgba(255,255,255,.96); border:1px solid #e3e7ee; border-radius:999px; box-shadow:0 4px 16px rgba(0,0,0,.14);
@@ -346,7 +297,7 @@
     #ptrIndicator.ptr-loading .ptr-spin { animation:spin .7s linear infinite; }
 
     /* ── PENDING ORDERS (Due Deliveries) ── */
-    .pend-wrap { background:var(--card); border-radius:var(--r); box-shadow:var(--sh); padding:14px; margin-bottom:16px; }
+    .pend-wrap { background:var(--card); border-radius:var(--r); box-shadow:var(--sh); padding:14px; }
     .pend-sum { display:flex; gap:8px; margin-bottom:10px; }
     .pend-sum .ptile { flex:1; background:#fff4e2; border-radius:12px; padding:9px 10px; }
     .pend-sum .ptile.val { background:#e7f5fd; }
@@ -363,7 +314,17 @@
     .pend-row .pr-age.old { color:var(--red); }
     .pend-empty { text-align:center; padding:20px; color:var(--sub2); font-size:12.5px; }
 
-    /* ── popup (back-button contract, CLAUDE.md §6.1) ── */
+    /* ── invoice cards (All Invoices) — one row, every number in it ── */
+    .inv-card { background:var(--card); border-radius:12px; box-shadow:var(--sh); border:1px solid var(--border); padding:10px 12px; margin-bottom:8px; cursor:pointer; }
+    .inv-card:last-child { margin-bottom:0; }
+    .inv-top { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:7px; }
+    .inv-no { font-size:12px; font-weight:800; color:var(--blue-d); }
+    .inv-date { font-size:10.5px; color:var(--sub2); font-weight:700; }
+    .inv-client { font-size:12px; font-weight:700; margin-bottom:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .inv-client span { color:var(--sub2); font-weight:500; font-size:10.5px; }
+    .inv-chips { display:flex; gap:6px; }
+
+    /* ── popup (back-button contract) ── */
     .ov { position:fixed; inset:0; background:rgba(15,20,30,.55); z-index:500; display:flex; align-items:flex-end; overscroll-behavior:contain; touch-action:none; }
     .ov-sheet { background:#fff; width:100%; max-height:86vh; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y; border-radius:18px 18px 0 0; padding:16px 16px 26px; }
     .ov-hd { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
@@ -375,8 +336,8 @@
     .ov-row .v { font-weight:700; text-align:right; }
     .ov-prod { background:var(--bg); border-radius:10px; padding:8px 10px; margin-top:8px; font-size:12px; }
     .ov-prod-line { display:flex; justify-content:space-between; padding:3px 0; }
-    /* Tap-to-call / tap-to-WhatsApp icons — same pattern as Client Calls panel,
-       replaces a plain "number  WhatsApp" text link that didn't work on tap. */
+    .ov-tiles { display:flex; gap:8px; margin-bottom:6px; }
+    .ov-tiles .ptile { flex:1; background:var(--bg); border-radius:12px; padding:9px 10px; }
     .tel-icons { display:flex; align-items:center; gap:8px; }
     .icon-btn { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; text-decoration:none; flex-shrink:0; }
     .icon-btn:active { opacity:.7; }
@@ -396,75 +357,133 @@
   <div class="g-quote" id="g-quote"></div>
 </div>
 
-<!-- YTD + CASH (live) -->
+<!-- Business summary hero + needs-attention + month trend (always visible) -->
 <div id="dash-body">
   <div class="state"><div class="spin"></div>Loading dashboard...</div>
 </div>
 
-<!-- SALES VS COLLECTION -->
-<div class="section">
-  <div class="sc-wrap">
-    <div class="sc-title">Sales vs Collection</div>
-    <div class="range-row">
-      <div class="dwrap" onclick="openPicker('d-start')"><span id="ds-show">—</span><input type="date" id="d-start" onchange="renderAnalytics()"></div>
-      <span class="range-arrow">→</span>
-      <div class="dwrap" onclick="openPicker('d-end')"><span id="de-show">—</span><input type="date" id="d-end" onchange="renderAnalytics()"></div>
+<!-- Accordion nav — one button per section, opening one closes the rest -->
+<div class="section" style="padding-top:14px;">
+  <div class="sec-hdr"><span class="sec-title">Dashboard Sections</span><span class="chart-s">tap to open</span></div>
+  <div class="nav-list">
+
+    <div class="nav-btn" id="nav-ytd" onclick="accToggle('ytd')">
+      <span class="nav-ico">📅</span>
+      <div style="flex:1;min-width:0"><div class="nav-lbl">Year to Date</div><div class="nav-sub">Sales, collection, gross &amp; net profit since Jan 1</div></div>
+      <span class="nav-arrow">▾</span>
     </div>
-    <div class="sc-grid" id="sc-grid" style="display:none">
-      <div class="gtile"><div class="gtile-l">Sales</div><div class="gtile-v" id="k-sales">—</div></div>
-      <div class="gtile"><div class="gtile-l">Due</div><div class="gtile-v" id="k-due">—</div></div>
-      <div class="gtile"><div class="gtile-l">Collection</div><div class="gtile-v" id="k-coll">—</div></div>
-      <div class="gtile"><div class="gtile-l">Collection Rate</div><div class="gtile-v" id="k-crate">—</div></div>
-      <div class="gtile"><div class="gtile-l">Gross Profit</div><div class="gtile-v" id="k-gp">—</div></div>
-      <div class="gtile"><div class="gtile-l">Gross Profit %</div><div class="gtile-v" id="k-gpp">—</div></div>
-      <div class="gtile"><div class="gtile-l">Expense</div><div class="gtile-v" id="k-exp">—</div></div>
-      <div class="gtile"><div class="gtile-l">Net Profit</div><div class="gtile-v" id="k-np">—</div></div>
-      <div class="gtile"><div class="gtile-l">Net Profit %</div><div class="gtile-v" id="k-npp">—</div></div>
+    <div class="acc-panel" id="acc-ytd">
+      <div class="section" style="padding:10px 0 0;">
+        <div id="ytd-container"><div class="state"><div class="spin"></div>Computing YTD...</div></div>
+      </div>
     </div>
-    <div class="chart-panel">
-      <div class="state" id="an-state"><div class="spin"></div>Loading sales data...</div>
-      <canvas id="trendChart" style="display:none"></canvas>
+
+    <div class="nav-btn blk" id="nav-svc" onclick="accToggle('svc')">
+      <span class="nav-ico">⚖️</span>
+      <div style="flex:1;min-width:0"><div class="nav-lbl">Sales vs Collection</div><div class="nav-sub">Pick any date range, see profit for it</div></div>
+      <span class="nav-arrow">▾</span>
     </div>
+    <div class="acc-panel" id="acc-svc">
+      <div class="section" style="padding:10px 0 0;">
+        <div class="sc-wrap">
+          <div class="range-row">
+            <div class="dwrap" onclick="openPicker('d-start')"><span id="ds-show">—</span><input type="date" id="d-start" onchange="renderAnalytics()"></div>
+            <span class="range-arrow">→</span>
+            <div class="dwrap" onclick="openPicker('d-end')"><span id="de-show">—</span><input type="date" id="d-end" onchange="renderAnalytics()"></div>
+          </div>
+          <div class="sc-grid" id="sc-grid" style="display:none">
+            <div class="gtile"><div class="gtile-l">Sales</div><div class="gtile-v" id="k-sales">—</div></div>
+            <div class="gtile"><div class="gtile-l">Due</div><div class="gtile-v" id="k-due">—</div></div>
+            <div class="gtile"><div class="gtile-l">Collection</div><div class="gtile-v" id="k-coll">—</div></div>
+            <div class="gtile"><div class="gtile-l">Collection Rate</div><div class="gtile-v" id="k-crate">—</div></div>
+            <div class="gtile"><div class="gtile-l">Gross Profit</div><div class="gtile-v" id="k-gp">—</div></div>
+            <div class="gtile"><div class="gtile-l">Gross Profit %</div><div class="gtile-v" id="k-gpp">—</div></div>
+            <div class="gtile"><div class="gtile-l">Expense</div><div class="gtile-v" id="k-exp">—</div></div>
+            <div class="gtile"><div class="gtile-l">Net Profit</div><div class="gtile-v" id="k-np">—</div></div>
+            <div class="gtile"><div class="gtile-l">Net Profit %</div><div class="gtile-v" id="k-npp">—</div></div>
+          </div>
+          <div class="sc-hint" id="sc-hint" style="display:none"></div>
+          <div class="chart-panel">
+            <div class="state" id="an-state"><div class="spin"></div>Loading sales data...</div>
+            <canvas id="trendChart" style="display:none"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-btn" id="nav-inv" onclick="accToggle('inv')">
+      <span class="nav-ico">🧾</span>
+      <div style="flex:1;min-width:0"><div class="nav-lbl">All Invoices</div><div class="nav-sub">Every invoice, bill vs collected vs profit after delivery</div></div>
+      <span class="nav-arrow">▾</span>
+    </div>
+    <div class="acc-panel" id="acc-inv">
+      <div class="section" style="padding:10px 0 0;" id="inv-section-body">
+        <div class="state"><div class="spin"></div>Loading invoices...</div>
+      </div>
+    </div>
+
+    <div class="nav-btn blk" id="nav-prod" onclick="accToggle('prod')">
+      <span class="nav-ico">📦</span>
+      <div style="flex:1;min-width:0"><div class="nav-lbl">Product Performance</div><div class="nav-sub">Qty sold, revenue, profit and margin per product</div></div>
+      <span class="nav-arrow">▾</span>
+    </div>
+    <div class="acc-panel" id="acc-prod">
+      <div class="section" style="padding:10px 0 0;" id="prod-section-body">
+        <div class="state"><div class="spin"></div>Loading product data...</div>
+      </div>
+    </div>
+
+    <div class="nav-btn" id="nav-sellers" onclick="accToggle('sellers')">
+      <span class="nav-ico">🧑‍💼</span>
+      <div style="flex:1;min-width:0"><div class="nav-lbl">Seller Information</div><div class="nav-sub">Target, incentive and product mix per salesman</div></div>
+      <span class="nav-arrow">▾</span>
+    </div>
+    <div class="acc-panel" id="acc-sellers">
+      <div class="section" style="padding:10px 0 0;">
+        <div class="sc-total" id="perf-total"></div>
+        <div class="seller-list" id="perf-tbl"></div>
+      </div>
+    </div>
+
+    <div class="nav-btn amb" id="nav-pending" onclick="accToggle('pending')">
+      <span class="nav-ico">🚚</span>
+      <div style="flex:1;min-width:0"><div class="nav-lbl">Due Deliveries</div><div class="nav-sub">Pending orders awaiting delivery</div></div>
+      <span class="nav-badge" id="pending-badge"></span>
+      <span class="nav-arrow">▾</span>
+    </div>
+    <div class="acc-panel" id="acc-pending">
+      <div class="section" style="padding:10px 0 0;">
+        <div class="pend-wrap" id="pend-wrap"><div class="state"><div class="spin"></div>Loading pending orders...</div></div>
+      </div>
+    </div>
+
+    <div class="nav-btn amb" id="nav-demand" onclick="accToggle('demand')">
+      <span class="nav-ico">📊</span>
+      <div style="flex:1;min-width:0"><div class="nav-lbl">Product Demand</div><div class="nav-sub">Total quantity waiting across pending orders</div></div>
+      <span class="nav-arrow">▾</span>
+    </div>
+    <div class="acc-panel" id="acc-demand">
+      <div class="section" style="padding:10px 0 0;">
+        <div class="pend-wrap" id="demand-wrap"><div class="state"><div class="spin"></div>Loading product demand...</div></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<div class="section" id="perf-section" style="display:none; padding-top:14px;">
-  <div class="sec-hdr"><span class="sec-title">Salesman Performance</span><span class="chart-s">tap a row for full detail</span></div>
-  <div class="sc-total" id="perf-total"></div>
-  <div class="expand-btn blue" id="perf-toggle" onclick="toggleCollapsible('perf-tbl','perf-toggle','Seller Information','Hide seller information')">
-    <span>Seller Information</span><span class="arrow">▾</span>
-  </div>
-  <div class="seller-list collapsible" id="perf-tbl"></div>
-</div>
-
-<div class="section" id="pend-section" style="padding-top:14px;">
-  <div class="sec-hdr"><span class="sec-title">Due Deliveries (Pending Orders)</span></div>
-  <div class="pend-wrap" id="pend-wrap"><div class="state"><div class="spin"></div>Loading pending orders...</div></div>
-</div>
-
-<!-- Product Demand — total qty per product across every still-Pending Sales
-     Note, whole team. Chayan's ask (20 Sep 2026): each salesman can already
-     see their own per-product totals in the Sales Panel, but the admin
-     dashboard never aggregated it across everyone. Same PEND_NOTES data
-     Due Deliveries already fetches, just grouped by product instead of by
-     note, so no new backend call or Apps Script redeploy needed. -->
-<div class="section" id="demand-section" style="padding-top:14px;">
-  <div class="sec-hdr"><span class="sec-title">Product Demand (Pending Orders)</span></div>
-  <div class="pend-wrap" id="demand-wrap"><div class="state"><div class="spin"></div>Loading product demand...</div></div>
-</div>
-
-<!-- Pending-order detail popup. Full 3-part back-button contract below:
-     open -> parent.__erpOv(); close-by-tap -> parent.__erpOvClose();
-     window.__erpHandleBack closes it on Android Back. This panel had zero
-     popups before (see KNOWN-BUGS.md item B) — this is the first one, done
-     to the contract on purpose. -->
+<!-- Due Deliveries detail popup -->
 <div class="ov" id="pendOv" style="display:none" onclick="if(event.target===this) closePendDetail()">
   <div class="ov-sheet" id="pendSheet"></div>
 </div>
 
-<!-- Salesman performance detail popup — same contract as pendOv above. -->
+<!-- Salesman performance detail popup -->
 <div class="ov" id="sellerOv" style="display:none" onclick="if(event.target===this) closeSellerDetail()">
   <div class="ov-sheet" id="sellerSheet"></div>
+</div>
+
+<!-- Invoice detail popup (new) -->
+<div class="ov" id="invOv" style="display:none" onclick="if(event.target===this) closeInvDetail()">
+  <div class="ov-sheet" id="invSheet"></div>
 </div>
 
 <script>
@@ -516,7 +535,6 @@
     "Momentum loves preparation."
   ];
 
-  // open native date picker (desktop + mobile)
   window.openPicker = function(id) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -525,7 +543,7 @@
 
   // ── format helpers ──
   const MMM = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  function fmtDate(d) { return d.getDate()+' '+MMM[d.getMonth()]+', '+d.getFullYear(); }   // 26 Jan, 2026
+  function fmtDate(d) { return d.getDate()+' '+MMM[d.getMonth()]+', '+d.getFullYear(); }
 
   function fmt(v) {
     if (v===''||v===null||v===undefined) return '—';
@@ -559,7 +577,7 @@
     const first = userName.split(' ')[0];
     document.getElementById('g-date').textContent  = wd+' · '+fmtDate(now);
     document.getElementById('g-name').textContent  = wrd + ', ' + first + ' 👋';
-    const doy = Math.floor((now - new Date(now.getFullYear(),0,0)) / 86400000); // day of year → rotates daily
+    const doy = Math.floor((now - new Date(now.getFullYear(),0,0)) / 86400000);
     document.getElementById('g-quote').textContent = '" ' + QUOTES[doy % QUOTES.length] + ' "';
   })();
 
@@ -567,34 +585,137 @@
     return String(name).split(' ').filter(Boolean).map(n=>n[0]).slice(0,2).join('').toUpperCase() || '?';
   }
 
+  /* ═══════════════════════════════════════════════════════════
+     GLOBAL ACCORDION — exactly one section open at a time, across
+     the whole dashboard (Chayan's explicit ask: "if I click a
+     button then every other button should be closed"). Replaces
+     the old independent toggleCollapsible/COLLAPSE_STATE pairs.
+     Opening a section lazily triggers its first render/fetch.
+     ═══════════════════════════════════════════════════════════ */
+  let ACC_OPEN = null;
+  const ACC_ON_OPEN = {}; // sectionId -> function to run the first time it opens
+  function accToggle(id) {
+    const willOpen = ACC_OPEN !== id;
+    if (ACC_OPEN) {
+      const prevBtn = document.getElementById('nav-'+ACC_OPEN), prevPanel = document.getElementById('acc-'+ACC_OPEN);
+      if (prevBtn) prevBtn.classList.remove('open');
+      if (prevPanel) prevPanel.classList.remove('open');
+    }
+    ACC_OPEN = willOpen ? id : null;
+    if (ACC_OPEN) {
+      const btn = document.getElementById('nav-'+id), panel = document.getElementById('acc-'+id);
+      if (btn) btn.classList.add('open');
+      if (panel) panel.classList.add('open');
+      if (ACC_ON_OPEN[id] && !ACC_ON_OPEN[id]._done) { ACC_ON_OPEN[id]._done = true; ACC_ON_OPEN[id](); }
+    }
+  }
+
   function buildDash(data) {
     let h = '';
-    // Insights first: what the business needs from you today, before the ledger.
     h += '<div class="section" id="ins-hero"></div>';
     h += '<div class="section" id="ins-acts"></div>';
     h += '<div class="section" id="ins-chart"></div>';
-    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Year to Date (YTD)</span></div><div id="ytd-container"><div class="state"><div class="spin"></div>Computing YTD...</div></div></div>';
-    // Cash in Hand section removed from view (16 Sep 2026, Chayan asked for it
-    // gone) — the underlying data.cash figures are NOT dropped, they still
-    // feed the runway ring in the insights hero above (see renderInsights()).
     document.getElementById('dash-body').innerHTML = h;
-
-    // refresh YTD, insights and P&L tiles now that expense data is here
     if (AN_ROWS.length) renderYTD();
     renderInsights();
     if (document.getElementById('d-start').value) renderAnalytics();
   }
 
   /* ═══════════════════════════════════════════════════════════
-     INSIGHTS — runway hero, attention list, monthly trend.
-     Built from data already in memory: AN_ROWS (sale lines),
-     EXP_ROWS (expenses) and the Cash in Hand tab. No new sheet
-     reads, so this costs nothing extra on mobile data.
+     MONTHLY P&L — read straight from the Central Finance Sheet's
+     "Monthly Dashboard" tab, an engine-computed, verified P&L
+     (Sales, Paid, COGS, Gross/Cash Gross Profit, itemised expense
+     by category, Operating Expense excl. inventory, NET PROFIT,
+     Burn Rate, Capitalised amount). 27 Sep 2026 fix: the dashboard
+     used to reconstruct expense/net-profit itself from the
+     "Expense- Helper" tab, which returns #REF! (a broken formula
+     in Central Finance) — so Expense, Net Profit, Burn and the
+     "infinity runway" figure were being computed from silently
+     empty inputs the whole time. This tab is a different,
+     independently correct source and needs no reconstruction.
      ═══════════════════════════════════════════════════════════ */
-  let INS_SEL = null, INS_SERIES = [];
-  const MOS3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MD_COL = {
+    date:0, sales:1, paid:2, clearPct:3, due:4, cogs:5, gpAcc:6, gpAccPct:7, cashGP:8, cashGPPct:9,
+    transport:10, office:11, rent:12, utilities:13, salary:14, maint:15, marketing:16, rawMat:17, misc:18,
+    opex:19, deprec:20, netProfit:21, burn:22, capitalised:23
+  };
+  let MONTHLY_PL = [], MONTHLY_BY_K = {};
+  window._mdLoaded = false;
+
   function mKey(d){ return d.getFullYear()*12 + d.getMonth(); }
-  function mLabel(k){ return MOS3[k%12]+' '+String(Math.floor(k/12)).slice(-2); }
+  const MOS3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function mLabel(k){ return MOS3[((k%12)+12)%12]+' '+String(Math.floor(k/12)).slice(-2); }
+  function mLabelFull(k){ return MOS3[((k%12)+12)%12]+' '+Math.floor(k/12); }
+
+  async function loadMonthlyPL() {
+    try {
+      const tbl = await gvTable(FIN_SHEET_ID, 'Monthly Dashboard');
+      const rows = (tbl.rows||[]).map(r => {
+        const c = r.c||[];
+        const d = gvDate(c[MD_COL.date] ? (c[MD_COL.date].v!==null && c[MD_COL.date].v!==undefined ? c[MD_COL.date].v : null) : null);
+        if (!d) return null;
+        const num = i => cellNum(c[i]);
+        return {
+          k: mKey(d), date:d,
+          sales: num(MD_COL.sales), paid: num(MD_COL.paid), due: num(MD_COL.due),
+          cogs: num(MD_COL.cogs), gpAcc: num(MD_COL.gpAcc), cashGP: num(MD_COL.cashGP),
+          opex: num(MD_COL.opex), deprec: num(MD_COL.deprec),
+          netProfit: num(MD_COL.netProfit), burn: num(MD_COL.burn), capitalised: num(MD_COL.capitalised)
+        };
+      }).filter(Boolean).sort((a,b)=>a.k-b.k);
+      MONTHLY_PL = rows;
+      MONTHLY_BY_K = {};
+      rows.forEach(r => { MONTHLY_BY_K[r.k] = r; });
+      window._mdLoaded = true;
+    } catch(e) {
+      console.error('monthly P&L:', e);
+      window._mdLoaded = true; // flip so the UI can show a clear failure, not a permanent spinner
+      MONTHLY_PL = []; MONTHLY_BY_K = {};
+    }
+  }
+
+  // Sum of Operating Expense / Net Profit across whole calendar months only
+  // (day-level expense data has no working source since Expense- Helper is
+  // broken) — used by Sales vs Collection when the picked range is exactly
+  // one or more full months; otherwise those two tiles honestly show "—"
+  // rather than a fabricated day-precise figure.
+  function monthlyPLRange(start, end) {
+    const lastDayOfEnd = new Date(end.getFullYear(), end.getMonth()+1, 0).getDate();
+    if (start.getDate() !== 1 || end.getDate() !== lastDayOfEnd) return { ok:false };
+    const kStart = mKey(start), kEnd = mKey(end);
+    const rows = [];
+    for (let k=kStart; k<=kEnd; k++) { if (!MONTHLY_BY_K[k]) return { ok:false }; rows.push(MONTHLY_BY_K[k]); }
+    return {
+      ok:true,
+      opex: rows.reduce((t,r)=>t+r.opex,0),
+      netProfit: rows.reduce((t,r)=>t+r.netProfit,0)
+    };
+  }
+
+  // ── Cash in Hand — kept as its own small read, separate from the P&L tab ──
+  window._cashOk = false;
+  async function loadCashInHand() {
+    try {
+      const ct = await gvTable(FIN_SHEET_ID, 'Cash in Hand');
+      let chayanRaw = '', anikRaw = '';
+      (ct.rows||[]).forEach(r => {
+        const c = r.c||[];
+        const lbl = cellStr(c[0]).toLowerCase();
+        if (lbl === 'positive') { chayanRaw = (c[3]&&c[3].v!==null&&c[3].v!==undefined)?c[3].v:''; anikRaw = (c[6]&&c[6].v!==null&&c[6].v!==undefined)?c[6].v:''; }
+      });
+      const chayanNum = (chayanRaw!=='' && !isNaN(Number(chayanRaw))) ? Number(chayanRaw) : null;
+      const anikNum   = (anikRaw!=='' && !isNaN(Number(anikRaw)))   ? Number(anikRaw)   : null;
+      window._cashOk = chayanNum !== null || anikNum !== null;
+      window._lastCash = { chayan: chayanNum, anik: anikNum };
+    } catch(e) {
+      console.error('cash in hand:', e);
+      window._cashOk = false;
+      window._lastCash = { chayan:null, anik:null };
+    } finally {
+      window._cashLoaded = true;
+    }
+  }
+
   function shortTk(n){
     n = Number(n)||0; const s = n<0?'-':''; n = Math.abs(n);
     if (n>=1e7) return s+(n/1e7).toFixed(1).replace(/\.0$/,'')+'cr';
@@ -603,17 +724,6 @@
     return s+Math.round(n);
   }
   function plainTk(n){ return (Number(n)||0).toLocaleString('en-IN',{maximumFractionDigits:0})+' tk'; }
-
-  // Month-by-month P&L series from the raw rows.
-  function buildSeries() {
-    const map = {};
-    function slot(k){ if(!map[k]) map[k]={k:k,sales:0,paid:0,pmc:0,exp:0}; return map[k]; }
-    AN_ROWS.forEach(r => { const s=slot(mKey(r.d)); s.sales+=r.sales; s.paid+=r.paid; s.pmc+=r.pmc; });
-    EXP_ROWS.forEach(e => { slot(mKey(e.d)).exp += e.amt; });
-    const out = Object.keys(map).map(k=>map[k]).sort((a,b)=>a.k-b.k);
-    out.forEach(s => { s.gp = s.paid - s.pmc; s.np = s.gp - s.exp; s.due = s.sales - s.paid; });
-    return out.length > 18 ? out.slice(out.length-18) : out;
-  }
 
   function smoothPath(p) {
     if (p.length < 2) return '';
@@ -634,49 +744,65 @@
       + ';stroke-dasharray:'+c.toFixed(1)+';stroke-dashoffset:'+(c*(1-p/100)).toFixed(1)+'"></circle></svg>';
   }
 
+  /* ═══════════════════════════════════════════════════════════
+     BUSINESS SUMMARY HERO + NEEDS ATTENTION + MONTH TREND
+     Now fed from MONTHLY_PL (verified engine numbers) instead of
+     a reconstruction from raw rows — this is the actual fix for
+     the "infinity runway" bug: the ring's inputs are correct now.
+     ═══════════════════════════════════════════════════════════ */
+  let INS_SEL = null;
   function renderInsights() {
-    if (!AN_ROWS.length || !window._expLoaded) return;
+    if (!window._mdLoaded || !window._cashLoaded) return;
     const hero = document.getElementById('ins-hero');
     const actsEl = document.getElementById('ins-acts');
     const chartEl = document.getElementById('ins-chart');
     if (!hero || !actsEl || !chartEl) return;
 
-    const S = buildSeries();
-    INS_SERIES = S;
-    if (INS_SEL != null && INS_SEL >= S.length) INS_SEL = null;
+    if (!MONTHLY_PL.length) {
+      hero.innerHTML = '<div class="hero"><div class="hero-note bad">⚠️ Could not read the Monthly Dashboard tab in the Central Finance sheet. Business summary and month trend are unavailable until that tab is reachable again.</div></div>';
+      actsEl.innerHTML = ''; chartEl.innerHTML = '';
+      return;
+    }
+
     const nowK = mKey(new Date());
-    const cur = S.find(x=>x.k===nowK) || {sales:0,paid:0,pmc:0,exp:0,gp:0,np:0,due:0};
-    const prev = S.find(x=>x.k===nowK-1) || null;
+    const cur = MONTHLY_BY_K[nowK] || MONTHLY_PL[MONTHLY_PL.length-1];
+    const curIsThisMonth = cur.k === nowK;
+    const prev = MONTHLY_BY_K[cur.k-1] || null;
 
-    const cash = (Number((window._lastCash||{}).chayan)||0) + (Number((window._lastCash||{}).anik)||0);
+    const cashOk = window._cashOk;
+    const cash = cashOk ? (Number((window._lastCash||{}).chayan)||0) + (Number((window._lastCash||{}).anik)||0) : null;
 
-    // Burn: average NEGATIVE net profit over the last 3 completed months.
-    const done = S.filter(x=>x.k<nowK).slice(-3);
-    const avgNp = done.length ? done.reduce((t,x)=>t+x.np,0)/done.length : (cur.np||0);
+    // Burn: average NEGATIVE net profit over the last 3 COMPLETED months
+    // before the one being shown (never the partial current month).
+    const done = MONTHLY_PL.filter(x=>x.k<cur.k).slice(-3);
+    const avgNp = done.length ? done.reduce((t,x)=>t+x.netProfit,0)/done.length : (cur.netProfit||0);
     const burn = avgNp < 0 ? -avgNp : 0;
-    const runway = burn > 0 ? cash/burn : null;              // null = not burning
-    const runPct = runway == null ? 100 : Math.max(0, Math.min(runway/6*100, 100)); // 6 months = full ring
-    const runCol = runway == null ? '#16b07c' : (runway<2 ? '#ef4444' : runway<4 ? '#f59e0b' : '#29ABE2');
+    const runway = (cashOk && burn > 0) ? cash/burn : (cashOk ? null : undefined); // undefined = cash unknown
+    const runPct = runway == null ? 100 : (runway===undefined ? 0 : Math.max(0, Math.min(runway/6*100, 100)));
+    const runCol = runway === undefined ? '#5b6270' : (runway==null ? '#16b07c' : (runway<2 ? '#ef4444' : runway<4 ? '#f59e0b' : '#29ABE2'));
 
     // ── HERO ──
     let hh = '<div class="hero"><div class="hero-row">'
       + '<div class="ringwrap">'+ring(runPct, runCol)
-      // Past a year the exact figure stops meaning anything and the digits stop
-      // fitting the ring, so it caps at 12+.
       + '<div class="ringtxt"><div class="ringv">'
-      + (runway==null ? '∞' : (runway>=12 ? '12+' : (Math.round(runway*10)/10)))
-      + (runway==null?'':'<span>mo</span>')+'</div><div class="ringl">runway</div></div></div>'
+      + (runway===undefined ? '—' : (runway==null ? '∞' : (runway>=12 ? '12+' : (Math.round(runway*10)/10))))
+      + (runway!=null && runway!==undefined ? '<span>mo</span>' : '')+'</div><div class="ringl">runway</div></div></div>'
       + '<div class="hero-side">';
-    if (runway == null) {
+    if (runway === undefined) {
+      hh += '<div class="hs-k">Status</div><div class="hs-v" style="font-size:15px">No cash figure</div>'
+         +  '<div class="hs-k">Avg monthly net (recent)</div><div class="hs-v2 '+(avgNp>=0?'up':'dn')+'">'+plainTk(avgNp)+'</div>';
+    } else if (runway == null) {
       hh += '<div class="hs-k">Status</div><div class="hs-v" style="color:#5fe0ad">PROFITABLE</div>'
          +  '<div class="hs-k">Avg monthly net</div><div class="hs-v2 up">'+plainTk(avgNp)+'</div>';
     } else {
       hh += '<div class="hs-k">Cash left</div><div class="hs-v">'+shortTk(cash)+'</div>'
          +  '<div class="hs-k">Burning per month</div><div class="hs-v2 dn">'+plainTk(burn)+'</div>';
     }
-    hh += '<div class="hs-k">Net profit this month</div><div class="hs-v2 '+(cur.np>=0?'up':'dn')+'">'+plainTk(cur.np)+'</div>'
+    hh += '<div class="hs-k">Net profit '+(curIsThisMonth?'this month':'('+mLabel(cur.k)+')')+'</div><div class="hs-v2 '+(cur.netProfit>=0?'up':'dn')+'">'+plainTk(cur.netProfit)+'</div>'
       + '</div></div>';
-    if (runway != null) {
+    if (runway === undefined) {
+      hh += '<div class="hero-note bad">Cash in Hand tracking (the "Positive" row) has no figures right now, so cash position and runway can\'t be estimated. Update that tab for this to work.</div>';
+    } else if (runway != null) {
       hh += '<div class="hero-note'+(runway<3?' bad':'')+'">'
         + (runway<3
             ? 'At this burn the cash runs out in about '+(Math.round(runway*10)/10)+' months. Either lift collections or cut a cost line this month.'
@@ -684,15 +810,19 @@
         + '</div>';
     }
     hh += '<div class="hero-foot">'
-      + '<div class="hf"><div class="hf-l">Sales MTD</div><div class="hf-v">'+shortTk(cur.sales)+'</div></div>'
+      + '<div class="hf"><div class="hf-l">Sales'+(curIsThisMonth?' MTD':'')+'</div><div class="hf-v">'+shortTk(cur.sales)+'</div></div>'
       + '<div class="hf"><div class="hf-l">Collected</div><div class="hf-v">'+shortTk(cur.paid)+'</div></div>'
-      + '<div class="hf"><div class="hf-l">Expense</div><div class="hf-v">'+shortTk(cur.exp)+'</div></div>'
+      + '<div class="hf"><div class="hf-l">Expense</div><div class="hf-v">'+shortTk(cur.opex)+'</div></div>'
       + '</div></div>';
     hero.innerHTML = hh;
 
     // ── ATTENTION LIST ──
     const acts = [];
-    if (runway != null && runway < 3)
+    if (!window._mdStale && !window._mdLoaded) {} // no-op guard
+    if (runway === undefined)
+      acts.push({lv:'warn', t:'Cash in Hand has no figures logged',
+        s:'The Positive row (Chayan / Anik columns) in the Cash in Hand tab is blank, so runway can\'t be computed. Fill it in to get a real runway estimate.'});
+    if (runway != null && runway !== undefined && runway < 3)
       acts.push({lv:'bad', t:'Runway is '+(Math.round(runway*10)/10)+' months',
         s:plainTk(cash)+' cash against '+plainTk(burn)+' burned a month. Under three months is the point to act, not to watch.'});
 
@@ -712,37 +842,40 @@
       acts.push({lv:'warn', t:plainTk(aged)+' receivable is over 30 days old',
         s:agedRows+' invoice line'+(agedRows===1?'':'s')+' past a month. Old dues collect slower every week they age.'});
 
-    if (prev && prev.exp > 0 && cur.exp > prev.exp*1.4)
-      acts.push({lv:'warn', t:'Expenses up '+Math.round((cur.exp/prev.exp-1)*100)+'% vs last month',
-        s:plainTk(cur.exp)+' this month against '+plainTk(prev.exp)+' last month. Check what changed before it repeats.'});
+    if (prev && prev.opex > 0 && cur.opex > prev.opex*1.4)
+      acts.push({lv:'warn', t:'Expenses up '+Math.round((cur.opex/prev.opex-1)*100)+'% vs last month',
+        s:plainTk(cur.opex)+' this month against '+plainTk(prev.opex)+' last month. Check what changed before it repeats.'});
 
-    // Salesmen fading against their own recent average (no targets in this sheet).
+    if (cur.netProfit < 0 && prev && cur.netProfit < prev.netProfit)
+      acts.push({lv:'warn', t:'Net loss widened vs last month',
+        s:plainTk(-cur.netProfit)+' lost '+(curIsThisMonth?'so far this month':'in '+mLabel(cur.k))+', against '+plainTk(-prev.netProfit)+' last month.'});
+
     const bySeller = {};
     AN_ROWS.forEach(r => {
       const k = mKey(r.d);
       if (!bySeller[r.seller]) bySeller[r.seller] = {};
       bySeller[r.seller][k] = (bySeller[r.seller][k]||0) + r.sales;
     });
+    const nowKlocal = mKey(new Date());
     const fading = [];
     Object.keys(bySeller).forEach(name => {
       if (name === '(No seller)') return;
-      const hist = [nowK-3,nowK-2,nowK-1].map(k=>bySeller[name][k]||0);
+      const hist = [nowKlocal-3,nowKlocal-2,nowKlocal-1].map(k=>bySeller[name][k]||0);
       const base = hist.reduce((a,b)=>a+b,0)/3;
-      const now  = bySeller[name][nowK]||0;
+      const now  = bySeller[name][nowKlocal]||0;
       if (base > 1000 && now < base*0.5) fading.push({name:name, now:now, base:base});
     });
     if (fading.length)
       acts.push({lv:'warn', t:fading.length+' salesman below half their usual pace',
         s:fading.map(f=>f.name+' at '+shortTk(f.now)+' against a '+shortTk(f.base)+' average').join(' · ')+'.'});
 
-    const cCh = Number((window._lastCash||{}).chayan)||0, cAn = Number((window._lastCash||{}).anik)||0;
-    if (cCh < 0 || cAn < 0)
-      acts.push({lv:'bad', t:'Negative cash in hand recorded',
-        s:'A negative balance means more was paid out or approved than recorded as received. Reconcile the Cash in Hand tab.'});
+    if (cashOk) {
+      const cCh = Number((window._lastCash||{}).chayan), cAn = Number((window._lastCash||{}).anik);
+      if ((!isNaN(cCh) && cCh < 0) || (!isNaN(cAn) && cAn < 0))
+        acts.push({lv:'bad', t:'Negative cash in hand recorded',
+          s:'A negative balance means more was paid out or approved than recorded as received. Reconcile the Cash in Hand tab.'});
+    }
 
-    // Most urgent first (bad before warn), capped to the 5 that matter most
-    // so this stays a short "what to act on" list, not a long log (16 Sep
-    // 2026, Chayan asked for these to be "more relevant").
     const lvRank = { bad:0, warn:1 };
     acts.sort((a,b) => (lvRank[a.lv]??2) - (lvRank[b.lv]??2));
     const shown = acts.slice(0, 5);
@@ -754,22 +887,21 @@
             + (hidden>0 ? '<div class="chart-hint">+'+hidden+' more lower-priority item'+(hidden===1?'':'s')+'</div>' : '')
           : '<div class="all-clear">Nothing urgent. Cash, collections and spend are all within range.</div>');
 
-    // ── TREND CHART ──
     chartEl.innerHTML = '<div class="sec-hdr"><span class="sec-title">Sales &amp; profit trend</span></div>'
-      + insChart(S);
+      + insChart(MONTHLY_PL.slice(-18));
   }
 
   function insChart(S) {
     if (!S.length) return '<div class="chartcard"><div class="chart-hint">No history yet.</div></div>';
     if (S.length < 2) return '<div class="chartcard"><div class="chart-hint">One month of history so far. The trend appears from the second month.</div></div>';
     const W=320,H=124,PL=8,PR=8,PT=14,PB=20, n=S.length;
-    const vals = S.map(s=>[s.sales, s.np]).flat();
+    const vals = S.map(s=>[s.sales, s.netProfit]).flat();
     const hi = Math.max(...vals, 1), lo = Math.min(...vals, 0);
     const span = (hi-lo)||1;
     const xAt = i => PL+(W-PL-PR)*(n===1?0.5:i/(n-1));
     const yAt = v => PT+(H-PT-PB)*(1-((Number(v)||0)-lo)/span);
     const pS = S.map((s,i)=>({x:xAt(i),y:yAt(s.sales)}));
-    const pN = S.map((s,i)=>({x:xAt(i),y:yAt(s.np)}));
+    const pN = S.map((s,i)=>({x:xAt(i),y:yAt(s.netProfit)}));
     const base = H-PB;
     const zeroY = yAt(0);
 
@@ -782,8 +914,6 @@
       + '<path d="'+smoothPath(pN)+'" fill="none" stroke="#16b07c" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round" opacity=".9"/>'
       + '<path d="'+smoothPath(pS)+'" fill="none" stroke="#29ABE2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'
       + '<circle cx="'+pS[n-1].x.toFixed(1)+'" cy="'+pS[n-1].y.toFixed(1)+'" r="4" fill="#29ABE2" stroke="#fff" stroke-width="2"/>'
-      // Latest month's number sits right on the graph — Chayan asked to
-      // "put numbers in it if possible" instead of only showing on tap.
       + '<text x="'+(pS[n-1].x-4).toFixed(1)+'" y="'+(pS[n-1].y-8).toFixed(1)+'" font-size="9.5" font-weight="800" fill="#1583b3" text-anchor="end">'+shortTk(S[n-1].sales)+'</text>';
 
     const sel = (INS_SEL!=null && INS_SEL>=0 && INS_SEL<n) ? INS_SEL : null;
@@ -808,19 +938,19 @@
       const cr = r.sales>0 ? Math.round(r.paid/r.sales*100) : 0;
       const dd = pv ? r.sales-pv.sales : null;
       detail = '<div class="chart-detail">'
-        + '<div class="cd-hd"><span class="cd-m">'+mLabel(r.k)+'</span><span class="cd-x">tap again to close</span></div>'
+        + '<div class="cd-hd"><span class="cd-m">'+mLabelFull(r.k)+'</span><span class="cd-x">tap again to close</span></div>'
         + '<div class="cd-row">'
         + '<div class="cd-b"><div class="cd-l">Sales</div><div class="cd-v" style="color:var(--blue-d)">'+shortTk(r.sales)+'</div></div>'
         + '<div class="cd-b"><div class="cd-l">Collected</div><div class="cd-v" style="color:var(--green)">'+shortTk(r.paid)+'</div></div>'
-        + '<div class="cd-b"><div class="cd-l">Expense</div><div class="cd-v">'+shortTk(r.exp)+'</div></div>'
-        + '<div class="cd-b"><div class="cd-l">Net</div><div class="cd-v" style="color:'+(r.np>=0?'var(--green)':'var(--red)')+'">'+shortTk(r.np)+'</div></div>'
+        + '<div class="cd-b"><div class="cd-l">Expense</div><div class="cd-v">'+shortTk(r.opex)+'</div></div>'
+        + '<div class="cd-b"><div class="cd-l">Net</div><div class="cd-v" style="color:'+(r.netProfit>=0?'var(--green)':'var(--red)')+'">'+shortTk(r.netProfit)+'</div></div>'
         + '</div>'
         + '<div class="cd-note">Collection rate '+cr+'% · due '+plainTk(r.due)
         + (dd==null ? '' : (dd>=0 ? ' · '+plainTk(dd)+' more than '+mLabel(pv.k) : ' · '+plainTk(-dd)+' less than '+mLabel(pv.k)))
         + '</div></div>';
     }
 
-    const lastNp = S[n-1].np, prevNp = S[n-2].np, dNp = lastNp-prevNp;
+    const lastNp = S[n-1].netProfit, prevNp = S[n-2].netProfit, dNp = lastNp-prevNp;
     return '<div class="chartcard" id="insChart">'
       + '<div class="chart-hd"><span class="chart-t">Month by month</span>'
       + '<span class="chart-s">net '+(dNp>=0?'▲ ':'▼ ')+shortTk(Math.abs(dNp))+' vs last month</span></div>'
@@ -831,26 +961,15 @@
       + '</div>';
   }
 
-  // Tap toggles: same month closes, another month switches. Only the chart
-  // card is redrawn, so the page never jumps.
   function insTap(i) {
     INS_SEL = (INS_SEL===i) ? null : i;
     const el = document.getElementById('insChart');
-    if (el) el.outerHTML = insChart(INS_SERIES);
+    if (el) el.outerHTML = insChart(MONTHLY_PL.slice(-18));
   }
 
-  // FIX (16 Sep 2026): tapping the month-by-month graph opened its detail
-  // popup, but tapping anywhere ELSE on the page never closed it — Chayan
-  // reported "when I click other than this graph, the popup should be gone."
-  // A tap on a bar is handled by insTap() above (inline onclick, inside
-  // #insChart) — this only fires for taps OUTSIDE it.
   document.addEventListener('click', function(e) {
     if (INS_SEL != null && !e.target.closest('#insChart')) insTap(INS_SEL);
   });
-  // Same complaint applies to the Chart.js "Sales vs Collection" tooltip:
-  // on a touch device, tapping outside the canvas fires no Chart.js event at
-  // all, so its last tooltip/hover state can stay stuck on screen. Force it
-  // to clear whenever a tap lands outside that canvas.
   document.addEventListener('click', function(e) {
     if (trendChart && !e.target.closest('#trendChart')) {
       trendChart.setActiveElements([]);
@@ -859,11 +978,12 @@
     }
   });
 
-  // ── YTD computed live from Sale Entry rows ──
+  // ── YTD computed live from Sale Entry rows (sales/paid/due/gp) + verified
+  // Monthly Dashboard (expense/net profit) — no more broken-tab dependency ──
   function renderYTD() {
     if (!AN_ROWS.length) return;
     const now  = new Date();
-    const ytdS = new Date(now.getFullYear(), 0, 1);   // Jan 1 of current year
+    const ytdS = new Date(now.getFullYear(), 0, 1);
     const ytdRows = AN_ROWS.filter(r => r.d >= ytdS && r.d <= now);
 
     let tSales = 0, tPaid = 0, tPmc = 0;
@@ -873,23 +993,22 @@
     const clrPct = tSales ? tPaid / tSales : 0;
     const gp     = tPaid - tPmc;
 
-    let exp = 0;
-    const expReady = window._expLoaded;
-    if (expReady) EXP_ROWS.forEach(e => { if (e.d >= ytdS && e.d <= now) exp += e.amt; });
-    const np = gp - exp;
+    let exp = null, np = null;
+    if (window._mdLoaded && MONTHLY_PL.length) {
+      const kStart = mKey(ytdS), kEnd = mKey(now);
+      exp = 0; np = 0;
+      for (let k=kStart; k<=kEnd; k++) { const r = MONTHLY_BY_K[k]; if (r) { exp += r.opex; np += r.netProfit; } }
+    }
 
     const stats = [
       { lbl:'Paid',            val:tk(tPaid),             cls:'pos' },
       { lbl:'Collection Rate', val:fmtPct(clrPct),       cls: clrPct>=0.8?'pos':'blu' },
       { lbl:'Due',             val:tk(due),               cls: due>0?'neg':'pos' },
       { lbl:'Gross Pft',       val:tk(gp),                cls:numClass(gp) },
-      { lbl:'Expense',         val:expReady?tk(exp):'—',  cls:'' },
-      { lbl:'Net Pft',         val:expReady?tk(np):'—',   cls:numClass(np) },
+      { lbl:'Expense',         val:exp!=null?tk(exp):'—',  cls:'' },
+      { lbl:'Net Pft',         val:np!=null?tk(np):'—',   cls:numClass(np) },
     ];
 
-    // Total Sales pulled out of the small tile grid into its own prominent
-    // card (16 Sep 2026, Chayan asked for it in "a good card" of its own,
-    // not buried as one of seven equal-sized tiles).
     const el = document.getElementById('ytd-container');
     if (!el) return;
     el.innerHTML = '<div class="ytd-hero"><div class="yh-l">Total Sales (YTD)</div><div class="yh-v">'+tk(tSales)+'</div></div>'+
@@ -898,14 +1017,11 @@
         '<div class="ystat"><div class="ystat-l">'+s.lbl+'</div>'+
         '<div class="ystat-v '+s.cls+'">'+s.val+'</div></div>'
       ).join('')+
-    '</div>';
+    '</div>'
+    + (exp==null ? '<div class="ystat-note">Expense &amp; Net Profit need the Monthly Dashboard tab — retrying automatically.</div>' : '');
   }
 
-  // ── finance data — read live from the Central Finance sheet via gviz ──
-  window._financeLoaded = false;
-  window._expLoaded = false;
-  let EXP_ROWS = [];
-
+  // ── gviz reader — shared by every tab this dashboard reads ──
   async function gvTable(sheetId, sheetName) {
     const url = 'https://docs.google.com/spreadsheets/d/'+sheetId+
                 '/gviz/tq?tqx=out:json&sheet='+encodeURIComponent(sheetName)+'&t='+Date.now();
@@ -914,85 +1030,34 @@
     if (!m) throw new Error('gviz parse');
     return JSON.parse(m[1]).table;
   }
-
   function rowVals(r) {
     const out = [];
     (r.c||[]).forEach((cell,i) => { out[i] = (cell && cell.v!==null && cell.v!==undefined) ? cell.v : ''; });
     return out;
   }
-
-  async function loadFinance() {
-    try {
-      const [ct, et] = await Promise.all([
-        gvTable(FIN_SHEET_ID, 'Cash in Hand'),
-        gvTable(FIN_SHEET_ID, 'Expense- Helper')
-      ]);
-
-      // Expense- Helper: B(1) = Category · D(3) = Date · H(7) = Amount
-      // Exclude "Raw Materials / Inventory" — already covered by COGS (PMC)
-      EXP_ROWS = (et.rows||[]).map(r => {
-        const c = r.c||[];
-        const cat = (c[1] && c[1].v!==null && c[1].v!==undefined) ? String(c[1].v).trim() : '';
-        if (cat.toLowerCase() === 'raw materials / inventory') return null;
-        const d = gvDate(c[3] ? (c[3].v!==null && c[3].v!==undefined ? c[3].v : null) : null);
-        if (!d) return null;
-        const amt = (c[7] && c[7].v!==null && c[7].v!==undefined && c[7].v!=='') ? (Number(c[7].v)||0) : 0;
-        return { d: new Date(d.getFullYear(), d.getMonth(), d.getDate()), amt: amt };
-      }).filter(Boolean);
-      window._expLoaded = true;
-
-      // Cash in Hand: row where col A = "positive" · D(3) = Chayan · G(6) = Anik
-      let chayan = '', anik = '';
-      (ct.rows||[]).forEach(r => {
-        const c = r.c||[];
-        const lbl = (c[0] && c[0].v!==null && c[0].v!==undefined) ? String(c[0].v).toLowerCase().trim() : '';
-        if (lbl === 'positive') {
-          chayan = (c[3] && c[3].v!==null && c[3].v!==undefined) ? c[3].v : '';
-          anik   = (c[6] && c[6].v!==null && c[6].v!==undefined) ? c[6].v : '';
-        }
-      });
-
-      window._financeLoaded = true;
-      window._lastCash = { chayan, anik };
-      buildDash({ cash:{ chayan, anik } });
-    } catch(e) {
-      console.error(e);
-      if (!window._financeLoaded) {
-        document.getElementById('dash-body').innerHTML =
-          '<div class="state">⚠️ Could not load finance data.<br><small>Central Finance sheet must be shared: Anyone with link · Viewer.</small></div>';
-      }
-    }
-  }
-
-  /* ═══════════════════════════════════════════════════════════
-     SALES ANALYTICS — reads "Sale Entry - Helper" tab from
-     Central Finance Sheet (FIN_SHEET_ID) via gviz
-     A=Date · B=Client · J=Final Bill · M=Paid · P=Seller · R=PMC
-     ═══════════════════════════════════════════════════════════ */
-  let AN_ROWS = [], trendChart = null;
-
+  function cellNum(c)  { return (c && c.v!==null && c.v!==undefined && c.v!=='') ? (Number(c.v)||0) : 0; }
+  function cellStr(c)  { return (c && c.v!==null && c.v!==undefined) ? String(c.v).trim() : ''; }
   function isoLocal(d) {
     return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   }
-
   function gvDate(v) {
     if (v===null || v===undefined || v==='') return null;
     const s = String(v);
     let m = s.match(/Date\((\d+),(\d+),(\d+)/);
     if (m) return new Date(+m[1], +m[2], +m[3]);
-    m = s.match(/^(\d{1,2})\s+([A-Za-z]+),?\s+(\d{2,4})$/);          // "1 Jan, 26"
+    m = s.match(/^(\d{1,2})\s+([A-Za-z]+),?\s+(\d{2,4})$/);
     if (m) {
       const y = m[3].length===2 ? 2000+ +m[3] : +m[3];
       const d = new Date(m[1]+' '+m[2]+' '+y);
       return isNaN(d) ? null : d;
     }
-    m = s.match(/^([A-Za-z]{3,})\s+(\d{1,2}),?\s+(\d{2,4})$/);       // "Oct 19, 25"
+    m = s.match(/^([A-Za-z]{3,})\s+(\d{1,2}),?\s+(\d{2,4})$/);
     if (m) {
       const y = m[3].length===2 ? 2000+ +m[3] : +m[3];
       const d = new Date(m[2]+' '+m[1]+' '+y);
       return isNaN(d) ? null : d;
     }
-    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);                // "15/10/2025" DD/MM/YYYY
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
     if (m) {
       const y = m[3].length===2 ? 2000+ +m[3] : +m[3];
       const d = new Date(y, +m[2]-1, +m[1]);
@@ -1002,11 +1067,13 @@
     return isNaN(d) ? null : d;
   }
 
-  function cellNum(c)  { return (c && c.v!==null && c.v!==undefined && c.v!=='') ? (Number(c.v)||0) : 0; }
-  function cellStr(c)  { return (c && c.v!==null && c.v!==undefined) ? String(c.v).trim() : ''; }
-
-  // Column indices (0-based) in Sale Entry - Helper tab:
-  // A=0 Date · B=1 Client · J=9 Final Bill · M=12 Paid · P=15 Seller · R=17 PMC
+  /* ═══════════════════════════════════════════════════════════
+     SALES ANALYTICS — "Sale Entry- Helper" tab (Central Finance)
+     A=Date · B=Client · J=Final Bill · M=Paid · P=Seller · R=PMC
+     Feeds YTD, Sales vs Collection and Seller Information — all
+     unaffected by the Expense- Helper bug, so unchanged.
+     ═══════════════════════════════════════════════════════════ */
+  let AN_ROWS = [], trendChart = null;
   const SC = { date:0, client:1, sales:9, paid:12, seller:15, pmc:17 };
 
   async function loadAnalytics() {
@@ -1050,13 +1117,11 @@
     let end   = new Date(eEl.value+'T00:00:00');
     if (end < start) { const t = start; start = end; end = t; }
 
-    // formatted date pills — 26 Jan, 2026
     document.getElementById('ds-show').textContent = fmtDate(start);
     document.getElementById('de-show').textContent = fmtDate(end);
 
     const rows = AN_ROWS.filter(r => r.d >= start && r.d <= end);
 
-    // daily buckets
     const dayMs = 86400000;
     const nDays = Math.round((end - start)/dayMs) + 1;
     const labels = [], fullDates = [], salesArr = [], paidArr = [];
@@ -1076,7 +1141,6 @@
       tSales += r.sales; tPaid += r.paid; tPmc += r.pmc;
     });
 
-    // tiles
     const due = tSales - tPaid;
     document.getElementById('sc-grid').style.display = 'grid';
     document.getElementById('k-sales').innerHTML = tk(tSales);
@@ -1086,8 +1150,6 @@
     kd.className = 'gtile-v ' + (due>0 ? 'neg' : 'pos');
     document.getElementById('k-crate').textContent = tSales ? Math.round(tPaid/tSales*100)+'%' : '—';
 
-    // day-exact P&L, cash basis (matches sheet "Actual" columns):
-    // GP = Paid − PMC (COGS) · Expense = dated register · NP = GP − Expense · % against Paid
     function setTile(id, html, cls) {
       const el = document.getElementById(id);
       el.innerHTML = html;
@@ -1096,58 +1158,71 @@
     const gp = tPaid - tPmc;
     setTile('k-gp',  tk(gp),            numClass(gp));
     setTile('k-gpp', pctOf(gp, tPaid),  numClass(gp));
-    if (window._expLoaded) {
-      let exp = 0;
-      EXP_ROWS.forEach(e => { if (e.d >= start && e.d <= end) exp += e.amt; });
-      const np = gp - exp;
-      setTile('k-exp', tk(exp),           '');
-      setTile('k-np',  tk(np),            numClass(np));
-      setTile('k-npp', pctOf(np, tPaid),  numClass(np));
+
+    const mr = monthlyPLRange(start, end);
+    const hintEl = document.getElementById('sc-hint');
+    if (mr.ok) {
+      const np = gp - mr.opex;
+      setTile('k-exp', tk(mr.opex), '');
+      setTile('k-np',  tk(np),      numClass(np));
+      setTile('k-npp', pctOf(np, tPaid), numClass(np));
+      hintEl.style.display = 'none';
     } else {
       ['k-exp','k-np','k-npp'].forEach(id => setTile(id,'—',''));
+      hintEl.style.display = 'block';
+      hintEl.textContent = 'Pick a full calendar month (or months) to see Expense and Net Profit here — day-level expense figures aren\'t tracked. Gross Profit above is exact for any range.';
     }
 
-    // chart — light panel styling, matching the rest of the dashboard
-    // (16 Sep 2026: was styled for the dark .sc-wrap card that no longer exists)
     document.getElementById('an-state').style.display = 'none';
-    const cv = document.getElementById('trendChart');
-    cv.style.display = 'block';
-    if (trendChart) trendChart.destroy();
-    trendChart = new Chart(cv, {
-      data: {
-        labels: labels,
-        datasets: [
-          { type:'bar',  label:'Sales',      data:salesArr,
-            backgroundColor:'rgba(21,131,179,0.55)', hoverBackgroundColor:'rgba(21,131,179,0.85)',
-            borderRadius:4, order:2 },
-          { type:'line', label:'Collection', data:paidArr,
-            borderColor:'#16b07c', backgroundColor:'rgba(22,176,124,0.12)',
-            fill:true, tension:0.35, pointRadius:2, pointHoverRadius:5,
-            pointBackgroundColor:'#16b07c', borderWidth:2, order:1 }
-        ]
-      },
-      options: {
-        responsive:true, maintainAspectRatio:false, animation:false,
-        interaction:{ mode:'index', intersect:false },
-        plugins:{
-          legend:{ labels:{ boxWidth:10, color:'#828791', font:{ family:'Inter', size:10, weight:'700' } } },
-          tooltip:{
-            backgroundColor:'#fff', titleColor:'#16181d', bodyColor:'#16181d',
-            borderColor:'#eceff3', borderWidth:1,
-            callbacks:{
-              title: items => items.length ? fullDates[items[0].dataIndex] : '',
-              label: ctx => ' '+ctx.dataset.label+': '+fmt(ctx.parsed.y)+' tk'
-            }
-          }
+    // Guarded on its own (27 Sep 2026): Chart.js loads from a CDN <script> tag
+    // in <head>, which normally finishes well before this inline script runs —
+    // but on a slow/flaky mobile connection it might not have yet. Without
+    // this try/catch, a single "Chart is not defined" here used to abort the
+    // rest of renderAnalytics() too, silently killing the seller cards below
+    // it. Now a chart hiccup only loses the chart, never the numbers.
+    try {
+      const cv = document.getElementById('trendChart');
+      cv.style.display = 'block';
+      if (trendChart) trendChart.destroy();
+      trendChart = new Chart(cv, {
+        data: {
+          labels: labels,
+          datasets: [
+            { type:'bar',  label:'Sales',      data:salesArr,
+              backgroundColor:'rgba(21,131,179,0.55)', hoverBackgroundColor:'rgba(21,131,179,0.85)',
+              borderRadius:4, order:2 },
+            { type:'line', label:'Collection', data:paidArr,
+              borderColor:'#16b07c', backgroundColor:'rgba(22,176,124,0.12)',
+              fill:true, tension:0.35, pointRadius:2, pointHoverRadius:5,
+              pointBackgroundColor:'#16b07c', borderWidth:2, order:1 }
+          ]
         },
-        scales:{
-          x:{ grid:{ display:false }, ticks:{ color:'#828791', font:{ family:'Inter', size:9 }, maxRotation:0, autoSkip:true, maxTicksLimit:8 } },
-          y:{ beginAtZero:true, grid:{ color:'#eceff3' }, ticks:{ color:'#828791', font:{ family:'Inter', size:9 }, callback:v => v>=1000 ? (v/1000)+'k' : v } }
+        options: {
+          responsive:true, maintainAspectRatio:false, animation:false,
+          interaction:{ mode:'index', intersect:false },
+          plugins:{
+            legend:{ labels:{ boxWidth:10, color:'#828791', font:{ family:'Inter', size:10, weight:'700' } } },
+            tooltip:{
+              backgroundColor:'#fff', titleColor:'#16181d', bodyColor:'#16181d',
+              borderColor:'#eceff3', borderWidth:1,
+              callbacks:{
+                title: items => items.length ? fullDates[items[0].dataIndex] : '',
+                label: ctx => ' '+ctx.dataset.label+': '+fmt(ctx.parsed.y)+' tk'
+              }
+            }
+          },
+          scales:{
+            x:{ grid:{ display:false }, ticks:{ color:'#828791', font:{ family:'Inter', size:9 }, maxRotation:0, autoSkip:true, maxTicksLimit:8 } },
+            y:{ beginAtZero:true, grid:{ color:'#eceff3' }, ticks:{ color:'#828791', font:{ family:'Inter', size:9 }, callback:v => v>=1000 ? (v/1000)+'k' : v } }
+          }
         }
-      }
-    });
+      });
+    } catch(chartErr) {
+      console.error('trend chart failed:', chartErr);
+      document.getElementById('an-state').style.display = 'block';
+      document.getElementById('an-state').innerHTML = '⚠️ Chart could not load, figures above are still current.';
+    }
 
-    // salesman table
     const by = {};
     rows.forEach(r => {
       const k = r.seller;
@@ -1158,31 +1233,15 @@
     });
     const sellers = Object.keys(by).sort((a,b) => by[b].sales - by[a].sales);
 
-    // Target % and Incentive always come from the Salesman API and are always
-    // THIS MONTH's figures (that's the only period the backend tracks target
-    // against) — independent of whatever date range is picked above for
-    // Sales/Coll./Due/Clients. Labelled "(mo.)" so the two don't read as if
-    // they obey the same date range.
-    //
-    // Rendered as a vertical stack of tappable cards (not a table) so the
-    // panel only ever scrolls top-to-bottom, never sideways — each card
-    // holds its own stat grid, and tapping one opens the full popup detail.
     let totC = new Set();
     let listH = '';
     sellers.forEach(k => {
       const o = by[k];
       o.clients.forEach(c => totC.add(c));
       const t = TEAM_BY_NAME[k.trim().toLowerCase()];
-      // Achieved shows the actual taka sold this month (t.mSales) — the number
-      // itself, not just the percentage of target it represents (16 Sep 2026,
-      // Chayan asked "what amount they have achieved already").
       const achieved = t ? tk(t.mSales) : (window._teamLoaded ? '—' : '…');
       const achv = t ? (t.target > 0 ? tk(t.target)+' ('+Math.round(t.achievementPct)+'%)' : 'No target') : (window._teamLoaded ? '—' : '…');
       const achvCls = t && t.target > 0 ? (t.achievementPct >= 100 ? 'pos-t' : (t.achievementPct < 70 ? 'neg-t' : '')) : '';
-      // Incentive shown as the AVAILED amount (what they'd earn on current
-      // sales, before the target gate) — not finalCommission, which stays 0
-      // until target is met and reads as "earning nothing" even when close.
-      // finalCommission (the actual gated payout) is still in Full Detail ›.
       const inc = t ? tk(t.availed) : (window._teamLoaded ? '—' : '…');
       const due2 = o.sales - o.paid;
       const dueCls = due2 > 0 ? 'neg-t' : (due2 < 0 ? 'pos-t' : '');
@@ -1206,26 +1265,15 @@
         + '</div>';
     });
     document.getElementById('perf-tbl').innerHTML = listH || '<div class="pend-empty">No sales in this range.</div>';
-    // Cards instead of a text line (16 Sep 2026, 2nd pass) — Chayan: "you
-    // don't have to make a line, rather you can make boxes or cards."
-    // Sales and Collected% used to repeat here (20 Sep 2026: Chayan flagged
-    // this as duplicate — those two numbers are already in the Sales vs
-    // Collection grid above). This card now shows only what's unique to
-    // Team Performance: distinct client count, tagged with the same date
-    // range so it doesn't read as a mystery number on its own.
     document.getElementById('perf-total').innerHTML = '<div class="team-tiles" style="grid-template-columns:1fr;">'
         + '<div class="gtile"><div class="gtile-l">Clients ('+document.getElementById('ds-show').textContent+' &ndash; '+document.getElementById('de-show').textContent+')</div><div class="gtile-v">'+totC.size+'</div></div>'
       + '</div>'
-      // Reworded (20 Sep 2026) — Chayan said the old wording was a line he
-      // "didn't know what it means." Shorter, states the number plainly.
       + '<div class="pf-note">Incentive (100%) shown per seller below is what they earn ONLY if they hit 100% of this month\'s target, not money already earned.</div>'
       + (window._teamLoadError
           ? (window._teamAuthError
               ? '<div class="pf-err">Target % and Incentive did not load — this login is not on the Salesman API approver list, ask Chayan to add it in the Access sheet.</div>'
               : '<div class="pf-err">Target % and Incentive did not load — most likely the Salesman API script needs a fresh deploy.</div>')
           : '');
-    document.getElementById('perf-section').style.display = 'block';
-    applyCollapseState('perf-tbl','perf-toggle','Seller Information','Hide seller information');
   };
 
   (function initAnalytics() {
@@ -1241,12 +1289,190 @@
     document.getElementById('de-show').textContent = fmtDate(now);
   })();
 
-  // ── PENDING ORDERS (Due Deliveries) — every seller's Sales Notes, not just one ──
-  // getOrderNotes in the Sales Note Apps Script only ever filtered by seller_id,
-  // so nobody but the seller who wrote a note could see it (Chayan's report,
-  // 16 Sep 2026). getAllOrderNotes is the new read-only action that removes
-  // that filter; this panel is the first caller. 'Forwarded' = already turned
-  // into a real sale in Sale Entry, so only 'Pending' counts as still due.
+  /* ═══════════════════════════════════════════════════════════
+     ALL INVOICES + PRODUCT PERFORMANCE — new sections, read
+     straight from the real "Sale Entry" sheet (not the slim
+     Helper mirror), which carries Invoice No, Product Profit (AE)
+     and Net Profit After Delivery (AF) per line/invoice. Grouped
+     by Invoice No, preserving row order: per-line fields (product,
+     qty, rate, its own profit) come from each row; invoice-level
+     fields (Total Payable, Paid, Due, delivery cost, Net Profit
+     After Delivery) come from the LAST row of the group, which is
+     where the sheet's own formulas roll them up.
+     ═══════════════════════════════════════════════════════════ */
+  const SE_COL = {
+    date:0, client:1, product:3, gift:4, rate:5, qty:6, bill:7, discount:8, finalBill:9,
+    prevDue:10, totalPayable:11, paid:12, due:13, comment:14, seller:15, cashRecvBy:16,
+    cogs:17, invoiceNo:23, delivCharge:24, parcelWt:25, delivZone:26, estCourier:27,
+    actCourier:28, consignId:29, prodProfit:30, netAfterDeliv:31, delivCost:32
+  };
+  let SE_ROWS = [], INVOICES = [];
+  window._seLoaded = false;
+  let INV_RANGE_K = null; // month key currently browsed by All Invoices / Product Performance
+
+  async function loadSaleEntryRaw() {
+    try {
+      const tbl = await gvTable(SALES_FILE_ID, 'Sale Entry');
+      const rows = (tbl.rows||[]).map(r => {
+        const c = r.c||[];
+        const d = gvDate(c[SE_COL.date] ? (c[SE_COL.date].v!==null && c[SE_COL.date].v!==undefined ? c[SE_COL.date].v : null) : null);
+        const invNo = cellNum(c[SE_COL.invoiceNo]);
+        if (!d || !invNo) return null; // skip padding/blank rows
+        return {
+          d: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
+          client: cellStr(c[SE_COL.client]),
+          product: cellStr(c[SE_COL.product]),
+          gift: !!(c[SE_COL.gift] && c[SE_COL.gift].v),
+          rate: cellNum(c[SE_COL.rate]), qty: cellNum(c[SE_COL.qty]),
+          finalBill: cellNum(c[SE_COL.finalBill]),
+          totalPayable: cellNum(c[SE_COL.totalPayable]), paid: cellNum(c[SE_COL.paid]), due: cellNum(c[SE_COL.due]),
+          comment: cellStr(c[SE_COL.comment]), seller: cellStr(c[SE_COL.seller]) || '(No seller)',
+          cashRecvBy: cellStr(c[SE_COL.cashRecvBy]), cogs: cellNum(c[SE_COL.cogs]),
+          invoiceNo: invNo,
+          delivCharge: cellNum(c[SE_COL.delivCharge]), delivZone: cellStr(c[SE_COL.delivZone]),
+          courierCost: cellNum(c[SE_COL.delivCost]),
+          prodProfit: cellNum(c[SE_COL.prodProfit]), netAfterDeliv: (c[SE_COL.netAfterDeliv] && c[SE_COL.netAfterDeliv].v!==null && c[SE_COL.netAfterDeliv].v!==undefined) ? cellNum(c[SE_COL.netAfterDeliv]) : null
+        };
+      }).filter(Boolean);
+      SE_ROWS = rows;
+
+      const byInv = {};
+      rows.forEach(r => {
+        if (!byInv[r.invoiceNo]) byInv[r.invoiceNo] = [];
+        byInv[r.invoiceNo].push(r);
+      });
+      INVOICES = Object.keys(byInv).map(no => {
+        const lines = byInv[no];
+        const last = lines[lines.length-1];
+        return {
+          invoiceNo: Number(no), date: last.d, client: last.client, seller: last.seller,
+          cashRecvBy: last.cashRecvBy, comment: lines.map(l=>l.comment).filter(Boolean).join(' · '),
+          bill: lines.reduce((t,l)=>t+l.finalBill,0),
+          totalPayable: last.totalPayable, paid: last.paid, due: last.due,
+          delivCharge: lines.reduce((t,l)=>t+l.delivCharge,0),
+          delivZone: last.delivZone, courierCost: last.courierCost,
+          productProfit: lines.reduce((t,l)=>t+l.prodProfit,0),
+          netAfterDeliv: last.netAfterDeliv,
+          items: lines.filter(l=>l.product)
+        };
+      }).sort((a,b) => b.date - a.date || b.invoiceNo - a.invoiceNo);
+
+      window._seLoaded = true;
+      if (INV_RANGE_K == null) INV_RANGE_K = mKey(new Date());
+      renderInvoicesSection();
+      renderProductPerfSection();
+    } catch(e) {
+      console.error('sale entry raw:', e);
+      window._seLoaded = true;
+      ['inv-section-body','prod-section-body'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '<div class="state">⚠️ Could not load the Sale Entry sheet.</div>';
+      });
+    }
+  }
+
+  function invStep(dir) {
+    INV_RANGE_K += dir;
+    renderInvoicesSection();
+    renderProductPerfSection();
+  }
+
+  function mstepHtml() {
+    return '<div class="mstep">'
+      + '<div class="mstep-btn" onclick="invStep(-1)">‹</div>'
+      + '<div class="mstep-lbl">'+mLabelFull(INV_RANGE_K)+'</div>'
+      + '<div class="mstep-btn" onclick="invStep(1)">›</div>'
+      + '</div>';
+  }
+
+  function renderInvoicesSection() {
+    const el = document.getElementById('inv-section-body');
+    if (!el || !window._seLoaded) return;
+    const inRange = INVOICES.filter(iv => mKey(iv.date) === INV_RANGE_K);
+    const tBill = inRange.reduce((t,i)=>t+i.bill,0);
+    const tPaid = inRange.reduce((t,i)=>t+i.paid,0);
+    const tDue  = inRange.reduce((t,i)=>t+i.due,0);
+    const withProfit = inRange.filter(i=>i.netAfterDeliv!=null);
+    const tNet  = withProfit.reduce((t,i)=>t+i.netAfterDeliv,0);
+
+    let h = mstepHtml();
+    h += '<div class="mstep-tiles">'
+      + '<div class="gtile"><div class="gtile-l">Invoices</div><div class="gtile-v">'+inRange.length+'</div></div>'
+      + '<div class="gtile"><div class="gtile-l">Bill</div><div class="gtile-v">'+tk(tBill)+'</div></div>'
+      + '<div class="gtile"><div class="gtile-l">Collected</div><div class="gtile-v">'+tk(tPaid)+'</div></div>'
+      + '<div class="gtile"><div class="gtile-l">Profit After Delivery</div><div class="gtile-v '+numClass(tNet)+'">'+(withProfit.length?tk(tNet):'—')+'</div></div>'
+      + '</div>';
+
+    if (!inRange.length) {
+      h += '<div class="pend-empty">No invoices in '+mLabelFull(INV_RANGE_K)+'.</div>';
+    } else {
+      inRange.forEach(iv => {
+        const netCls = iv.netAfterDeliv==null ? 'pchip-n' : (iv.netAfterDeliv>=0 ? 'pchip-p' : 'pchip-d');
+        h += '<div class="inv-card" onclick="openInvDetail('+iv.invoiceNo+')">'
+          + '<div class="inv-top"><span class="inv-no">#'+iv.invoiceNo+'</span><span class="inv-date">'+fmtDate(iv.date)+'</span></div>'
+          + '<div class="inv-client">'+(iv.client||'Unknown client')+'<span> · '+iv.seller+'</span></div>'
+          + '<div class="inv-chips">'
+          + '<div class="pchip pchip-b"><div class="pchip-lbl">Bill</div><div class="pchip-val">'+fmt(iv.bill)+'</div></div>'
+          + '<div class="pchip pchip-p"><div class="pchip-lbl">Paid</div><div class="pchip-val">'+fmt(iv.paid)+'</div></div>'
+          + '<div class="pchip pchip-d"><div class="pchip-lbl">Due</div><div class="pchip-val">'+fmt(iv.due)+'</div></div>'
+          + '<div class="pchip '+netCls+'"><div class="pchip-lbl">After Delivery</div><div class="pchip-val">'+(iv.netAfterDeliv==null?'—':fmt(iv.netAfterDeliv))+'</div></div>'
+          + '</div></div>';
+      });
+    }
+    el.innerHTML = h;
+  }
+
+  function renderProductPerfSection() {
+    const el = document.getElementById('prod-section-body');
+    if (!el || !window._seLoaded) return;
+    const byProduct = {};
+    SE_ROWS.forEach(r => {
+      if (!r.product || mKey(r.d) !== INV_RANGE_K) return;
+      const key = r.product;
+      if (!byProduct[key]) byProduct[key] = { product:key, qty:0, revenue:0, cogs:0, profit:0 };
+      byProduct[key].qty     += r.qty;
+      byProduct[key].revenue += r.finalBill;
+      byProduct[key].cogs    += r.cogs;
+      byProduct[key].profit  += r.prodProfit;
+    });
+    const rows = Object.values(byProduct).sort((a,b) => b.revenue - a.revenue);
+    const tRev = rows.reduce((t,r)=>t+r.revenue,0), tProfit = rows.reduce((t,r)=>t+r.profit,0);
+
+    let h = mstepHtml();
+    h += '<div class="mstep-tiles">'
+      + '<div class="gtile"><div class="gtile-l">Products</div><div class="gtile-v">'+rows.length+'</div></div>'
+      + '<div class="gtile"><div class="gtile-l">Revenue</div><div class="gtile-v">'+tk(tRev)+'</div></div>'
+      + '<div class="gtile"><div class="gtile-l">Profit</div><div class="gtile-v '+numClass(tProfit)+'">'+tk(tProfit)+'</div></div>'
+      + '<div class="gtile"><div class="gtile-l">Margin</div><div class="gtile-v">'+pctOf(tProfit,tRev)+'</div></div>'
+      + '</div>';
+
+    if (!rows.length) {
+      h += '<div class="pend-empty">No products sold in '+mLabelFull(INV_RANGE_K)+'.</div>';
+    } else {
+      rows.forEach(r => {
+        const margin = r.revenue ? r.profit/r.revenue : 0;
+        const rateCls = margin>=0.25 ? 'rate-hi' : (margin<0 ? 'rate-lo' : 'rate-mid');
+        h += '<div class="pcard"><div class="pcard-top"><span class="pcard-name">'+r.product+'</span>'
+          + '<span class="rate-pill '+rateCls+'">'+Math.round(margin*100)+'%</span></div>'
+          + '<div class="pcard-chips">'
+          + '<div class="pchip pchip-n"><div class="pchip-lbl">Qty</div><div class="pchip-val">'+fmt(r.qty)+'</div></div>'
+          + '<div class="pchip pchip-b"><div class="pchip-lbl">Revenue</div><div class="pchip-val">'+fmt(r.revenue)+'</div></div>'
+          + '<div class="pchip '+(r.profit>=0?'pchip-p':'pchip-d')+'"><div class="pchip-lbl">Profit</div><div class="pchip-val">'+fmt(r.profit)+'</div></div>'
+          + '</div></div>';
+      });
+    }
+    el.innerHTML = h;
+  }
+
+  ACC_ON_OPEN['inv']  = function(){ if (window._seLoaded) { renderInvoicesSection(); } };
+  ACC_ON_OPEN['prod'] = function(){ if (window._seLoaded) { renderProductPerfSection(); } };
+  // Both need the raw sheet; if it hasn't loaded yet by the time either
+  // section is first opened, render once loadSaleEntryRaw() finishes (it
+  // calls both render functions itself) — nothing else to do here.
+
+  /* ═══════════════════════════════════════════════════════════
+     PENDING ORDERS (Due Deliveries)
+     ═══════════════════════════════════════════════════════════ */
   const NOTES_AS_URL = 'https://script.google.com/macros/s/AKfycbzrSZWi3slmIrFl-OtstzU2GOBtQaYg0Ufdk9s5x0whmaLcifXd3wmBaEDqEcZCW-MHmA/exec';
   let PEND_NOTES = [], PEND_SORTED = [];
   window._pendLoaded = false;
@@ -1273,36 +1499,14 @@
     return Math.floor((new Date() - d) / 86400000);
   }
 
-  // Row list is collapsible so the section reads as "count + value awaiting,
-  // then details on demand" (16 Sep 2026, Chayan's ask) — the two summary
-  // tiles stay visible always, the row list hides behind a button.
-  const COLLAPSE_STATE = {};
-  function toggleCollapsible(contentId, btnId, closedLabel, openLabel) {
-    const c = document.getElementById(contentId), b = document.getElementById(btnId);
-    if (!c || !b) return;
-    const nowOpen = !c.classList.contains('open');
-    c.classList.toggle('open', nowOpen);
-    b.classList.toggle('open', nowOpen);
-    const s = b.querySelector('span'); if (s) s.textContent = nowOpen ? openLabel : closedLabel;
-    COLLAPSE_STATE[contentId] = nowOpen;
-  }
-  // Re-applies whatever open/closed state the user left a section in, after
-  // a re-render — without this, every 20s live refresh would silently snap
-  // an opened section shut again while Chayan is still reading it.
-  function applyCollapseState(contentId, btnId, closedLabel, openLabel) {
-    const isOpen = !!COLLAPSE_STATE[contentId];
-    const c = document.getElementById(contentId), b = document.getElementById(btnId);
-    if (!c || !b) return;
-    c.classList.toggle('open', isOpen);
-    b.classList.toggle('open', isOpen);
-    const s = b.querySelector('span'); if (s) s.textContent = isOpen ? openLabel : closedLabel;
-  }
-
   function renderPendingOrders() {
     const el = document.getElementById('pend-wrap');
     if (!el) return;
     const totalVal = PEND_NOTES.reduce((t,n) => t + (Number(n.subtotal)||0), 0);
-    PEND_SORTED = PEND_NOTES.slice().sort((a,b) => String(a.ts).localeCompare(String(b.ts))); // oldest first = most overdue first
+    PEND_SORTED = PEND_NOTES.slice().sort((a,b) => String(a.ts).localeCompare(String(b.ts)));
+
+    const badge = document.getElementById('pending-badge');
+    if (badge) badge.textContent = PEND_NOTES.length;
 
     let h = '<div class="pend-sum">'
       + '<div class="ptile"><div class="pl">Pending Orders</div><div class="pv">'+PEND_NOTES.length+'</div></div>'
@@ -1312,9 +1516,6 @@
     if (!PEND_SORTED.length) {
       h += '<div class="pend-empty">Nothing pending. Every note has been delivered or cleared.</div>';
     } else {
-      h += '<div class="expand-btn amber" id="pend-toggle" onclick="toggleCollapsible(\'pend-list\',\'pend-toggle\',\'View '+PEND_SORTED.length+' pending order'+(PEND_SORTED.length===1?'':'s')+'\',\'Hide pending orders\')">'
-        + '<span>View '+PEND_SORTED.length+' pending order'+(PEND_SORTED.length===1?'':'s')+'</span><span class="arrow">▾</span></div>';
-      h += '<div class="collapsible" id="pend-list">';
       PEND_SORTED.forEach((n,i) => {
         const age = noteAgeDays(n.ts);
         const ageTxt = age===null ? '' : (age<=0 ? 'today' : age+'d old');
@@ -1329,18 +1530,11 @@
           + '<div class="pr-age'+(age!==null && age>7 ? ' old':'')+'">'+ageTxt+'</div></div>'
           + '</div>';
       });
-      h += '</div>';
     }
     el.innerHTML = h;
-    if (PEND_SORTED.length) applyCollapseState('pend-list','pend-toggle','View '+PEND_SORTED.length+' pending order'+(PEND_SORTED.length===1?'':'s'),'Hide pending orders');
     renderProductDemand();
   }
 
-  // ── PRODUCT DEMAND — total qty per product across every still-Pending
-  // Sales Note, whole team, not just one salesman (Chayan's ask, 20 Sep
-  // 2026). Reuses PEND_NOTES already fetched by loadPendingOrders above,
-  // so this needs no new fetch and no Apps Script change — pure
-  // aggregation of data the dashboard already has in memory.
   function renderProductDemand() {
     const el = document.getElementById('demand-wrap');
     if (!el) return;
@@ -1360,9 +1554,7 @@
       el.innerHTML = '<div class="pend-empty">No pending orders, nothing to plan production or stock for right now.</div>';
       return;
     }
-    let h = '<div class="expand-btn blue" id="demand-toggle" onclick="toggleCollapsible(\'demand-list\',\'demand-toggle\',\'View '+rows.length+' product'+(rows.length===1?'':'s')+'\',\'Hide product demand\')">'
-      + '<span>View '+rows.length+' product'+(rows.length===1?'':'s')+'</span><span class="arrow">▾</span></div>';
-    h += '<div class="collapsible" id="demand-list">';
+    let h = '';
     rows.forEach(r => {
       h += '<div class="pcard"><div class="pcard-top"><span class="pcard-name">'+r.product
         + '<span class="pcard-sub">'+r.orders+' pending order'+(r.orders===1?'':'s')+'</span></span></div>'
@@ -1371,18 +1563,18 @@
         + '<div class="pchip pchip-p"><div class="pchip-lbl">Value</div><div class="pchip-val">'+tk(r.value)+'</div></div>'
         + '</div></div>';
     });
-    h += '</div>';
     el.innerHTML = h;
-    applyCollapseState('demand-list','demand-toggle','View '+rows.length+' product'+(rows.length===1?'':'s'),'Hide product demand');
   }
 
-  // ── CLIENTS INFO — full name/shop/location/zone/phone, joined by "det" ──
-  // Sales Notes' client field IS the "det" string (name, shop, loc, zone
-  // joined with ", "), the same join key used across Clients Info, Sale
-  // Entry, Sales Notes and the Call Log sheet. This tab is the only place
-  // the phone number lives, so a phone/full-detail view has to read it too.
-  // Columns verified against Sales Panel Apps Script's updateClientPhone:
-  // B=type C=name D=shop E=loc F=zone G=phone H=det.
+  /* ═══════════════════════════════════════════════════════════
+     CLIENTS INFO — name/shop/location/zone/phone AND (new) each
+     client's lifetime Sales/Paid, straight from the sheet's own
+     Sales/Paid columns (I/J) rather than re-aggregated here —
+     answers Chayan's ask directly: tap a pending order, see that
+     client's total sale and total collection, not just this order.
+     Columns verified live 27 Sep 2026: B type C name D shop E loc
+     F zone G phone H det I Sales J Paid K Running Due O Profit% P Rank.
+     ═══════════════════════════════════════════════════════════ */
   let CLIENTS_BY_DET = {};
   async function loadClientsInfo() {
     try {
@@ -1392,7 +1584,10 @@
         const c = r.c||[];
         const det = cellStr(c[7]);
         if (!det) return;
-        map[det] = { name:cellStr(c[2]), shop:cellStr(c[3]), loc:cellStr(c[4]), zone:cellStr(c[5]), phone:cellStr(c[6]) };
+        map[det] = {
+          name:cellStr(c[2]), shop:cellStr(c[3]), loc:cellStr(c[4]), zone:cellStr(c[5]), phone:cellStr(c[6]),
+          sales:cellNum(c[8]), paid:cellNum(c[9]), due:cellNum(c[10]), profitPct:cellNum(c[14]), rank:cellNum(c[15])
+        };
       });
       CLIENTS_BY_DET = map;
     } catch(e) { console.error('clients info:', e); }
@@ -1404,8 +1599,6 @@
     if (d.indexOf('0') === 0) return '880' + d.slice(1);
     return '880' + d;
   }
-  // Same call/WhatsApp icon pair as the Client Calls panel — an emoji glyph
-  // ignores CSS color, an inline SVG can be made solid white to match.
   const TEL_SVG = '<svg viewBox="0 0 24 24" fill="white"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>';
   const WA_SVG = '<svg viewBox="0 0 24 24" fill="white"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.85.5 3.58 1.36 5.08L2 22l5.25-1.38a9.87 9.87 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.8 14.07c-.24.68-1.4 1.32-1.93 1.4-.5.08-1.13.11-1.82-.11-.42-.13-.96-.31-1.65-.6-2.9-1.25-4.79-4.17-4.93-4.36-.14-.19-1.18-1.57-1.18-3 0-1.42.75-2.12 1.02-2.41.27-.29.58-.36.78-.36.19 0 .39 0 .56.01.18.01.42-.07.66.5.24.58.83 2 .9 2.14.07.15.12.32.02.51-.09.19-.14.31-.28.48-.14.17-.29.37-.42.5-.14.14-.28.29-.12.57.16.28.7 1.16 1.51 1.88 1.04.93 1.92 1.22 2.19 1.36.28.14.44.12.6-.07.16-.19.68-.79.87-1.06.18-.27.36-.22.6-.13.24.09 1.53.72 1.79.85.27.14.44.2.51.32.06.11.06.65-.18 1.32z"/></svg>';
   function telIconsHtml(phone) {
@@ -1415,19 +1608,6 @@
       + (wa ? '<a class="icon-btn wa-ic" href="https://wa.me/'+wa+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" aria-label="WhatsApp">'+WA_SVG+'</a>' : '');
   }
 
-  // ── friendly date/time — so a salesman reading this, not just Chayan,
-  // understands it at a glance instead of a raw "2026-09-16 14:30:00" ──
-  // Robust parse for two very different raw shapes: gviz's "YYYY-MM-DD HH:MM:SS"
-  // AND the Apps Script backend's String(dateCell), which is a full JS
-  // Date.toString() like "Thu Sep 24 2026 00:00:00 GMT+0600 (Bangladesh
-  // Standard Time)". BUG FIXED 16 Sep 2026: the old code always did
-  // s.replace(' ','T') before parsing — fine for the gviz shape, but for the
-  // GMT shape it inserted a T after "Thu" and produced an unparseable string,
-  // so parsing failed and the function fell back to returning that raw GMT
-  // string as-is. That raw fallback is exactly what Chayan saw on the
-  // Deadline row. Fix: try parsing the raw string directly first (both shapes
-  // above parse fine with a plain `new Date(s)`), only reach for the
-  // space→T fallback if that fails.
   function parseNoteDate(raw) {
     const s = String(raw||'').trim();
     if (!s) return null;
@@ -1451,34 +1631,15 @@
     return d ? fmtDate(d) : String(raw);
   }
 
-  // ── TEAM PERFORMANCE — target%, incentive and product mix per seller,
-  // straight from the Salesman API's own commission/target engine (same
-  // numbers profile-s.html shows each seller for themselves; this is the
-  // admin-wide version). Always "this month", same period the backend
-  // tracks target against. ──
+  /* ═══════════════════════════════════════════════════════════
+     TEAM PERFORMANCE
+     ═══════════════════════════════════════════════════════════ */
   let TEAM_PERF = [], TEAM_BY_NAME = {};
   window._teamLoaded = false;
   window._teamLoadError = false;
-  // FIX (16 Sep 2026): on a failed fetch, _teamLoaded used to stay false
-  // FOREVER, so every seller card showed "…" (the "still loading" symbol)
-  // permanently instead of an honest error — this is almost certainly what
-  // Chayan saw as "I just see three dots, why am I not getting the numbers."
-  // Most likely cause: EnkoreSalesman_API.gs hasn't been redeployed since
-  // getTeamPerformance was added — the live Web App doesn't know that action
-  // yet. Now a failure still flips _teamLoaded so the UI can tell "loading"
-  // apart from "tried and failed."
   async function loadTeamPerformance() {
     try {
       const js = await fetch(SALESMAN_AS_URL + '?action=getTeamPerformance&approverId=' + encodeURIComponent(userId) + '&t=' + Date.now()).then(r => r.json());
-      // FIX (16 Sep 2026, 2nd time): "not authorized" is a completely different
-      // problem from a broken/undeployed script — the backend is reachable and
-      // working, it just says this logged-in id isn't allowed to see the team
-      // table. Confirmed live: a non-approver id got a clean, fast
-      // {ok:false,error:'not authorized'} response while an approver id (same
-      // moment, same deployment) got full data — so the deploy is fine. The
-      // old code threw both cases into the same bucket and showed "needs a
-      // fresh deploy" either way, which sent Chayan chasing a redeploy that
-      // was never the actual cause.
       if (js && js.ok === false && js.error === 'not authorized') {
         window._teamLoaded = true;
         window._teamLoadError = true;
@@ -1501,26 +1662,26 @@
     }
   }
 
-  // ── shared popup scroll-lock — fixes "popup open, but scrolling moves the
-  // page behind it instead of the popup" (16 Sep 2026). CSS alone
-  // (touch-action / overscroll-behavior) covers most phones; this is the
-  // belt-and-braces JS lock for the rest. ──
+  /* ═══════════════════════════════════════════════════════════
+     POPUPS — 3-part back-button contract for every one of them:
+     open -> parent.__erpOv(); close-by-tap -> parent.__erpOvClose();
+     window.__erpHandleBack closes the topmost on Android Back.
+     Three popups now: pendOv, sellerOv, invOv (new).
+     ═══════════════════════════════════════════════════════════ */
   function anyOvOpen() {
-    const a = document.getElementById('pendOv'), b = document.getElementById('sellerOv');
-    return (a && a.style.display !== 'none') || (b && b.style.display !== 'none');
+    const ids = ['pendOv','sellerOv','invOv'];
+    return ids.some(id => { const el = document.getElementById(id); return el && el.style.display !== 'none'; });
   }
   function lockScroll() { document.body.style.overflow = 'hidden'; }
   function unlockScroll() { if (!anyOvOpen()) document.body.style.overflow = ''; }
 
-  // ── Popup #1 — Due Deliveries detail. Full 3-part back-button contract ──
+  // ── Popup #1 — Due Deliveries detail (now shows the client's lifetime
+  // Sales/Paid, per Chayan's ask, not just this one order's value) ──
   function openPendDetail(i) {
     const n = PEND_SORTED[i];
     if (!n) return;
     const c = CLIENTS_BY_DET[n.client] || null;
     const displayName = (c && c.name) ? c.name : (n.client || 'Unknown client');
-    // Product cards instead of a plain line (16 Sep 2026, 2nd pass) —
-    // same pattern as Seller Information's product list and the Sales
-    // panel's chip rows, so it's clear what was ordered and for how much.
     const prodHtml = (n.products||[]).map(p =>
       '<div class="pcard"><div class="pcard-top"><span class="pcard-name">'+p.product+(p.gift==='YES'?' (Gift)':'')+'</span></div>'
       + '<div class="pcard-chips">'
@@ -1535,35 +1696,38 @@
         + telIconsHtml(c.phone)
         + '</span></div>';
     }
+    const lifetimeHtml = c
+      ? '<div class="ov-tiles"><div class="ptile"><div class="pl">Client Lifetime Sale</div><div class="pv">'+tk(c.sales)+'</div></div>'
+        + '<div class="ptile val"><div class="pl">Client Lifetime Collected</div><div class="pv">'+tk(c.paid)+'</div></div></div>'
+      : '';
     document.getElementById('pendSheet').innerHTML =
         '<div class="ov-hd"><span class="ov-title">'+displayName+'</span>'
       + '<span class="ov-x" onclick="closePendDetail()">✕</span></div>'
+      + lifetimeHtml
+      + (c && c.due ? '<div class="ov-row"><span class="k">Client running due</span><span class="v '+(c.due>0?'neg-t':'')+'">'+tk(c.due)+'</span></div>' : '')
       + (c && (c.shop||c.loc||c.zone) ? '<div class="ov-row"><span class="k">Location</span><span class="v">'+[c.shop,c.loc,c.zone].filter(Boolean).join(', ')+'</span></div>' : '')
       + contactHtml
       + '<div class="ov-row"><span class="k">Seller</span><span class="v">'+(n.sellerName||'Unassigned')+'</span></div>'
       + '<div class="ov-row"><span class="k">Logged</span><span class="v">'+fmtNoteTs(n.ts)+'</span></div>'
       + '<div class="ov-row"><span class="k">Deadline</span><span class="v">'+fmtNoteDeadline(n.deadline)+'</span></div>'
-      + '<div class="ov-row"><span class="k">Value</span><span class="v">'+tk(n.subtotal)+'</span></div>'
+      + '<div class="ov-row"><span class="k">This order\'s value</span><span class="v">'+tk(n.subtotal)+'</span></div>'
       + (n.comment ? '<div class="ov-row"><span class="k">Comment</span><span class="v">'+n.comment+'</span></div>' : '')
       + '<div class="sec-title" style="margin:14px 0 8px;display:block">Order Items</div>'
       + prodHtml;
     document.getElementById('pendOv').style.display = 'flex';
     lockScroll();
-    parent.__erpOv();                 // 1. announce the popup opened
+    parent.__erpOv();
   }
   function closePendDetail() {
     document.getElementById('pendOv').style.display = 'none';
     unlockScroll();
-    parent.__erpOvClose();            // 2. announce it closed by tap
+    parent.__erpOvClose();
   }
 
   // ── Popup #2 — Salesman performance detail ──
   function openSellerDetail(name) {
     const t = TEAM_BY_NAME[String(name||'').trim().toLowerCase()];
     if (!t) return;
-    // Product cards instead of a plain table (16 Sep 2026, 2nd pass) —
-    // matches the Sales panel's own product-line chip pattern (Bill/Paid/
-    // Due) so "what's written here" reads the same way across the ERP.
     const prodHtml = (t.products && t.products.length)
       ? t.products.map(p =>
           '<div class="pcard"><div class="pcard-top"><span class="pcard-name">'+p.product+'<span class="pcard-sub">'+fmt(p.qty)+' pcs sold</span></span></div>'
@@ -1603,41 +1767,75 @@
     parent.__erpOvClose();
   }
 
-  // 3. let Android Back close whichever popup is open — must close only the
-  // topmost and return true, per CLAUDE.md §6.1 (this panel had none of
-  // these before 16 Sep 2026). The two popups never open at the same time in
-  // this UI, so "check pend, then seller" is enough — no z-index stacking.
+  // ── Popup #3 — Invoice detail (new): full item list + delivery
+  // breakdown + who received the cash, for a single invoice. ──
+  function openInvDetail(invoiceNo) {
+    const iv = INVOICES.find(x => x.invoiceNo === invoiceNo);
+    if (!iv) return;
+    const prodHtml = iv.items.length ? iv.items.map(p =>
+      '<div class="pcard"><div class="pcard-top"><span class="pcard-name">'+p.product+(p.gift?' (Gift)':'')+'</span></div>'
+      + '<div class="pcard-chips">'
+      + '<div class="pchip pchip-b"><div class="pchip-lbl">Qty</div><div class="pchip-val">'+fmt(p.qty)+'</div></div>'
+      + '<div class="pchip pchip-b"><div class="pchip-lbl">Rate</div><div class="pchip-val">'+fmt(p.rate)+'</div></div>'
+      + '<div class="pchip pchip-p"><div class="pchip-lbl">Bill</div><div class="pchip-val">'+fmt(p.finalBill)+'</div></div>'
+      + '</div></div>'
+    ).join('') : '<div class="pend-empty">No product line items — a due-collection or adjustment entry.</div>';
+    document.getElementById('invSheet').innerHTML =
+        '<div class="ov-hd"><span class="ov-title">Invoice #'+iv.invoiceNo+'</span>'
+      + '<span class="ov-x" onclick="closeInvDetail()">✕</span></div>'
+      + '<div class="ov-row"><span class="k">Client</span><span class="v">'+(iv.client||'Unknown')+'</span></div>'
+      + '<div class="ov-row"><span class="k">Date</span><span class="v">'+fmtDate(iv.date)+'</span></div>'
+      + '<div class="ov-row"><span class="k">Seller</span><span class="v">'+iv.seller+'</span></div>'
+      + '<div class="ov-row"><span class="k">Cash received by</span><span class="v">'+(iv.cashRecvBy||'—')+'</span></div>'
+      + '<div class="ov-row"><span class="k">Bill</span><span class="v">'+tk(iv.bill)+'</span></div>'
+      + '<div class="ov-row"><span class="k">Total Payable</span><span class="v">'+tk(iv.totalPayable)+'</span></div>'
+      + '<div class="ov-row"><span class="k">Paid</span><span class="v">'+tk(iv.paid)+'</span></div>'
+      + '<div class="ov-row"><span class="k">Due</span><span class="v '+(iv.due>0?'neg-t':'')+'">'+tk(iv.due)+'</span></div>'
+      + (iv.delivZone ? '<div class="ov-row"><span class="k">Delivery zone</span><span class="v">'+iv.delivZone+'</span></div>' : '')
+      + (iv.courierCost ? '<div class="ov-row"><span class="k">Delivery / courier cost</span><span class="v">'+tk(iv.courierCost)+'</span></div>' : '')
+      + '<div class="ov-row"><span class="k">Product profit (before delivery)</span><span class="v '+numClass(iv.productProfit)+'">'+tk(iv.productProfit)+'</span></div>'
+      + '<div class="ov-row"><span class="k">Net profit after delivery</span><span class="v '+numClass(iv.netAfterDeliv)+'">'+(iv.netAfterDeliv==null?'—':tk(iv.netAfterDeliv))+'</span></div>'
+      + (iv.comment ? '<div class="ov-row"><span class="k">Comment</span><span class="v">'+iv.comment+'</span></div>' : '')
+      + '<div class="sec-title" style="margin:14px 0 8px;display:block">Items</div>'
+      + prodHtml;
+    document.getElementById('invOv').style.display = 'flex';
+    lockScroll();
+    parent.__erpOv();
+  }
+  function closeInvDetail() {
+    document.getElementById('invOv').style.display = 'none';
+    unlockScroll();
+    parent.__erpOvClose();
+  }
+
   window.__erpHandleBack = function () {
     const p = document.getElementById('pendOv');
     if (p && p.style.display !== 'none') { p.style.display = 'none'; unlockScroll(); return true; }
     const s = document.getElementById('sellerOv');
     if (s && s.style.display !== 'none') { s.style.display = 'none'; unlockScroll(); return true; }
+    const iv = document.getElementById('invOv');
+    if (iv && iv.style.display !== 'none') { iv.style.display = 'none'; unlockScroll(); return true; }
     return false;
   };
 
-  // ── LIVE DASHBOARD (fixed 16 Sep 2026) ──
-  // Old behaviour only re-pulled live data on a brand-new cache or a fresh
-  // login, so a phone left signed in for days kept showing days-old numbers
-  // while another device open right after login showed current ones — the
-  // "numbers don't match" bug. Fix: paint the cache instantly for zero
-  // flicker, but ALWAYS pull live data the moment the panel opens, then keep
-  // pulling every LIVE_REFRESH_MS while the panel stays on screen, paused
-  // when the tab/app is in the background. This is the fastest safe cadence
-  // against Google's gviz endpoint and the Sales Note Apps Script — true
-  // instant push isn't possible off a Google Sheet without a bigger backend
-  // change (e.g. a websocket relay), so this is the practical ceiling.
-  const DASH_CACHE_KEY = 'enkore_dash_cache_v1';
-  const LIVE_REFRESH_MS = 20000; // 20s — sir asked for "every moment"; this is as fast as it's safe to poll
+  /* ═══════════════════════════════════════════════════════════
+     LIVE DASHBOARD — paint the cache instantly, always pull live
+     data the moment the panel opens, then keep polling while it
+     stays on screen (paused when backgrounded).
+     ═══════════════════════════════════════════════════════════ */
+  const DASH_CACHE_KEY = 'enkore_dash_cache_v2';
+  const LIVE_REFRESH_MS = 20000;
   let _dashRefreshing = false;
   let _liveTimer = null;
 
   function saveDashCache() {
-    if (!window._financeLoaded || !window._anLoaded) return; // cache only a complete load
+    if (!window._mdLoaded || !window._anLoaded) return;
     try {
       localStorage.setItem(DASH_CACHE_KEY, JSON.stringify({
         ts:   Date.now(),
-        cash: window._lastCash || { chayan:'', anik:'' },
-        exp:  EXP_ROWS.map(e => ({ d: e.d.getTime(), amt: e.amt })),
+        cash: window._lastCash || { chayan:null, anik:null },
+        cashOk: !!window._cashOk,
+        md:   MONTHLY_PL,
         an:   AN_ROWS.map(r => ({ d: r.d.getTime(), client:r.client, sales:r.sales, paid:r.paid, seller:r.seller, pmc:r.pmc }))
       }));
     } catch(_) {}
@@ -1647,11 +1845,14 @@
     let c;
     try { c = JSON.parse(localStorage.getItem(DASH_CACHE_KEY) || 'null'); } catch(_) { c = null; }
     if (!c || !c.ts) return null;
-    EXP_ROWS = (c.exp||[]).map(e => ({ d: new Date(e.d), amt: e.amt }));
+    MONTHLY_PL = (c.md||[]).map(r => ({ ...r, date: r.date ? new Date(r.date) : null }));
+    MONTHLY_BY_K = {}; MONTHLY_PL.forEach(r => { MONTHLY_BY_K[r.k] = r; });
     AN_ROWS  = (c.an ||[]).map(r => ({ d: new Date(r.d), client:r.client, sales:r.sales, paid:r.paid, seller:r.seller, pmc:r.pmc }));
-    window._expLoaded = true; window._financeLoaded = true; window._anLoaded = true;
-    window._lastCash = c.cash || { chayan:'', anik:'' };
-    buildDash({ cash: window._lastCash });
+    window._mdLoaded = true; window._anLoaded = true;
+    window._lastCash = c.cash || { chayan:null, anik:null };
+    window._cashOk = !!c.cashOk;
+    window._cashLoaded = true;
+    buildDash({});
     renderYTD();
     renderAnalytics();
     return c.ts;
@@ -1660,25 +1861,37 @@
   async function refreshDashLive() {
     if (_dashRefreshing) return;
     _dashRefreshing = true;
-    await Promise.allSettled([loadFinance(), loadAnalytics(), loadPendingOrders(), loadTeamPerformance(), loadClientsInfo()]);
-    // Re-render with whatever finished, regardless of which call resolved
-    // last — Target%/Incentive and the pending-orders client names/phones
-    // depend on the Salesman API and Clients Info calls specifically.
+    await Promise.allSettled([loadMonthlyPL(), loadCashInHand(), loadAnalytics(), loadPendingOrders(), loadTeamPerformance(), loadClientsInfo(), loadSaleEntryRaw()]);
+    renderInsights();
     if (window._pendLoaded) renderPendingOrders();
     if (document.getElementById('d-start').value) renderAnalytics();
     saveDashCache();
     _dashRefreshing = false;
   }
 
+  // Safety net registered FIRST, before startDashboard runs (27 Sep 2026 fix):
+  // an uncaught error partway through the IIFE below aborts every statement
+  // still queued after it IN THE SAME SCRIPT BLOCK — including a listener
+  // registration written after it. Registering this first guarantees the
+  // page is never left permanently cloaked (visibility:hidden) even if
+  // something inside startDashboard throws.
+  window.addEventListener('load', function(){ document.body.classList.add('booted'); });
+
   (function startDashboard() {
-    hydrateDashCache();
-    // Reveal now — cached content (or the first-load spinner) is painted in one step.
+    let hadCache = null;
+    try { hadCache = hydrateDashCache(); } catch(e) { console.error('hydrateDashCache failed:', e); }
+    // No cache yet (first-ever login on this device) — hydrateDashCache()
+    // normally builds the hero/attention/chart containers itself; without a
+    // cache that never happens, so #ins-hero etc. would not exist yet and
+    // every render call below would silently no-op forever. Build them now.
+    // Wrapped in try/catch so a slow Chart.js CDN load (renderAnalytics runs
+    // synchronously inside buildDash) can never stop refreshDashLive() and
+    // startLiveRefresh() below from still running.
+    try { if (!hadCache) buildDash({}); } catch(e) { console.error('initial buildDash failed:', e); }
     document.body.classList.add('booted');
-    refreshDashLive();   // always pull live data on open, regardless of cache age
+    refreshDashLive();
     startLiveRefresh();
   })();
-  // Safety net: never leave the page cloaked if something above throws.
-  window.addEventListener('load', function(){ document.body.classList.add('booted'); });
 
   function startLiveRefresh() {
     if (_liveTimer) return;
@@ -1687,14 +1900,12 @@
   function stopLiveRefresh() {
     if (_liveTimer) { clearInterval(_liveTimer); _liveTimer = null; }
   }
-  // Don't poll a backgrounded tab/app — saves the phone's data and battery —
-  // but refresh immediately and resume polling the moment it's looked at again.
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) { stopLiveRefresh(); }
     else { refreshDashLive(); startLiveRefresh(); }
   });
 
-  // ── PULL TO REFRESH / AUTO REFRESH (manual + on login) ──
+  /* ── PULL TO REFRESH ── */
   async function forceRefresh() {
     const ind = document.getElementById('ptrIndicator');
     ind.style.marginTop = '0px';
