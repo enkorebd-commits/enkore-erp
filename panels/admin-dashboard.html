@@ -974,8 +974,17 @@
     }
     svg += '<text x="'+PL+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#b7bdc7">'+mLabel(S[0].k)+'</text>'
       + '<text x="'+(W-PR)+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#828791" text-anchor="end">'+mLabel(S[n-1].k)+'</text>'
-      + '<text x="'+(W-PR)+'" y="'+(PT-3)+'" font-size="9" font-weight="800" fill="#b7bdc7" text-anchor="end">peak '+shortTk(hi)+'</text>'
+      + peakLabel()
       + '</svg>';
+    // 30 Sep 2026: "peak 1.4L" was drawn on top of the last month's value label
+    // whenever the last month was the peak. Now: if the last month IS the peak,
+    // its own label already says it, so no separate peak text; if it is close to
+    // the top, the peak text moves to the left corner instead.
+    function peakLabel() {
+      if (S[n-1].sales >= hi) return '';
+      const near = (pS[n-1].y - 8) < PT + 12;
+      return '<text x="'+(near ? PL : W-PR)+'" y="'+(PT-3)+'" font-size="9" font-weight="800" fill="#b7bdc7" text-anchor="'+(near ? 'start' : 'end')+'">peak '+shortTk(hi)+'</text>';
+    }
 
     let detail = '';
     if (sel != null) {
