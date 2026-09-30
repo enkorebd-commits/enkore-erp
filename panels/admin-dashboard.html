@@ -932,8 +932,9 @@
             + (hidden>0 ? '<div class="chart-hint">+'+hidden+' more lower-priority item'+(hidden===1?'':'s')+'</div>' : '')
           : '<div class="all-clear">Nothing urgent. Cash, collections and spend are all within range.</div>');
 
-    chartEl.innerHTML = '<div class="sec-hdr"><span class="sec-title">Sales &amp; profit trend</span></div>'
-      + insChart(MONTHLY_PL.slice(-18));
+    if (!window.__insDrag)   // never rebuild the graph while a finger is sliding on it
+      chartEl.innerHTML = '<div class="sec-hdr"><span class="sec-title">Sales &amp; profit trend</span></div>'
+        + insChart(MONTHLY_PL.slice(-18));
   }
 
   function insChart(S) {
@@ -962,16 +963,15 @@
       + '<text x="'+(pS[n-1].x-4).toFixed(1)+'" y="'+(pS[n-1].y-8).toFixed(1)+'" font-size="9.5" font-weight="800" fill="#1583b3" text-anchor="end">'+shortTk(S[n-1].sales)+'</text>';
 
     const sel = (INS_SEL!=null && INS_SEL>=0 && INS_SEL<n) ? INS_SEL : null;
-    if (sel != null) {
-      svg += '<line x1="'+pS[sel].x.toFixed(1)+'" y1="'+PT+'" x2="'+pS[sel].x.toFixed(1)+'" y2="'+base+'" stroke="#29ABE2" stroke-width="1.4" stroke-dasharray="3 3" opacity=".55"/>'
-        + '<circle cx="'+pN[sel].x.toFixed(1)+'" cy="'+pN[sel].y.toFixed(1)+'" r="4" fill="#16b07c" stroke="#fff" stroke-width="2"/>'
-        + '<circle cx="'+pS[sel].x.toFixed(1)+'" cy="'+pS[sel].y.toFixed(1)+'" r="5.5" fill="#29ABE2" stroke="#fff" stroke-width="2.4"/>';
-    }
-    const slot = (W-PL-PR)/Math.max(n-1,1);
-    for (let i=0;i<n;i++) {
-      const x = Math.max(0, xAt(i)-slot/2);
-      svg += '<rect class="hit" x="'+x.toFixed(1)+'" y="0" width="'+Math.min(slot,W-x).toFixed(1)+'" height="'+H+'" onclick="insTap('+i+')"></rect>';
-    }
+    // 30 Sep 2026: slide-to-read. The cursor (line, two dots, month tag) and the
+    // detail box are always in the DOM and are MOVED by insShow(), never rebuilt,
+    // so a finger dragging across the graph keeps working. See insPointer* below.
+    svg += '<g id="insCur" style="display:'+(sel==null?'none':'')+'">'
+      + '<line id="insCurL" x1="0" y1="'+PT+'" x2="0" y2="'+base+'" stroke="#29ABE2" stroke-width="1.4" stroke-dasharray="3 3" opacity=".6"/>'
+      + '<circle id="insCurN" r="4" fill="#16b07c" stroke="#fff" stroke-width="2"/>'
+      + '<circle id="insCurS" r="5.5" fill="#29ABE2" stroke="#fff" stroke-width="2.4"/>'
+      + '<rect id="insCurB" y="0" width="40" height="13" rx="6.5" fill="#09090D"/>'
+      + '<text id="insCurT" y="9.5" font-size="8.5" font-weight="800" fill="#fff" text-anchor="middle"></text></g>';
     svg += '<text x="'+PL+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#b7bdc7">'+mLabel(S[0].k)+'</text>'
       + '<text x="'+(W-PR)+'" y="'+(H-6)+'" font-size="9" font-weight="700" fill="#828791" text-anchor="end">'+mLabel(S[n-1].k)+'</text>'
       + peakLabel()
@@ -986,40 +986,98 @@
       return '<text x="'+(near ? PL : W-PR)+'" y="'+(PT-3)+'" font-size="9" font-weight="800" fill="#b7bdc7" text-anchor="'+(near ? 'start' : 'end')+'">peak '+shortTk(hi)+'</text>';
     }
 
-    let detail = '';
-    if (sel != null) {
-      const r = S[sel], pv = sel>0 ? S[sel-1] : null;
-      const cr = r.sales>0 ? Math.round(r.paid/r.sales*100) : 0;
-      const dd = pv ? r.sales-pv.sales : null;
-      detail = '<div class="chart-detail">'
-        + '<div class="cd-hd"><span class="cd-m">'+mLabelFull(r.k)+'</span><span class="cd-x">tap again to close</span></div>'
-        + '<div class="cd-row">'
-        + '<div class="cd-b"><div class="cd-l">Sales</div><div class="cd-v" style="color:var(--blue-d)">'+shortTk(r.sales)+'</div></div>'
-        + '<div class="cd-b"><div class="cd-l">Collected</div><div class="cd-v" style="color:var(--green)">'+shortTk(r.paid)+'</div></div>'
-        + '<div class="cd-b"><div class="cd-l">Expense</div><div class="cd-v">'+shortTk(r.opex)+'</div></div>'
-        + '<div class="cd-b"><div class="cd-l">Net</div><div class="cd-v" style="color:'+(r.netProfit>=0?'var(--green)':'var(--red)')+'">'+shortTk(r.netProfit)+'</div></div>'
-        + '</div>'
-        + '<div class="cd-note">Collection rate '+cr+'% · due '+plainTk(r.due)
-        + (dd==null ? '' : (dd>=0 ? ' · '+plainTk(dd)+' more than '+mLabel(pv.k) : ' · '+plainTk(-dd)+' less than '+mLabel(pv.k)))
-        + '</div></div>';
-    }
+    window.__ins = { S:S, pS:pS, pN:pN, W:W, PL:PL, PR:PR, n:n };
 
     const lastNp = S[n-1].netProfit, prevNp = S[n-2].netProfit, dNp = lastNp-prevNp;
-    return '<div class="chartcard" id="insChart">'
+    const html = '<div class="chartcard" id="insChart">'
       + '<div class="chart-hd"><span class="chart-t">Month by month</span>'
       + '<span class="chart-s">net '+(dNp>=0?'▲ ':'▼ ')+shortTk(Math.abs(dNp))+' vs last month</span></div>'
-      + svg
+      + svg.replace('<svg class="chart-svg"', '<svg class="chart-svg" id="insSvg" style="touch-action:pan-y;cursor:crosshair"')
       + '<div class="chart-legend"><span class="l1"><i></i>Sales</span><span class="l2"><i></i>Net profit</span></div>'
-      + detail
-      + (sel==null ? '<div class="chart-hint">Tap any month on the graph for its details</div>' : '')
+      + '<div id="insDet">'+(sel==null?'':insDetail(sel))+'</div>'
+      + '<div class="chart-hint" id="insHint"'+(sel==null?'':' style="display:none"')+'>Slide your finger across the graph to read each month</div>'
       + '</div>';
+    if (sel != null) setTimeout(() => insShow(sel), 0);   // position the cursor once the SVG exists
+    return html;
   }
 
-  function insTap(i) {
-    INS_SEL = (INS_SEL===i) ? null : i;
-    const el = document.getElementById('insChart');
-    if (el) el.outerHTML = insChart(MONTHLY_PL.slice(-18));
+  function insDetail(i) {
+    const S = window.__ins.S, r = S[i], pv = i>0 ? S[i-1] : null;
+    const cr = r.sales>0 ? Math.round(r.paid/r.sales*100) : 0;
+    const dd = pv ? r.sales-pv.sales : null;
+    return '<div class="chart-detail">'
+      + '<div class="cd-hd"><span class="cd-m">'+mLabelFull(r.k)+'</span><span class="cd-x">slide for other months</span></div>'
+      + '<div class="cd-row">'
+      + '<div class="cd-b"><div class="cd-l">Sales</div><div class="cd-v" style="color:var(--blue-d)">'+shortTk(r.sales)+'</div></div>'
+      + '<div class="cd-b"><div class="cd-l">Collected</div><div class="cd-v" style="color:var(--green)">'+shortTk(r.paid)+'</div></div>'
+      + '<div class="cd-b"><div class="cd-l">Expense</div><div class="cd-v">'+shortTk(r.opex)+'</div></div>'
+      + '<div class="cd-b"><div class="cd-l">Net</div><div class="cd-v" style="color:'+(r.netProfit>=0?'var(--green)':'var(--red)')+'">'+shortTk(r.netProfit)+'</div></div>'
+      + '</div>'
+      + '<div class="cd-note">Collection rate '+cr+'% · due '+plainTk(r.due)
+      + (dd==null ? '' : (dd>=0 ? ' · '+plainTk(dd)+' more than '+mLabel(pv.k) : ' · '+plainTk(-dd)+' less than '+mLabel(pv.k)))
+      + '</div></div>';
   }
+
+  // Move the cursor to month i (null hides it). Touches only attributes and the
+  // detail box's innerHTML, so it is cheap enough to run on every pointermove.
+  function insShow(i) {
+    const g = window.__ins, cur = document.getElementById('insCur');
+    if (!g || !cur) return;
+    INS_SEL = i;
+    const det = document.getElementById('insDet'), hint = document.getElementById('insHint');
+    if (i == null) {
+      cur.style.display = 'none';
+      if (det) det.innerHTML = '';
+      if (hint) hint.style.display = '';
+      return;
+    }
+    const x = g.pS[i].x, set = (id, a) => { const el = document.getElementById(id); if (el) Object.keys(a).forEach(k => el.setAttribute(k, a[k])); };
+    set('insCurL', { x1:x.toFixed(1), x2:x.toFixed(1) });
+    set('insCurS', { cx:x.toFixed(1), cy:g.pS[i].y.toFixed(1) });
+    set('insCurN', { cx:x.toFixed(1), cy:g.pN[i].y.toFixed(1) });
+    const bx = Math.max(g.PL, Math.min(g.W - g.PR - 40, x - 20));   // keep the month tag inside the graph
+    set('insCurB', { x:bx.toFixed(1) });
+    set('insCurT', { x:(bx + 20).toFixed(1) });
+    const t = document.getElementById('insCurT'); if (t) t.textContent = mLabel(g.S[i].k);
+    cur.style.display = '';
+    if (det) det.innerHTML = insDetail(i);
+    if (hint) hint.style.display = 'none';
+  }
+  function insTap(i) { insShow(INS_SEL === i ? null : i); }
+
+  // Finger or mouse position -> nearest month.
+  function insIndexAt(clientX) {
+    const svg = document.getElementById('insSvg'), g = window.__ins;
+    if (!svg || !g) return null;
+    const r = svg.getBoundingClientRect();
+    const x = (clientX - r.left) / r.width * g.W;
+    const f = (x - g.PL) / (g.W - g.PL - g.PR);
+    return Math.max(0, Math.min(g.n - 1, Math.round(f * (g.n - 1))));
+  }
+  let _insDrag = null;
+  document.addEventListener('pointerdown', function(e) {
+    if (!e.target.closest || !e.target.closest('#insSvg')) return;
+    const i = insIndexAt(e.clientX);
+    _insDrag = { id:e.pointerId, x:e.clientX, before:INS_SEL, moved:false };
+    window.__insDrag = true;
+    insShow(i);
+  });
+  document.addEventListener('pointermove', function(e) {
+    if (_insDrag && e.pointerId === _insDrag.id) {
+      if (Math.abs(e.clientX - _insDrag.x) > 4) _insDrag.moved = true;
+      insShow(insIndexAt(e.clientX));
+    } else if (e.pointerType === 'mouse' && e.buttons === 0 && e.target.closest && e.target.closest('#insSvg')) {
+      insShow(insIndexAt(e.clientX));               // desktop: hover to read
+    }
+  });
+  function insEnd(e) {
+    if (!_insDrag || e.pointerId !== _insDrag.id) return;
+    // A plain tap on the month that was already open closes it.
+    if (!_insDrag.moved && _insDrag.before === INS_SEL && e.type === 'pointerup') insShow(null);
+    _insDrag = null; window.__insDrag = false;
+  }
+  document.addEventListener('pointerup', insEnd);
+  document.addEventListener('pointercancel', insEnd);
 
   document.addEventListener('click', function(e) {
     if (INS_SEL != null && !e.target.closest('#insChart')) insTap(INS_SEL);
@@ -1979,7 +2037,7 @@
     const MAX = 84, FIRE = 58;
     let startY = 0, pulling = false, dist = 0;
     document.addEventListener('touchstart', e => {
-      if (_dashRefreshing || window.scrollY > 0 || anyOvOpen()) { pulling = false; return; }
+      if (_dashRefreshing || window.scrollY > 0 || anyOvOpen() || (e.target.closest && e.target.closest('#insSvg'))) { pulling = false; return; }
       startY = e.touches[0].clientY; pulling = true;
     }, { passive:true });
     document.addEventListener('touchmove', e => {

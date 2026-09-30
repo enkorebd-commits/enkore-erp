@@ -513,13 +513,15 @@
     const y = v => T + (mx - v) / ((mx - mn) || 1) * (B - T);
     // Up to 7 months fit any phone, so the chart scales to the card and the
     // axis stays visible. Longer ranges scroll sideways instead of squashing.
-    let s = '<svg class="chart" id="svg-'+o.id+'" viewBox="0 0 '+W+' '+H+'" '+(fit ? 'width="100%"' : 'width="'+W+'" height="'+H+'"')+'>';
+    let s = '<svg class="chart" id="svg-'+o.id+'" data-cid="'+o.id+'" viewBox="0 0 '+W+' '+H+'" '+(fit ? 'width="100%" style="touch-action:pan-y"' : 'width="'+W+'" height="'+H+'"')+'>';
     [mx, (mx+mn)/2, mn].forEach(v => {
       s += '<line x1="'+L+'" x2="'+W+'" y1="'+y(v).toFixed(1)+'" y2="'+y(v).toFixed(1)+'" stroke="#eceff3" '+(v===0?'':'stroke-dasharray="3 3"')+'/>'
         + '<text x="'+(L-5)+'" y="'+(y(v)+3).toFixed(1)+'" text-anchor="end" font-size="9.5" font-weight="600" fill="#9aa0a8">'+shortTk(v)+'</text>'
         + (fit ? '' : '<text x="'+(W-3)+'" y="'+(y(v)+3).toFixed(1)+'" text-anchor="end" font-size="9.5" font-weight="600" fill="#9aa0a8">'+shortTk(v)+'</text>');
     });
     if (mn < 0) s += '<line x1="'+L+'" x2="'+W+'" y1="'+y(0).toFixed(1)+'" y2="'+y(0).toFixed(1)+'" stroke="#c9ced6"/>';
+    // Slide-to-read cursor (moved by chartShow, never rebuilt), drawn behind the bars.
+    s += '<rect id="cur-'+o.id+'" x="0" y="'+T+'" width="'+(colW-4)+'" height="'+(B-T)+'" rx="6" fill="#1E9DD6" opacity=".16" style="display:none"/>';
     const nb = o.bars.length, bw = nb === 1 ? 26 : 16, gap = 3;
     o.ks.forEach((k, i) => {
       const cx = L + i*colW + colW/2;
@@ -540,20 +542,71 @@
       if (pts.length > 1) s += '<polyline fill="none" stroke="'+o.line.color+'" stroke-width="2.2" stroke-linejoin="round" '+(o.line.dash?'stroke-dasharray="5 4"':'')+' points="'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')+'"/>';
       pts.forEach(p => s += '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.2" fill="#fff" stroke="'+o.line.color+'" stroke-width="2"/>');
     }
-    o.ks.forEach((k, i) => { s += '<rect class="hit" x="'+(L+i*colW)+'" y="0" width="'+colW+'" height="'+H+'" onclick="chartTap(\''+o.id+'\','+i+')"/>'; });
     s += '</svg>';
+    o.geo = { L:L, colW:colW, W:W, n:n, fit:fit };
     CHARTS[o.id] = o;
     const leg = o.bars.map(b => '<span><i class="sq" style="background:'+(typeof b.color==='function'?b.legendColor:b.color)+'"></i>'+b.label+'</span>').join('')
       + (o.line ? '<span><i style="background:'+o.line.color+'"></i>'+o.line.label+'</span>' : '');
-    return '<div class="scrollx"'+(fit ? '' : ' data-scroll-end="1"')+'>'+s+'</div><div class="legend">'+leg+'</div>'
-      + '<div class="detail" id="det-'+o.id+'"></div><div class="hint">Tap any month for details</div>';
+    return '<div class="scrollx"'+(fit ? '' : ' data-scroll-end="1"')+' data-cid="'+o.id+'">'+s+'</div><div class="legend">'+leg+'</div>'
+      + '<div class="detail" id="det-'+o.id+'"></div><div class="hint" id="hint-'+o.id+'">'
+      + (fit ? 'Slide your finger across the chart to read each month' : 'Scroll the chart sideways, the month in the middle is shown below') + '</div>';
   }
-  function chartTap(id, i) {
-    const o = CHARTS[id], el = document.getElementById('det-'+id);
-    if (!o || !el) return;
-    if (el.dataset.i === String(i) && el.classList.contains('show')) { el.classList.remove('show'); el.dataset.i = ''; return; }
-    el.innerHTML = o.detail(i); el.dataset.i = String(i); el.classList.add('show');
+  // Show month i of chart id (null hides). Moves the cursor and fills the detail box.
+  function chartShow(id, i) {
+    const o = CHARTS[id], el = document.getElementById('det-'+id), cur = document.getElementById('cur-'+id);
+    if (!o || !el || !cur) return;
+    const hint = document.getElementById('hint-'+id);
+    if (i == null) { el.classList.remove('show'); el.dataset.i = ''; cur.style.display = 'none'; if (hint) hint.style.display = ''; return; }
+    if (el.dataset.i !== String(i)) el.innerHTML = o.detail(i);
+    el.dataset.i = String(i); el.classList.add('show');
+    cur.setAttribute('x', (o.geo.L + i * o.geo.colW + 2).toFixed(1)); cur.style.display = '';
+    if (hint) hint.style.display = 'none';
   }
+  function chartTap(id, i) { const el = document.getElementById('det-'+id); chartShow(id, el && el.dataset.i === String(i) ? null : i); }
+  function chartIndexAt(id, clientX) {
+    const o = CHARTS[id], svg = document.getElementById('svg-'+id);
+    if (!o || !svg) return null;
+    const r = svg.getBoundingClientRect(), x = (clientX - r.left) / r.width * o.geo.W;
+    return Math.max(0, Math.min(o.geo.n - 1, Math.floor((x - o.geo.L) / o.geo.colW)));
+  }
+  // Fitted charts: press and slide to read months. Scrolling charts: tap to pick,
+  // and while you scroll sideways the month in the middle is shown by itself.
+  let _cDrag = null;
+  document.addEventListener('pointerdown', e => {
+    const svg = e.target.closest && e.target.closest('svg.chart[data-cid]');
+    if (!svg) return;
+    const id = svg.dataset.cid, o = CHARTS[id], el = document.getElementById('det-'+id);
+    _cDrag = { id, pid:e.pointerId, x:e.clientX, before: el ? el.dataset.i : '', moved:false, fit: o && o.geo.fit };
+    if (_cDrag.fit) chartShow(id, chartIndexAt(id, e.clientX));
+  });
+  document.addEventListener('pointermove', e => {
+    if (_cDrag && e.pointerId === _cDrag.pid) {
+      if (Math.abs(e.clientX - _cDrag.x) > 4) _cDrag.moved = true;
+      if (_cDrag.fit) chartShow(_cDrag.id, chartIndexAt(_cDrag.id, e.clientX));
+    } else if (e.pointerType === 'mouse' && e.buttons === 0) {
+      const svg = e.target.closest && e.target.closest('svg.chart[data-cid]');
+      if (svg) chartShow(svg.dataset.cid, chartIndexAt(svg.dataset.cid, e.clientX));   // desktop: hover to read
+    }
+  });
+  function chartEnd(e) {
+    if (!_cDrag || e.pointerId !== _cDrag.pid) return;
+    if (!_cDrag.moved && e.type === 'pointerup') {
+      const i = chartIndexAt(_cDrag.id, e.clientX);
+      if (_cDrag.before === String(i)) chartShow(_cDrag.id, null);   // tap the open month again to close
+      else chartShow(_cDrag.id, i);
+    }
+    _cDrag = null;
+  }
+  document.addEventListener('pointerup', chartEnd);
+  document.addEventListener('pointercancel', chartEnd);
+  document.addEventListener('scroll', e => {
+    const box = e.target;
+    if (!box || !box.classList || !box.classList.contains('scrollx') || !box.dataset.cid || box._prog) return;
+    const o = CHARTS[box.dataset.cid]; if (!o || o.geo.fit) return;
+    const svg = document.getElementById('svg-'+box.dataset.cid); if (!svg) return;
+    const r = box.getBoundingClientRect();
+    chartShow(box.dataset.cid, chartIndexAt(box.dataset.cid, r.left + r.width / 2));
+  }, true);
   const dBox = (l, v, cls) => '<div class="d-b"><div class="d-l">'+l+'</div><div class="d-v '+(cls||'')+'">'+v+'</div></div>';
   const tile = (l, v, s, cls) => '<div class="tile"><div class="l">'+l+'</div><div class="v '+(cls||'')+'">'+v+'</div>'+(s?'<div class="s">'+s+'</div>':'')+'</div>';
 
@@ -615,7 +668,10 @@
     scrollChartsToEnd();
   }
   function scrollChartsToEnd() {
-    requestAnimationFrame(() => document.querySelectorAll('.scrollx[data-scroll-end]').forEach(el => { el.scrollLeft = el.scrollWidth; }));
+    requestAnimationFrame(() => document.querySelectorAll('.scrollx[data-scroll-end]').forEach(el => {
+      el._prog = true; el.scrollLeft = el.scrollWidth;          // our own scroll must not pick a month
+      setTimeout(() => { el._prog = false; }, 150);
+    }));
   }
   function windowKs() {   // months drawn on charts: the range, at least 6 months
     const k0 = Math.min(R0, Math.max(firstK(), R1 - 5));
