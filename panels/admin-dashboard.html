@@ -647,16 +647,39 @@
   function mLabel(k){ return MOS3[((k%12)+12)%12]+' '+String(Math.floor(k/12)).slice(-2); }
   function mLabelFull(k){ return MOS3[((k%12)+12)%12]+' '+Math.floor(k/12); }
 
+  // 30 Sep 2026 fix: the Month column is a date shown as "mmm yy", but the
+  // stored value uses the day for the year (Oct 25 is saved as 25 Oct 2026).
+  // Reading the raw date put Oct-Dec 2025 into Oct-Dec 2026: the trend chart
+  // ran to "Dec 26" with zero sales, and from 1 Oct 2026 the hero would have
+  // shown Oct 2025 as "this month". The displayed text is the truth, so it is
+  // read first; the raw date is only a fallback.
+  function mdMonthKey(cell) {
+    if (!cell) return null;
+    const f = String(cell.f || '').trim();
+    const m = f.match(/^([A-Za-z]{3})[a-z]*[\s\-']+(\d{2}|\d{4})$/);
+    if (m) {
+      const mi = MOS3.findIndex(x => x.toLowerCase() === m[1].toLowerCase());
+      const y = m[2].length === 2 ? 2000 + +m[2] : +m[2];
+      if (mi >= 0) return y*12 + mi;
+    }
+    const d = gvDate(cell.v!==null && cell.v!==undefined ? cell.v : null);
+    return d ? mKey(d) : null;
+  }
+
   async function loadMonthlyPL() {
     try {
       const tbl = await gvTable(FIN_SHEET_ID, 'Monthly Dashboard');
+      // gviz returns the FIRST tab when a tab name is missing, so confirm
+      // this really is the P&L before trusting a single number from it.
+      if (!(tbl.cols||[]).some(c => /NET PROFIT/i.test(String(c.label||'')))) throw new Error('Monthly Dashboard tab not found');
       const rows = (tbl.rows||[]).map(r => {
         const c = r.c||[];
-        const d = gvDate(c[MD_COL.date] ? (c[MD_COL.date].v!==null && c[MD_COL.date].v!==undefined ? c[MD_COL.date].v : null) : null);
-        if (!d) return null;
+        const k = mdMonthKey(c[MD_COL.date]);
+        if (k == null) return null;
+        const d = new Date(Math.floor(k/12), k%12, 1);
         const num = i => cellNum(c[i]);
         return {
-          k: mKey(d), date:d,
+          k: k, date:d,
           sales: num(MD_COL.sales), paid: num(MD_COL.paid), due: num(MD_COL.due),
           cogs: num(MD_COL.cogs), gpAcc: num(MD_COL.gpAcc), cashGP: num(MD_COL.cashGP),
           opex: num(MD_COL.opex), deprec: num(MD_COL.deprec),
@@ -697,6 +720,7 @@
   async function loadCashInHand() {
     try {
       const ct = await gvTable(FIN_SHEET_ID, 'Cash in Hand');
+      if (!/cash in hand/i.test(String(((ct.cols||[])[0]||{}).label||''))) throw new Error('Cash in Hand tab not found');
       let chayanRaw = '', anikRaw = '';
       (ct.rows||[]).forEach(r => {
         const c = r.c||[];
@@ -1823,7 +1847,7 @@
      data the moment the panel opens, then keep polling while it
      stays on screen (paused when backgrounded).
      ═══════════════════════════════════════════════════════════ */
-  const DASH_CACHE_KEY = 'enkore_dash_cache_v2';
+  const DASH_CACHE_KEY = 'enkore_dash_cache_v3'; // v3: month keys fixed 30 Sep 2026, old cache had them wrong
   const LIVE_REFRESH_MS = 20000;
   let _dashRefreshing = false;
   let _liveTimer = null;
