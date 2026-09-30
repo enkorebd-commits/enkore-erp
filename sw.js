@@ -1,4 +1,4 @@
-const CACHE_NAME = 'enkore-erp-v70';
+const CACHE_NAME = 'enkore-erp-v71';
 const STATIC_FILES = [
   '/enkore-erp',
   '/enkore-erp.html',
@@ -9,6 +9,7 @@ const STATIC_FILES = [
   '/assets/logo-white.png',
   // Panels precached at install → first open is instant, no blank wait
   '/panels/admin-dashboard.html',
+  '/panels/business-health.html',
   '/panels/drive.html',
   '/panels/sales-entry.html',
   '/panels/expense-entry.html',

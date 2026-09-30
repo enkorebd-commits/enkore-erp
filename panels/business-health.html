@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Business Health</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    :root {
+      --blue:#1E9DD6; --blue-d:#1583b3; --green:#16b07c; --red:#ef4444; --amber:#d97706;
+      --bg:#f4f6fa; --card:#ffffff; --text:#16181d; --sub2:#828791; --border:#eceff3;
+      --r:16px; --sh:0 1px 3px rgba(18,22,33,.06), 0 0 1px rgba(18,22,33,.08);
+    }
+    html { background:#f4f6fa; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); overflow-y:auto;
+      min-height:100vh; max-width:600px; margin:0 auto; box-shadow:0 0 24px rgba(18,22,33,.06);
+      padding-bottom:28px; visibility:hidden; }
+    @media(min-width:601px){ html { background:#e4e7ec; } }
+    body.booted { visibility:visible; }
+    svg text { font-family:'Inter',sans-serif; }
+
+    /* header */
+    .greeting { background:#1E9DD6; padding:16px 18px 20px; color:#fff; position:relative; overflow:hidden; }
+    .greeting::after { content:''; position:absolute; right:0; top:0; width:130px; height:130px; background:#09090D; clip-path:polygon(100% 0,100% 65%,30% 0); }
+    .greeting::before { content:''; position:absolute; left:-26px; bottom:-40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,.06); }
+    .g-date { font-size:11px; color:rgba(255,255,255,.7); font-weight:600; letter-spacing:.3px; position:relative; }
+    .g-name { font-size:21px; font-weight:800; letter-spacing:-.3px; margin-top:3px; position:relative; }
+    .g-step { display:flex; align-items:center; gap:8px; margin-top:12px; position:relative; }
+    .g-arrow { width:32px; height:32px; border-radius:9px; background:rgba(9,9,13,.85); color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:pointer; flex-shrink:0; user-select:none; }
+    .g-arrow.off { opacity:.3; pointer-events:none; }
+    .g-lbl { flex:1; text-align:center; font-size:13px; font-weight:800; background:rgba(255,255,255,.18); border-radius:9px; padding:8px 6px; }
+
+    /* period chips */
+    .chips { display:flex; gap:6px; padding:12px 14px 0; overflow-x:auto; scrollbar-width:none; }
+    .chips::-webkit-scrollbar { display:none; }
+    .chip { flex-shrink:0; font-size:11px; font-weight:700; padding:7px 12px; border-radius:99px; background:#fff; color:var(--sub2); border:1px solid var(--border); cursor:pointer; user-select:none; }
+    .chip.on { background:var(--blue); color:#fff; border-color:var(--blue); }
+    .custom { display:none; gap:8px; padding:10px 14px 0; align-items:center; }
+    .custom.open { display:flex; }
+    .custom select { flex:1; min-width:0; font-family:inherit; font-size:12px; font-weight:700; padding:8px; border-radius:9px; border:1px solid var(--border); background:#fff; color:var(--text); }
+    .custom span { font-size:11px; font-weight:700; color:var(--sub2); }
+
+    .section { padding:14px 14px 0; }
+    .sec-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .sec-title { font-size:10px; font-weight:800; letter-spacing:1.2px; color:var(--sub2); text-transform:uppercase; }
+    .sec-s { font-size:10.5px; font-weight:700; color:var(--sub2); }
+
+    /* hero */
+    .hero { background:#09090D; border-radius:var(--r); padding:16px; color:#fff; position:relative; overflow:hidden; box-shadow:0 8px 26px rgba(9,9,13,.35); border:1px solid rgba(30,157,214,.45); }
+    .hero::before { content:''; position:absolute; right:0; top:0; width:120px; height:120px; background:#1E9DD6; clip-path:polygon(100% 0,100% 60%,35% 0); pointer-events:none; }
+    .hero-row, .hero-note { position:relative; }
+    .hero-row { display:flex; align-items:center; gap:15px; }
+    .ringwrap { position:relative; width:114px; height:114px; flex-shrink:0; }
+    .ringsvg { width:114px; height:114px; transform:rotate(-90deg); }
+    .ring-bg { fill:none; stroke:rgba(255,255,255,.14); stroke-width:11; }
+    .ring-fg { fill:none; stroke-width:11; stroke-linecap:round; transition:stroke-dashoffset .8s cubic-bezier(.25,.46,.45,.94); }
+    .ringtxt { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .ringv { font-size:22px; font-weight:800; letter-spacing:-1px; line-height:1; }
+    .ringl { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:rgba(255,255,255,.6); margin-top:3px; text-align:center; }
+    .hero-side { flex:1; min-width:0; }
+    .hs-k { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:rgba(255,255,255,.58); margin-top:9px; }
+    .hs-k:first-child { margin-top:0; }
+    .hs-v { font-size:17px; font-weight:800; letter-spacing:-.4px; line-height:1.2; }
+    .up { color:#5fe0ad; } .dn { color:#ff9c9c; }
+    .hero-note { margin-top:13px; font-size:11.5px; font-weight:600; line-height:1.5; background:rgba(255,255,255,.1); padding:10px 12px; border-radius:10px; }
+    .hero-note.bad { background:rgba(239,68,68,.24); }
+
+    /* data quality list (same look as Needs Attention) */
+    .acts { display:flex; flex-direction:column; gap:8px; }
+    .act { display:flex; gap:11px; background:var(--card); border-radius:12px; box-shadow:var(--sh); padding:11px 13px; border-left:4px solid var(--blue); }
+    .act.warn { border-left-color:#f59e0b; } .act.bad { border-left-color:var(--red); }
+    .act-n { flex-shrink:0; width:22px; height:22px; border-radius:50%; background:#e8f6fd; color:var(--blue-d); font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+    .act.warn .act-n { background:#fff4e2; color:#b7791f; } .act.bad .act-n { background:#fee6e6; color:#c53030; }
+    .act-t { flex:1; min-width:0; }
+    .act-t b { display:block; font-size:12.5px; font-weight:800; line-height:1.35; }
+    .act-t span { display:block; font-size:11.5px; color:var(--sub2); font-weight:500; line-height:1.5; margin-top:2px; }
+
+    /* KPI cards */
+    .kg { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .kc { background:var(--card); border-radius:14px; box-shadow:var(--sh); padding:11px 12px; min-width:0; }
+    .kl { font-size:8.5px; font-weight:800; letter-spacing:.5px; color:var(--sub2); text-transform:uppercase; }
+    .kv { font-size:19px; font-weight:800; margin-top:3px; letter-spacing:-.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ks { font-size:10.5px; font-weight:600; margin-top:2px; color:var(--sub2); line-height:1.35; }
+    .spark { width:100%; height:24px; display:block; margin-top:5px; }
+    .c-pos { color:var(--green); } .c-neg { color:var(--red); } .c-amb { color:var(--amber); } .c-blu { color:var(--blue); }
+
+    /* accordion */
+    .nav-list { display:flex; flex-direction:column; gap:8px; }
+    .nav-btn { display:flex; align-items:center; gap:9px; background:var(--card); border-radius:13px; box-shadow:var(--sh); padding:12px 13px; cursor:pointer; user-select:none; border-left:4px solid var(--blue); }
+    .nav-btn.blk { border-left-color:#09090D; }
+    .nav-ico { font-size:15px; flex-shrink:0; width:20px; text-align:center; }
+    .nav-lbl { font-size:13px; font-weight:800; }
+    .nav-sub { font-size:10.5px; color:var(--sub2); font-weight:600; margin-top:1px; }
+    .nav-badge { font-size:10px; font-weight:800; padding:2px 8px; border-radius:20px; flex-shrink:0; background:#e7f5fd; color:var(--blue-d); }
+    .nav-badge.bad { background:#feecec; color:var(--red); } .nav-badge.good { background:#e4f8f0; color:var(--green); } .nav-badge.warn { background:#fff4e2; color:#b7791f; }
+    .nav-arrow { font-size:12px; color:var(--sub2); flex-shrink:0; transition:transform .2s; }
+    .nav-btn.open .nav-arrow { transform:rotate(180deg); color:var(--text); }
+    .acc-panel { display:none; margin-top:8px; }
+    .acc-panel.open { display:block; }
+
+    .card { background:var(--card); border-radius:var(--r); box-shadow:var(--sh); padding:14px 12px 12px; margin-bottom:8px; }
+    .card-hd { display:flex; align-items:baseline; justify-content:space-between; padding:0 2px 8px; gap:8px; }
+    .card-t { font-size:12px; font-weight:800; }
+    .card-s { font-size:10.5px; font-weight:700; color:var(--sub2); text-align:right; }
+    .scrollx { overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+    .scrollx::-webkit-scrollbar { display:none; }
+    .chart { display:block; height:auto; }
+    .chart .hit { fill:transparent; cursor:pointer; }
+    .legend { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top:8px; font-size:10.5px; font-weight:700; color:var(--sub2); }
+    .legend i { display:inline-block; width:9px; height:3px; border-radius:2px; margin-right:5px; vertical-align:2px; }
+    .legend i.sq { height:9px; vertical-align:-1px; }
+    .detail { margin-top:10px; background:#eef7fd; border:1px solid #d3e9f7; border-radius:11px; padding:10px 12px; display:none; }
+    .detail.show { display:block; }
+    .d-hd { font-size:12.5px; font-weight:800; color:#0f5680; margin-bottom:7px; }
+    .d-row { display:flex; gap:6px; flex-wrap:wrap; }
+    .d-b { flex:1; min-width:70px; text-align:center; background:#fff; border-radius:9px; padding:7px 3px; }
+    .d-l { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--sub2); }
+    .d-v { font-size:12px; font-weight:800; margin-top:2px; }
+    .hint { text-align:center; font-size:10.5px; font-weight:600; color:var(--sub2); margin-top:6px; }
+    .note { font-size:11.5px; font-weight:600; line-height:1.55; color:#0f5680; background:#eef7fd; border:1px solid #d3e9f7; border-radius:11px; padding:10px 12px; margin-bottom:8px; }
+    .note.bad { color:#9b1c1c; background:#fff5f5; border-color:#fed7d7; }
+    .note.good { color:#0f6b4b; background:#effbf6; border-color:#c9f0de; }
+    .formula { font-size:10.5px; font-weight:600; color:var(--sub2); line-height:1.55; padding:2px 4px 6px; }
+    .formula b { color:var(--text); font-weight:800; }
+    .tiles { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin-bottom:8px; }
+    .tiles.t3 { grid-template-columns:repeat(3,1fr); }
+    @media(min-width:420px){ .tiles.t4 { grid-template-columns:repeat(4,1fr); } }
+    .tile { background:var(--card); border-radius:12px; box-shadow:var(--sh); padding:9px 8px; text-align:center; min-width:0; }
+    .tile .l { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.3px; color:var(--sub2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .tile .v { font-size:14px; font-weight:800; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .tile .s { font-size:9.5px; font-weight:600; color:var(--sub2); margin-top:1px; }
+    .donut-wrap { display:flex; gap:14px; align-items:center; }
+    .dl { flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
+    .dl-r { display:flex; align-items:center; gap:7px; font-size:11px; font-weight:600; }
+    .dl-r i { width:9px; height:9px; border-radius:3px; flex-shrink:0; }
+    .dl-r span { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--sub2); }
+    .dl-r b { font-weight:800; }
+    .tbl { width:100%; border-collapse:collapse; font-size:11.5px; }
+    .tbl th { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--sub2); text-align:left; padding:0 4px 6px; }
+    .tbl td { padding:7px 4px; border-top:1px solid var(--border); font-weight:600; }
+    .tbl td.n, .tbl th.n { text-align:right; }
+    .bar-bg { height:7px; background:#f1f3f6; border-radius:4px; overflow:hidden; min-width:50px; }
+    .bar-fg { height:100%; border-radius:4px; background:var(--blue); }
+    .rank { display:flex; align-items:center; gap:9px; padding:8px 2px; border-top:1px solid var(--border); }
+    .rank:first-of-type { border-top:none; }
+    .rank-n { width:20px; height:20px; border-radius:50%; background:#e8f6fd; color:var(--blue-d); font-size:10.5px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .rank-t { flex:1; min-width:0; font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .rank-t span { display:block; font-size:10px; color:var(--sub2); font-weight:500; }
+    .rank-v { font-size:12px; font-weight:800; flex-shrink:0; }
+    .foot { text-align:center; font-size:10.5px; font-weight:600; color:var(--sub2); padding:16px 14px 0; line-height:1.6; }
+
+    .state { text-align:center; padding:30px 20px; color:var(--sub2); font-size:13px; }
+    .spin { width:22px; height:22px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    #ptrIndicator { position:fixed; top:8px; left:50%; transform:translateX(-50%); display:flex; align-items:center; justify-content:center; gap:8px;
+      height:40px; padding:0 18px; margin-top:-60px; font-size:12px; font-weight:600; color:var(--sub2);
+      background:rgba(255,255,255,.96); border:1px solid #e3e7ee; border-radius:999px; box-shadow:0 4px 16px rgba(0,0,0,.14);
+      white-space:nowrap; z-index:60; transition:margin-top .18s ease; pointer-events:none; }
+    #ptrIndicator .ptr-spin { width:15px; height:15px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; display:inline-block; }
+    #ptrIndicator.ptr-loading .ptr-spin { animation:spin .7s linear infinite; }
+  </style>
+</head>
+<body>
+
+<div id="ptrIndicator"><span class="ptr-spin"></span><span id="ptrText">Pull to refresh</span></div>
+
+<div class="greeting">
+  <div class="g-date" id="g-date"></div>
+  <div class="g-name">Business Health 📈</div>
+  <div class="g-step">
+    <div class="g-arrow" id="stepPrev" onclick="stepMonth(-1)">‹</div>
+    <div class="g-lbl" id="rangeLbl">Loading…</div>
+    <div class="g-arrow" id="stepNext" onclick="stepMonth(1)">›</div>
+  </div>
+</div>
+
+<div class="chips" id="chips">
+  <div class="chip on" data-mode="month" onclick="setMode('month')">This month</div>
+  <div class="chip" data-mode="last3" onclick="setMode('last3')">Last 3 months</div>
+  <div class="chip" data-mode="ytd" onclick="setMode('ytd')">YTD</div>
+  <div class="chip" data-mode="all" onclick="setMode('all')">All time</div>
+  <div class="chip" data-mode="custom" onclick="setMode('custom')">📅 Custom</div>
+</div>
+<div class="custom" id="customRow">
+  <select id="selFrom" onchange="applyCustom()"></select>
+  <span>to</span>
+  <select id="selTo" onchange="applyCustom()"></select>
+</div>
+
+<div id="body"><div class="state"><div class="spin"></div>Loading business health…</div></div>
+
+<script>
+  /* ═══════════════════════════════════════════════════════════
+     BUSINESS HEALTH — ROI, Cashflow, CAC/LTV, Breakeven.
+     Read-only. Reads three link-readable tabs through gviz, the
+     same way admin-dashboard.html does:
+       Central Finance Sheet  · "Monthly Dashboard"  (P&L per month)
+       Central Finance Sheet  · "Cash in Hand"       (runway)
+       Central Finance Sheet  · "Capital Account"    (ROI, optional)
+       Sales Sheet            · "Sale Entry"         (customers)
+     No amounts are hardcoded here: this repo is public.
+     No popups, so no back-button contract is needed.
+     ═══════════════════════════════════════════════════════════ */
+  const FIN_SHEET_ID  = '1XE05NQJYc2QPM1qUivoGYUynu-lI1iaTH5Y785dPwJk';
+  const SALES_FILE_ID = '1IQ9osZGRHOYN_7UtioTOpkAF92wQ9TvNR31jZWop_Lg';
+  const CACHE_KEY = 'enkore_bh_cache_v1';
+  const REFRESH_MS = 5 * 60 * 1000;
+
+  const MOS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mLabel = k => MOS[((k%12)+12)%12] + ' ' + String(Math.floor(k/12)).slice(-2);
+  const mLabelFull = k => MOS[((k%12)+12)%12] + ' ' + Math.floor(k/12);
+  const mKey = d => d.getFullYear()*12 + d.getMonth();
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function shortTk(n) {
+    n = Number(n) || 0; const s = n < 0 ? '-' : ''; n = Math.abs(n);
+    if (n >= 1e7) return s + (n/1e7).toFixed(2).replace(/\.?0+$/,'') + 'cr';
+    if (n >= 1e5) return s + (n/1e5).toFixed(2).replace(/\.?0+$/,'') + 'L';
+    if (n >= 1e3) return s + (n/1e3).toFixed(1).replace(/\.0$/,'') + 'k';
+    return s + Math.round(n);
+  }
+  const plainTk = n => (Math.round(Number(n)||0)).toLocaleString('en-IN') + ' tk';
+  const pct = (n, d=0) => (n == null || !isFinite(n)) ? '—' : (n*100).toFixed(d) + '%';
+  const sgnTk = n => (n > 0 ? '+' : '') + shortTk(n);
+
+  /* ── gviz reader ── */
+  async function gvTable(sheetId, sheetName) {
+    const url = 'https://docs.google.com/spreadsheets/d/' + sheetId +
+      '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(sheetName) + '&t=' + Date.now();
+    const txt = await fetch(url).then(r => r.text());
+    const m = txt.match(/setResponse\(([\s\S]*)\)\s*;?\s*$/);
+    if (!m) throw new Error('gviz parse');
+    const j = JSON.parse(m[1]);
+    if (j.status === 'error' || !j.table) throw new Error('gviz error');
+    return j.table;
+  }
+  const cellNum = c => (c && c.v !== null && c.v !== undefined && c.v !== '' && !isNaN(Number(c.v))) ? Number(c.v) : 0;
+  const cellStr = c => (c && c.v !== null && c.v !== undefined) ? String(c.v).trim() : '';
+  function gvDate(v) {
+    if (v === null || v === undefined || v === '') return null;
+    const s = String(v);
+    let m = s.match(/Date\((\d+),(\d+),(\d+)/);
+    if (m) return new Date(+m[1], +m[2], +m[3]);
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+    if (m) { const y = m[3].length === 2 ? 2000 + +m[3] : +m[3]; return new Date(y, +m[2]-1, +m[1]); }
+    const d = new Date(s);
+    return isNaN(d) ? null : d;
+  }
+  // Header-name lookup, so a moved column does not silently feed the wrong number.
+  // Column A of Monthly Dashboard carries a long title that mentions other
+  // column names ("see Capitalised this month"), so value columns are only
+  // searched from `from` onward.
+  function colIdx(cols, re, fallback, from) {
+    const i = cols.findIndex((c, j) => j >= (from || 0) && re.test(String(c.label || '')));
+    return i >= 0 ? i : fallback;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     LOADERS
+     ═══════════════════════════════════════════════════════════ */
+  let MD = [], MD_BY_K = {}, SE = [], CASH = null, CAP = null, GEN_TS = '', UNID = new Set(), UNID_N = 0;
+
+  // "Monthly Dashboard" stores each month as a date shown "mmm yy", but the
+  // underlying value is day-of-month = the year (Oct 25 is saved as 25 Oct 2026).
+  // The displayed text is the truth, so it is read first; the raw date is only
+  // a fallback. Reading the raw date puts Oct-Dec 2025 into Oct-Dec 2026.
+  function mdMonthKey(cell) {
+    if (!cell) return null;
+    const f = String(cell.f || '').trim();
+    let m = f.match(/^([A-Za-z]{3})[a-z]*[\s\-']+(\d{2}|\d{4})$/);
+    if (m) {
+      const mi = MOS.findIndex(x => x.toLowerCase() === m[1].toLowerCase());
+      const y = m[2].length === 2 ? 2000 + +m[2] : +m[2];
+      if (mi >= 0) return y*12 + mi;
+    }
+    const d = gvDate(cell.v);
+    return d ? mKey(d) : null;
+  }
+
+  async function loadMonthly() {
+    const t = await gvTable(FIN_SHEET_ID, 'Monthly Dashboard');
+    const cols = t.cols || [];
+    if (!cols.some(c => /NET PROFIT/i.test(c.label || ''))) throw new Error('Monthly Dashboard tab not found');
+    const gm = String(cols[0] && cols[0].label || '').match(/Generated\s+([^.]+?)\./i);
+    GEN_TS = gm ? gm[1] : '';
+    const C = {
+      sales: colIdx(cols, /^Sales/i, 1, 1), paid: colIdx(cols, /^Paid/i, 2, 1), cogs: colIdx(cols, /^COGS/i, 5, 1),
+      gp: colIdx(cols, /Gross Profit, accrual \(tk\)/i, 6, 1), transport: colIdx(cols, /Transport/i, 10, 1),
+      office: colIdx(cols, /Office/i, 11, 1), rent: colIdx(cols, /^Rent/i, 12, 1), util: colIdx(cols, /Utilit/i, 13, 1),
+      salary: colIdx(cols, /Salary/i, 14, 1), maint: colIdx(cols, /Maintenance/i, 15, 1), mkt: colIdx(cols, /Marketing/i, 16, 1),
+      raw: colIdx(cols, /Raw Material/i, 17, 1), misc: colIdx(cols, /Miscell/i, 18, 1), opex: colIdx(cols, /Operating Expense/i, 19, 1),
+      dep: colIdx(cols, /Depreciation/i, 20, 1), np: colIdx(cols, /NET PROFIT/i, 21, 1), cap: colIdx(cols, /Capitalised/i, 23, 1)
+    };
+    const rows = [];
+    (t.rows || []).forEach(r => {
+      const c = r.c || [];
+      const k = mdMonthKey(c[0]);
+      if (k == null) return;
+      const n = i => cellNum(c[i]);
+      rows.push({ k, sales:n(C.sales), paid:n(C.paid), cogs:n(C.cogs), gp:n(C.gp), transport:n(C.transport),
+        office:n(C.office), rent:n(C.rent), util:n(C.util), salary:n(C.salary), maint:n(C.maint), mkt:n(C.mkt),
+        raw:n(C.raw), misc:n(C.misc), opex:n(C.opex), dep:n(C.dep), np:n(C.np), cap:n(C.cap) });
+    });
+    rows.sort((a,b) => a.k - b.k);
+    MD = rows; MD_BY_K = {}; rows.forEach(r => MD_BY_K[r.k] = r);
+  }
+
+  async function loadCash() {
+    try {
+      const t = await gvTable(FIN_SHEET_ID, 'Cash in Hand');
+      if (!/cash in hand/i.test(String((t.cols[0] || {}).label || ''))) throw new Error('not cash tab');
+      let a = null, b = null;
+      (t.rows || []).forEach(r => {
+        const c = r.c || [];
+        if (cellStr(c[0]).toLowerCase() === 'positive') {
+          const v1 = c[3] && c[3].v, v2 = c[6] && c[6].v;
+          a = (v1 !== null && v1 !== undefined && v1 !== '' && !isNaN(Number(v1))) ? Number(v1) : null;
+          b = (v2 !== null && v2 !== undefined && v2 !== '' && !isNaN(Number(v2))) ? Number(v2) : null;
+        }
+      });
+      CASH = (a === null && b === null) ? null : (a || 0) + (b || 0);
+    } catch (e) { CASH = null; }
+  }
+
+  // Optional tab in the Central Finance Sheet: Date | Type (In/Out) | Amount | Person | Note.
+  // gviz silently returns the FIRST tab when a tab name does not exist, so the
+  // headers are checked before any number is trusted.
+  async function loadCapital() {
+    try {
+      const t = await gvTable(FIN_SHEET_ID, 'Capital Account');
+      const cols = t.cols || [];
+      const iD = colIdx(cols, /^Date$/i, -1), iT = colIdx(cols, /^Type/i, -1), iA = colIdx(cols, /^Amount/i, -1);
+      if (iD < 0 || iT < 0 || iA < 0) { CAP = null; return; }
+      const list = [];
+      (t.rows || []).forEach(r => {
+        const c = r.c || [];
+        const d = gvDate(c[iD] && c[iD].v), amt = cellNum(c[iA]), type = cellStr(c[iT]).toLowerCase();
+        if (!d || !amt) return;
+        list.push({ k: mKey(d), amt: /out|withdraw|draw/.test(type) ? -Math.abs(amt) : Math.abs(amt) });
+      });
+      CAP = list.length ? list : null;
+    } catch (e) { CAP = null; }
+  }
+
+  async function loadSaleEntry() {
+    const t = await gvTable(SALES_FILE_ID, 'Sale Entry');
+    const cols = t.cols || [];
+    const iInv = colIdx(cols, /Invoice/i, -1);
+    if (iInv < 0) throw new Error('Sale Entry tab not found');
+    const iDate = colIdx(cols, /^Date/i, 0), iCli = colIdx(cols, /^Client/i, 1), iBill = colIdx(cols, /^Final Bill/i, 9);
+    const iPP = colIdx(cols, /^Product Profit/i, -1), iDC = colIdx(cols, /^Delivery Cost/i, -1);
+    const rows = []; UNID = new Set();
+    (t.rows || []).forEach(r => {
+      const c = r.c || [];
+      const d = gvDate(c[iDate] && c[iDate].v), inv = cellNum(c[iInv]);
+      if (!d || !inv) return;
+      const cli = cellStr(c[iCli]);
+      if (!cli || /\bdemo\b/i.test(cli)) return;
+      // Walk-in sales booked under a catch-all name are not one customer.
+      if (/^\s*unidentified\b/i.test(cli)) { UNID.add(inv); return; }
+      const dc = iDC >= 0 && c[iDC] && c[iDC].v !== null && c[iDC].v !== undefined && c[iDC].v !== '' ? cellNum(c[iDC]) : null;
+      rows.push({ k: mKey(d), cli, inv, bill: cellNum(c[iBill]), pp: iPP >= 0 ? cellNum(c[iPP]) : 0, dc });
+    });
+    SE = rows; UNID_N = UNID.size;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     PERIOD STATE
+     ═══════════════════════════════════════════════════════════ */
+  let MODE = 'month', R0 = null, R1 = null;   // inclusive month keys
+  const firstK = () => MD.length ? MD[0].k : null;
+  const lastK  = () => MD.length ? MD[MD.length-1].k : null;
+  const clampK = k => Math.max(firstK(), Math.min(lastK(), k));
+
+  function setMode(mode) {
+    if (!MD.length) return;
+    MODE = mode;
+    const L = lastK(), end = R1 == null ? L : R1;
+    if (mode === 'month')  { R0 = R1 = L; }
+    if (mode === 'last3')  { R1 = L; R0 = clampK(L - 2); }
+    if (mode === 'ytd')    { R1 = L; R0 = clampK(Math.floor(L/12)*12); }
+    if (mode === 'all')    { R1 = L; R0 = firstK(); }
+    if (mode === 'custom') { fillCustomSelects(); if (R0 == null) { R0 = clampK(end - 2); R1 = end; } syncCustomSelects(); }
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.mode === mode));
+    document.getElementById('customRow').classList.toggle('open', mode === 'custom');
+    renderAll();
+  }
+  function stepMonth(dir) {
+    if (!MD.length) return;
+    const k = clampK(R1 + dir);
+    MODE = 'month'; R0 = R1 = k;
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.mode === 'month'));
+    document.getElementById('customRow').classList.remove('open');
+    renderAll();
+  }
+  function fillCustomSelects() {
+    const opts = MD.map(r => '<option value="'+r.k+'">'+mLabelFull(r.k)+'</option>').join('');
+    document.getElementById('selFrom').innerHTML = opts;
+    document.getElementById('selTo').innerHTML = opts;
+  }
+  function syncCustomSelects() {
+    document.getElementById('selFrom').value = String(R0);
+    document.getElementById('selTo').value = String(R1);
+  }
+  function applyCustom() {
+    let a = Number(document.getElementById('selFrom').value), b = Number(document.getElementById('selTo').value);
+    if (a > b) { const t = a; a = b; b = t; }
+    R0 = a; R1 = b; syncCustomSelects(); renderAll();
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     CALCULATIONS
+     ═══════════════════════════════════════════════════════════ */
+  const fixedOf = r => r.office + r.rent + r.util + r.salary + r.maint + r.mkt + r.misc + r.dep;
+  const cashOutOf = r => r.opex + r.raw + r.cap;
+
+  function agg(k0, k1) {
+    const rows = MD.filter(r => r.k >= k0 && r.k <= k1);
+    const s = f => rows.reduce((t, r) => t + f(r), 0);
+    const a = {
+      n: rows.length, rows,
+      sales: s(r=>r.sales), paid: s(r=>r.paid), gp: s(r=>r.gp), transport: s(r=>r.transport),
+      fixed: s(fixedOf), np: s(r=>r.np), mkt: s(r=>r.mkt), opex: s(r=>r.opex), raw: s(r=>r.raw), cap: s(r=>r.cap),
+      cashOut: s(cashOutOf)
+    };
+    a.contrib = a.gp - a.transport;
+    a.cm = a.sales > 0 ? a.contrib / a.sales : null;
+    a.be = (a.cm && a.cm > 0) ? a.fixed / a.cm : null;
+    a.gap = a.be != null ? a.be - a.sales : null;
+    a.ncf = a.paid - a.cashOut;
+    a.delivShare = a.sales > 0 ? a.transport / a.sales : null;
+    return a;
+  }
+  function monthBE(r) {
+    if (!r || r.sales <= 0) return null;
+    const cm = (r.gp - r.transport) / r.sales;
+    return cm > 0 ? { cm, be: fixedOf(r) / cm } : { cm, be: null };
+  }
+  function cumNP(k) { return MD.filter(r => r.k <= k).reduce((t, r) => t + r.np, 0); }
+  function capitalAt(k) { return CAP ? CAP.filter(c => c.k <= k).reduce((t, c) => t + c.amt, 0) : null; }
+
+  function customers(k0, k1) {
+    const first = {}, invsTo = {}, profitTo = {};
+    let invAll = new Set(), profitAll = 0, dcKnown = new Set(), invCount = new Set();
+    SE.forEach(r => {
+      if (first[r.cli] == null || r.k < first[r.cli]) first[r.cli] = r.k;
+    });
+    SE.forEach(r => {
+      if (r.k > k1) return;
+      (invsTo[r.cli] = invsTo[r.cli] || new Set()).add(r.inv);
+      const p = r.pp - (r.dc || 0);
+      profitTo[r.cli] = (profitTo[r.cli] || 0) + p;
+      profitAll += p; invAll.add(r.inv);
+      if (r.dc != null) dcKnown.add(r.inv);
+    });
+    const cliTo = Object.keys(invsTo);
+    const newIn = Object.keys(first).filter(c => first[c] >= k0 && first[c] <= k1).length;
+    const newBy = {}; Object.keys(first).forEach(c => { newBy[first[c]] = (newBy[first[c]] || 0) + 1; });
+    const repeat = cliTo.filter(c => invsTo[c].size > 1).length;
+    const ltv = cliTo.length ? profitAll / cliTo.length : null;
+    const perOrder = invAll.size ? profitAll / invAll.size : null;
+    const mkt = agg(k0, k1).mkt;
+    const cac = newIn > 0 ? mkt / newIn : null;
+    const cohorts = [];
+    for (let k = k1; k >= Math.max(k1 - 5, firstK()); k--) {
+      const cs = Object.keys(first).filter(c => first[c] === k);
+      if (!cs.length) continue;
+      const back = cs.filter(c => invsTo[c] && invsTo[c].size > 1).length;
+      cohorts.push({ k, n: cs.length, back, rate: back / cs.length });
+    }
+    const top = cliTo.map(c => ({ c, p: profitTo[c], o: invsTo[c].size })).sort((a, b) => b.p - a.p).slice(0, 5);
+    return { total: cliTo.length, newIn, newBy, repeat, repeatRate: cliTo.length ? repeat / cliTo.length : null,
+      ltv, perOrder, cac, ratio: (cac && ltv != null) ? ltv / cac : null,
+      paybackOrders: (cac && perOrder > 0) ? cac / perOrder : null,
+      cohorts, top, mkt, invTotal: invAll.size, dcKnown: dcKnown.size };
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     SVG CHART HELPERS (no library: instant, offline-safe)
+     ═══════════════════════════════════════════════════════════ */
+  function ring(p, col) {
+    const v = Math.max(0, Math.min(Number(p) || 0, 100)), r = 50, c = 2*Math.PI*r;
+    return '<svg class="ringsvg" viewBox="0 0 114 114"><circle class="ring-bg" cx="57" cy="57" r="'+r+'"></circle>'
+      + '<circle class="ring-fg" cx="57" cy="57" r="'+r+'" style="stroke:'+col+';stroke-dasharray:'+c.toFixed(1)
+      + ';stroke-dashoffset:'+(c*(1-v/100)).toFixed(1)+'"></circle></svg>';
+  }
+  function spark(vals, col) {
+    const v = vals.filter(x => x != null && isFinite(x));
+    if (v.length < 2) return '<svg class="spark" viewBox="0 0 120 24"></svg>';
+    const mn = Math.min(...v), mx = Math.max(...v), sp = (mx - mn) || 1;
+    const pts = vals.map((x, i) => x == null || !isFinite(x) ? null : ((i/(vals.length-1))*118+1).toFixed(1)+','+(22 - ((x-mn)/sp)*20).toFixed(1)).filter(Boolean);
+    return '<svg class="spark" viewBox="0 0 120 24" preserveAspectRatio="none"><polyline fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="'+pts.join(' ')+'"/></svg>';
+  }
+  function niceMax(v) {
+    if (v <= 0) return 1;
+    const p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
+  }
+  const CHARTS = {};
+  /* Bar + line chart. opts: { id, ks, bars:[{vals,color,label}], line:{vals,color,dash,label}, hi:[k0,k1], zeroLine, detail(i) } */
+  function barChart(o) {
+    const n = o.ks.length, H = 180, T = 12, B = 150, L = 36, colW = 50;
+    const fit = n <= 7, RG = fit ? 6 : 40;   // long charts scroll, so they repeat the axis on the right
+    const W = Math.max(340, L + n * colW + RG);
+    const all = [];
+    o.bars.forEach(b => b.vals.forEach(v => v != null && all.push(v)));
+    if (o.line) o.line.vals.forEach(v => v != null && all.push(v));
+    let mx = Math.max(0, ...all), mn = Math.min(0, ...all);
+    mx = niceMax(mx); if (mn < 0) mn = -niceMax(-mn);
+    const y = v => T + (mx - v) / ((mx - mn) || 1) * (B - T);
+    // Up to 7 months fit any phone, so the chart scales to the card and the
+    // axis stays visible. Longer ranges scroll sideways instead of squashing.
+    let s = '<svg class="chart" id="svg-'+o.id+'" viewBox="0 0 '+W+' '+H+'" '+(fit ? 'width="100%"' : 'width="'+W+'" height="'+H+'"')+'>';
+    [mx, (mx+mn)/2, mn].forEach(v => {
+      s += '<line x1="'+L+'" x2="'+W+'" y1="'+y(v).toFixed(1)+'" y2="'+y(v).toFixed(1)+'" stroke="#eceff3" '+(v===0?'':'stroke-dasharray="3 3"')+'/>'
+        + '<text x="'+(L-5)+'" y="'+(y(v)+3).toFixed(1)+'" text-anchor="end" font-size="9.5" font-weight="600" fill="#9aa0a8">'+shortTk(v)+'</text>'
+        + (fit ? '' : '<text x="'+(W-3)+'" y="'+(y(v)+3).toFixed(1)+'" text-anchor="end" font-size="9.5" font-weight="600" fill="#9aa0a8">'+shortTk(v)+'</text>');
+    });
+    if (mn < 0) s += '<line x1="'+L+'" x2="'+W+'" y1="'+y(0).toFixed(1)+'" y2="'+y(0).toFixed(1)+'" stroke="#c9ced6"/>';
+    const nb = o.bars.length, bw = nb === 1 ? 26 : 16, gap = 3;
+    o.ks.forEach((k, i) => {
+      const cx = L + i*colW + colW/2;
+      const inR = o.hi && k >= o.hi[0] && k <= o.hi[1];
+      if (inR) s += '<rect x="'+(cx-colW/2+2)+'" y="'+T+'" width="'+(colW-4)+'" height="'+(B-T)+'" rx="6" fill="#eef7fd"/>';
+      o.bars.forEach((b, j) => {
+        const v = b.vals[i]; if (v == null) return;
+        const x = cx - (nb*bw + (nb-1)*gap)/2 + j*(bw+gap);
+        const y0 = y(Math.max(0, v)), h = Math.max(1.5, Math.abs(y(v) - y(0)));
+        const col = typeof b.color === 'function' ? b.color(v, i) : b.color;
+        s += '<rect x="'+x.toFixed(1)+'" y="'+y0.toFixed(1)+'" width="'+bw+'" height="'+h.toFixed(1)+'" rx="4" fill="'+col+'" opacity="'+(o.hi && !inR ? .45 : 1)+'"/>';
+      });
+      s += '<text x="'+cx+'" y="'+(B+16)+'" text-anchor="middle" font-size="10" font-weight="'+(inR?800:600)+'" fill="'+(inR?'#16181d':'#828791')+'">'+mLabel(k)+'</text>';
+    });
+    if (o.line) {
+      const pts = [];
+      o.line.vals.forEach((v, i) => { if (v != null) pts.push([L + i*colW + colW/2, y(v)]); });
+      if (pts.length > 1) s += '<polyline fill="none" stroke="'+o.line.color+'" stroke-width="2.2" stroke-linejoin="round" '+(o.line.dash?'stroke-dasharray="5 4"':'')+' points="'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')+'"/>';
+      pts.forEach(p => s += '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.2" fill="#fff" stroke="'+o.line.color+'" stroke-width="2"/>');
+    }
+    o.ks.forEach((k, i) => { s += '<rect class="hit" x="'+(L+i*colW)+'" y="0" width="'+colW+'" height="'+H+'" onclick="chartTap(\''+o.id+'\','+i+')"/>'; });
+    s += '</svg>';
+    CHARTS[o.id] = o;
+    const leg = o.bars.map(b => '<span><i class="sq" style="background:'+(typeof b.color==='function'?b.legendColor:b.color)+'"></i>'+b.label+'</span>').join('')
+      + (o.line ? '<span><i style="background:'+o.line.color+'"></i>'+o.line.label+'</span>' : '');
+    return '<div class="scrollx"'+(fit ? '' : ' data-scroll-end="1"')+'>'+s+'</div><div class="legend">'+leg+'</div>'
+      + '<div class="detail" id="det-'+o.id+'"></div><div class="hint">Tap any month for details</div>';
+  }
+  function chartTap(id, i) {
+    const o = CHARTS[id], el = document.getElementById('det-'+id);
+    if (!o || !el) return;
+    if (el.dataset.i === String(i) && el.classList.contains('show')) { el.classList.remove('show'); el.dataset.i = ''; return; }
+    el.innerHTML = o.detail(i); el.dataset.i = String(i); el.classList.add('show');
+  }
+  const dBox = (l, v, cls) => '<div class="d-b"><div class="d-l">'+l+'</div><div class="d-v '+(cls||'')+'">'+v+'</div></div>';
+  const tile = (l, v, s, cls) => '<div class="tile"><div class="l">'+l+'</div><div class="v '+(cls||'')+'">'+v+'</div>'+(s?'<div class="s">'+s+'</div>':'')+'</div>';
+
+  function donut(parts) {
+    const tot = parts.reduce((t, p) => t + Math.max(0, p.v), 0);
+    if (tot <= 0) return '<div class="state" style="padding:14px">No spending in this period.</div>';
+    const r = 42, c = 2*Math.PI*r; let off = 0, arcs = '';
+    parts.forEach(p => {
+      const f = Math.max(0, p.v) / tot; if (f <= 0) return;
+      arcs += '<circle cx="55" cy="55" r="'+r+'" fill="none" stroke="'+p.col+'" stroke-width="16" stroke-dasharray="'+(f*c).toFixed(2)+' '+c.toFixed(2)+'" stroke-dashoffset="'+(-off*c).toFixed(2)+'" transform="rotate(-90 55 55)"/>';
+      off += f;
+    });
+    const list = parts.filter(p => p.v > 0).map(p => '<div class="dl-r"><i style="background:'+p.col+'"></i><span>'+p.l+'</span><b>'+shortTk(p.v)+'</b></div>').join('');
+    return '<div class="donut-wrap"><svg viewBox="0 0 110 110" width="118" height="118" style="flex-shrink:0">'+arcs
+      + '<text x="55" y="53" text-anchor="middle" font-size="14" font-weight="800" fill="#16181d">'+shortTk(tot)+'</text>'
+      + '<text x="55" y="67" text-anchor="middle" font-size="8.5" font-weight="700" fill="#828791">CASH OUT</text></svg><div class="dl">'+list+'</div></div>';
+  }
+
+  /* Cost-volume-profit chart: sales line vs total cost line, crossing at breakeven. */
+  function cvpChart(fixed, cm, sales, be) {
+    const W = 340, H = 190, L = 36, T = 12, B = 160, R = 330;
+    const xMax = niceMax(Math.max(be || 0, sales) * 1.15 || 1);
+    const x = v => L + v / xMax * (R - L), y = v => B - v / xMax * (B - T);
+    const costAt = v => fixed + (1 - cm) * v;
+    let s = '<svg class="chart" viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:420px;margin:0 auto">';
+    [0, xMax/2, xMax].forEach(v => {
+      s += '<line x1="'+L+'" x2="'+R+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="#eceff3" stroke-dasharray="3 3"/>'
+        + '<text x="'+(L-5)+'" y="'+(y(v)+3)+'" text-anchor="end" font-size="9.5" font-weight="600" fill="#9aa0a8">'+shortTk(v)+'</text>'
+        + '<text x="'+x(v)+'" y="'+(B+14)+'" text-anchor="middle" font-size="9.5" font-weight="600" fill="#9aa0a8">'+shortTk(v)+'</text>';
+    });
+    if (be != null) s += '<polygon points="'+x(0)+','+y(fixed)+' '+x(be)+','+y(be)+' '+x(0)+','+y(0)+'" fill="#fee6e6" opacity=".7"/>'
+      + '<polygon points="'+x(be)+','+y(be)+' '+x(xMax)+','+y(xMax)+' '+x(xMax)+','+y(Math.min(xMax,costAt(xMax)))+'" fill="#e4f8f0" opacity=".8"/>';
+    s += '<line x1="'+x(0)+'" y1="'+y(0)+'" x2="'+x(xMax)+'" y2="'+y(xMax)+'" stroke="#1E9DD6" stroke-width="2.4"/>';
+    const cEnd = Math.min(costAt(xMax), xMax * 1.4);
+    s += '<line x1="'+x(0)+'" y1="'+y(fixed)+'" x2="'+x(xMax)+'" y2="'+y(Math.min(cEnd, xMax))+'" stroke="#ef4444" stroke-width="2.4" stroke-dasharray="6 4"/>';
+    s += '<line x1="'+x(0)+'" y1="'+y(fixed)+'" x2="'+x(xMax)+'" y2="'+y(fixed)+'" stroke="#09090D" stroke-width="1" stroke-dasharray="2 3" opacity=".5"/>';
+    if (be != null) s += '<circle cx="'+x(be)+'" cy="'+y(be)+'" r="5" fill="#09090D"/><text x="'+(x(be)-6)+'" y="'+(y(be)-9)+'" text-anchor="end" font-size="10" font-weight="800" fill="#09090D">Breakeven '+shortTk(be)+'</text>';
+    s += '<line x1="'+x(sales)+'" y1="'+T+'" x2="'+x(sales)+'" y2="'+B+'" stroke="#1583b3" stroke-width="1.5"/>'
+      + '<text x="'+(x(sales)+4)+'" y="'+(T+20)+'" font-size="10" font-weight="800" fill="#1583b3">You: '+shortTk(sales)+'</text>';
+    s += '<text x="'+(R-2)+'" y="'+(y(fixed)+13)+'" text-anchor="end" font-size="9.5" font-weight="700" fill="#555">Fixed cost '+shortTk(fixed)+'</text>';
+    s += '<text x="'+((L+R)/2)+'" y="'+(H-2)+'" text-anchor="middle" font-size="9.5" font-weight="700" fill="#828791">Sales in the period</text></svg>';
+    return s + '<div class="legend"><span><i style="background:#1E9DD6"></i>Sales</span><span><i style="background:#ef4444"></i>Total cost</span><span><i class="sq" style="background:#fee6e6"></i>Loss zone</span><span><i class="sq" style="background:#e4f8f0"></i>Profit zone</span></div>';
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     RENDER
+     ═══════════════════════════════════════════════════════════ */
+  let ACC_OPEN = 'be';
+  function accToggle(id) {
+    ACC_OPEN = ACC_OPEN === id ? null : id;
+    applyAcc();
+  }
+  function applyAcc() {
+    ['be','roi','cash','cust'].forEach(x => {
+      const b = document.getElementById('nav-'+x), p = document.getElementById('acc-'+x);
+      if (b) b.classList.toggle('open', ACC_OPEN === x);
+      if (p) p.classList.toggle('open', ACC_OPEN === x);
+    });
+    scrollChartsToEnd();
+  }
+  function scrollChartsToEnd() {
+    requestAnimationFrame(() => document.querySelectorAll('.scrollx[data-scroll-end]').forEach(el => { el.scrollLeft = el.scrollWidth; }));
+  }
+  function windowKs() {   // months drawn on charts: the range, at least 6 months
+    const k0 = Math.min(R0, Math.max(firstK(), R1 - 5));
+    return MD.filter(r => r.k >= k0 && r.k <= R1).map(r => r.k);
+  }
+  function rangeLabel() {
+    if (R0 === R1) return mLabelFull(R1);
+    return mLabel(R0) + ' – ' + mLabel(R1) + ' · ' + (R1 - R0 + 1) + ' months';
+  }
+  function isOpenMonth(k) { const now = new Date(); return k === mKey(now); }
+
+  function renderAll() {
+    if (!MD.length) return;
+    if (R1 == null) { R1 = lastK(); R0 = R1; }
+    document.getElementById('rangeLbl').textContent = rangeLabel();
+    document.getElementById('stepPrev').classList.toggle('off', R1 <= firstK());
+    document.getElementById('stepNext').classList.toggle('off', R1 >= lastK());
+
+    const A = agg(R0, R1), n = R1 - R0 + 1;
+    const P = agg(R0 - n, R0 - 1), hasPrev = P.n > 0;
+    const prevLbl = n === 1 ? mLabel(R0 - 1) : 'prev ' + n + ' mo';
+    const C = customers(R0, R1);
+    const cum = cumNP(R1), cap = capitalAt(R1);
+    const roi = (cap && cap > 0) ? cum / cap : null;
+    const last3 = MD.filter(r => r.k <= R1 && r.k > R1 - 3);
+    const burn = last3.length ? -last3.reduce((t, r) => t + r.np, 0) / last3.length : null;
+    const runway = (CASH != null && burn > 0) ? CASH / burn : null;
+    const WK = windowKs();
+
+    let h = '';
+
+    /* hero */
+    const ringCol = roi == null ? '#5a5f68' : roi >= 0 ? '#16b07c' : '#ef4444';
+    const ringV = roi == null ? '—' : (roi*100).toFixed(0) + '%';
+    let heroNote = '', heroBad = false;
+    if (A.be != null && A.gap > 0) { heroNote = 'To break even in '+(n===1?mLabelFull(R1):'this period')+' you needed '+plainTk(A.be)+' in sales. You made '+plainTk(A.sales)+', a gap of '+plainTk(A.gap)+'.'; heroBad = true; }
+    else if (A.be != null) heroNote = 'Sales were above breakeven by '+plainTk(-A.gap)+'. Keep margins where they are.';
+    else if (A.sales > 0) { heroNote = 'Gross profit after delivery is zero or negative, so no sales level can break even at this margin.'; heroBad = true; }
+    else heroNote = 'No sales recorded in this period yet.';
+    h += '<div class="section"><div class="hero"><div class="hero-row">'
+      + '<div class="ringwrap">'+ring(roi == null ? 0 : Math.abs(roi)*100, ringCol)+'<div class="ringtxt"><div class="ringv">'+ringV+'</div><div class="ringl">ROI<br>to '+mLabel(R1)+'</div></div></div>'
+      + '<div class="hero-side"><div class="hs-k">Net profit · '+(n===1?mLabel(R1):n+' months')+'</div><div class="hs-v '+(A.np>=0?'up':'dn')+'">'+shortTk(A.np)+' tk</div>'
+      + '<div class="hs-k">Net profit since start</div><div class="hs-v '+(cum>=0?'up':'dn')+'">'+shortTk(cum)+' tk</div>'
+      + (runway != null ? '<div class="hs-k">Cash runway</div><div class="hs-v">'+runway.toFixed(1)+' months</div>'
+         : cap != null ? '<div class="hs-k">Capital invested</div><div class="hs-v">'+shortTk(cap)+' tk</div>'
+         : '<div class="hs-k">Net cashflow · period</div><div class="hs-v '+(A.ncf>=0?'up':'dn')+'">'+shortTk(A.ncf)+' tk</div>')
+      + '</div></div><div class="hero-note'+(heroBad?' bad':'')+'">'+esc(heroNote)+'</div></div></div>';
+
+    /* data quality */
+    const dq = [];
+    if (isOpenMonth(R1)) dq.push({ c:'warn', b: mLabelFull(R1)+' is not over yet', s:'Numbers for this month are partial and will change as sales and expenses are entered.' });
+    if (CAP == null) dq.push({ c:'warn', b:'ROI needs the capital figure', s:'Add a "Capital Account" tab to the Central Finance Sheet (Date, Type In/Out, Amount, Person, Note). ROI shows — until then.' });
+    if (CASH == null) dq.push({ c:'warn', b:'Cash in Hand has no figures', s:'The "Positive" row in the Cash in Hand tab is blank, so runway cannot be calculated.' });
+    if (UNID_N) dq.push({ c:'', b:UNID_N+' walk-in invoices left out of customer numbers', s:'Sales booked under "Unidentified" are not one real customer, so CAC, LTV and repeat rate ignore them. Sales and profit still count them.' });
+    if (C.invTotal && C.dcKnown < C.invTotal * 0.8) dq.push({ c:'', b:'Delivery cost known on '+C.dcKnown+' of '+C.invTotal+' invoices', s:'LTV subtracts delivery only where it is recorded, so LTV may be slightly high.' });
+    if (dq.length) h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Data check</span><span class="sec-s">'+dq.length+' note'+(dq.length>1?'s':'')+'</span></div><div class="acts">'
+      + dq.map((d, i) => '<div class="act '+d.c+'"><div class="act-n">'+(i+1)+'</div><div class="act-t"><b>'+esc(d.b)+'</b><span>'+esc(d.s)+'</span></div></div>').join('') + '</div></div>';
+
+    /* KPI cards */
+    const sparkKs = MD.filter(r => r.k <= R1).slice(-6);
+    const ncfSpark = sparkKs.map(r => r.paid - cashOutOf(r));
+    const gapSpark = sparkKs.map(r => { const m = monthBE(r); return m && m.be != null ? m.be - r.sales : null; });
+    const newSpark = sparkKs.map(r => C.newBy[r.k] || 0);
+    const ratioSpark = sparkKs.map(r => customers(r.k, r.k).ratio);
+    const vsTxt = (cur, prev, goodUp) => {
+      if (!hasPrev || prev == null || cur == null) return '';
+      const d = cur - prev; if (Math.abs(d) < 1) return 'Same as ' + prevLbl;
+      const good = goodUp ? d > 0 : d < 0;
+      return '<span class="'+(good?'c-pos':'c-neg')+'">'+(d>0?'▲ ':'▼ ')+shortTk(Math.abs(d))+'</span> vs '+prevLbl;
+    };
+    const ratioCls = C.ratio == null ? '' : C.ratio >= 3 ? 'c-pos' : C.ratio >= 1 ? 'c-amb' : 'c-neg';
+    const CP = hasPrev ? customers(R0 - n, R0 - 1) : null;
+    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Key numbers</span><span class="sec-s">'+esc(rangeLabel())+'</span></div><div class="kg">'
+      + '<div class="kc"><div class="kl">Net cashflow</div><div class="kv '+(A.ncf>=0?'c-pos':'c-neg')+'">'+shortTk(A.ncf)+'</div>'+spark(ncfSpark, A.ncf>=0?'#16b07c':'#ef4444')+'<div class="ks">'+(vsTxt(A.ncf, hasPrev?P.ncf:null, true) || 'Cash in minus cash out')+'</div></div>'
+      + '<div class="kc"><div class="kl">Breakeven gap</div><div class="kv '+(A.gap==null?'':A.gap>0?'c-neg':'c-pos')+'">'+(A.gap==null?'—':shortTk(Math.abs(A.gap)))+'</div>'+spark(gapSpark, '#ef4444')+'<div class="ks">'+(A.be==null?'No breakeven at this margin':A.gap>0?'Need '+shortTk(A.be)+', made '+shortTk(A.sales):'Above breakeven')+'</div></div>'
+      + '<div class="kc"><div class="kl">LTV / CAC</div><div class="kv '+ratioCls+'">'+(C.ratio==null?'—':C.ratio.toFixed(1)+'x')+'</div>'+spark(ratioSpark, '#d97706')+'<div class="ks">'+(C.ratio==null?'No new customers or no marketing spend':'Healthy at 3x or more')+'</div></div>'
+      + '<div class="kc"><div class="kl">New customers</div><div class="kv c-blu">'+C.newIn+'</div>'+spark(newSpark, '#1E9DD6')+'<div class="ks">'+(vsTxt(C.newIn, CP?CP.newIn:null, true) || C.total+' customers in total')+'</div></div>'
+      + '</div></div>';
+
+    /* sections */
+    h += '<div class="section"><div class="sec-hdr"><span class="sec-title">Health sections</span><span class="sec-s">tap to open</span></div><div class="nav-list">';
+
+    /* ── BREAKEVEN ── */
+    const beBadge = A.be == null ? '<span class="nav-badge bad">No breakeven</span>' : A.gap > 0 ? '<span class="nav-badge bad">'+shortTk(A.gap)+' short</span>' : '<span class="nav-badge good">Above</span>';
+    h += navBtn('be', '⚖️', 'Breakeven', 'Sales needed to stop losing money', beBadge, false);
+    let be = '';
+    be += '<div class="tiles t4">' + tile('Sales', shortTk(A.sales)) + tile('Fixed cost', shortTk(A.fixed)) + tile('Margin', pct(A.cm, 1), 'after delivery', A.cm!=null&&A.cm<0.2?'c-neg':'') + tile('Breakeven', A.be==null?'—':shortTk(A.be), '', 'c-neg') + '</div>';
+    const bestWin = WK.map(k => ({ k, m: monthBE(MD_BY_K[k]) })).filter(x => x.m && x.m.cm > 0).sort((a, b) => b.m.cm - a.m.cm)[0];
+    let beNote = '';
+    if (A.sales > 0 && A.cm != null) {
+      beNote = 'Margin after delivery was '+pct(A.cm,1)+'. Delivery took '+pct(A.delivShare,1)+' of sales. ';
+      if (A.be != null) beNote += 'With '+plainTk(A.fixed)+' fixed cost, breakeven sales = '+plainTk(A.be)+'. ';
+      if (bestWin && A.cm != null && bestWin.m.cm > A.cm + 0.02) beNote += 'At '+mLabelFull(bestWin.k)+"'s "+pct(bestWin.m.cm,1)+' margin you would need only '+plainTk(A.fixed / bestWin.m.cm)+'.';
+    } else beNote = 'No sales in this period, so breakeven cannot be worked out.';
+    be += '<div class="note '+(A.gap>0||A.be==null?'bad':'good')+'">'+esc(beNote)+'</div>';
+    be += '<div class="card"><div class="card-hd"><span class="card-t">Sales vs breakeven sales</span><span class="card-s">per month</span></div>'
+      + barChart({ id:'be', ks:WK, hi:[R0,R1],
+          bars:[{ vals: WK.map(k => MD_BY_K[k].sales), color:'#1E9DD6', label:'Sales' }],
+          line:{ vals: WK.map(k => { const m = monthBE(MD_BY_K[k]); return m ? m.be : null; }), color:'#ef4444', dash:true, label:'Breakeven sales' },
+          detail: i => { const r = MD_BY_K[WK[i]], m = monthBE(r) || {}; return '<div class="d-hd">'+mLabelFull(r.k)+'</div><div class="d-row">'
+            + dBox('Sales', shortTk(r.sales)) + dBox('Breakeven', m.be==null?'—':shortTk(m.be), 'c-neg') + dBox('Margin', pct(m.cm,1)) + dBox('Fixed', shortTk(fixedOf(r))) + '</div>'; } })
+      + '</div>';
+    if (A.sales > 0 && A.cm != null && A.cm > 0) be += '<div class="card"><div class="card-hd"><span class="card-t">Where profit starts</span><span class="card-s">'+esc(rangeLabel())+'</span></div>' + cvpChart(A.fixed, A.cm, A.sales, A.be) + '</div>';
+    be += '<div class="formula"><b>Breakeven sales</b> = Fixed cost ÷ Margin after delivery. <b>Margin</b> = (Gross profit − Delivery) ÷ Sales. <b>Fixed cost</b> = Office + Rent + Utilities + Salary + Maintenance + Marketing + Misc + Depreciation.</div>';
+    h += accPanel('be', be);
+
+    /* ── ROI ── */
+    const roiBadge = roi == null ? '<span class="nav-badge warn">Capital not set</span>' : '<span class="nav-badge '+(roi>=0?'good':'bad')+'">'+(roi*100).toFixed(0)+'%</span>';
+    h += navBtn('roi', '📈', 'ROI', 'Profit against capital invested', roiBadge, true);
+    const allKs = MD.filter(r => r.k <= R1).map(r => r.k);
+    let ro = '<div class="tiles t3">' + tile('Since start', shortTk(cum), 'net profit', cum>=0?'c-pos':'c-neg')
+      + tile('Capital', cap==null?'—':shortTk(cap), cap==null?'not set':'invested') + tile('ROI', roi==null?'—':(roi*100).toFixed(1)+'%', '', roi==null?'':roi>=0?'c-pos':'c-neg') + '</div>';
+    let roNote = cum < 0 ? 'The business has lost '+plainTk(-cum)+' since '+mLabelFull(firstK())+'. ' : 'The business has earned '+plainTk(cum)+' since '+mLabelFull(firstK())+'. ';
+    if (burn != null && burn > 0) roNote += 'Average loss over the last 3 months: '+plainTk(burn)+' per month. Payback starts only after monthly profit turns positive.';
+    else if (burn != null && burn < 0) roNote += 'Average profit over the last 3 months: '+plainTk(-burn)+' per month.' + (cum < 0 ? ' At that pace the loss is recovered in about '+Math.ceil(-cum / -burn)+' months.' : '');
+    ro += '<div class="note '+(cum<0?'bad':'good')+'">'+esc(roNote)+'</div>';
+    const cumVals = []; let run = 0; allKs.forEach(k => { run += MD_BY_K[k].np; cumVals.push(run); });
+    ro += '<div class="card"><div class="card-hd"><span class="card-t">Monthly net profit and running total</span><span class="card-s">since start</span></div>'
+      + barChart({ id:'roi', ks:allKs, hi:[R0,R1],
+          bars:[{ vals: allKs.map(k => MD_BY_K[k].np), color:(v)=> v>=0?'#16b07c':'#ef4444', legendColor:'#ef4444', label:'Net profit (month)' }],
+          line:{ vals: cumVals, color:'#09090D', label:'Running total' },
+          detail: i => { const k = allKs[i], r = MD_BY_K[k], ca = capitalAt(k); return '<div class="d-hd">'+mLabelFull(k)+'</div><div class="d-row">'
+            + dBox('Net profit', shortTk(r.np), r.np>=0?'c-pos':'c-neg') + dBox('Running', shortTk(cumVals[i]), cumVals[i]>=0?'c-pos':'c-neg') + dBox('ROI', ca?((cumVals[i]/ca)*100).toFixed(1)+'%':'—') + '</div>'; } })
+      + '</div>';
+    ro += '<div class="formula"><b>ROI</b> = Net profit since start ÷ Capital invested × 100. Capital comes from the Capital Account tab (money In minus money Out).</div>';
+    h += accPanel('roi', ro);
+
+    /* ── CASHFLOW ── */
+    const cfBadge = '<span class="nav-badge '+(A.ncf>=0?'good':'bad')+'">'+sgnTk(A.ncf)+'</span>';
+    h += navBtn('cash', '💵', 'Cashflow', 'Cash in, cash out, runway', cfBadge, false);
+    let cf = '<div class="tiles t3">' + tile('Cash in', shortTk(A.paid), 'collected', 'c-pos') + tile('Cash out', shortTk(A.cashOut), 'spent', 'c-neg') + tile('Net', sgnTk(A.ncf), '', A.ncf>=0?'c-pos':'c-neg') + '</div>';
+    const outParts = [
+      { l:'Raw materials', v:A.raw, col:'#1E9DD6' }, { l:'Salary / PIB', v:A.rows.reduce((t,r)=>t+r.salary,0), col:'#09090D' },
+      { l:'Rent', v:A.rows.reduce((t,r)=>t+r.rent,0), col:'#6b7280' }, { l:'Delivery', v:A.transport, col:'#ef4444' },
+      { l:'Marketing', v:A.mkt, col:'#d97706' }, { l:'Assets bought', v:A.cap, col:'#16b07c' },
+      { l:'Other', v:A.rows.reduce((t,r)=>t+r.office+r.util+r.maint+r.misc,0), col:'#c4cad3' }
+    ];
+    const top = outParts.slice().sort((a,b)=>b.v-a.v)[0];
+    let cfNote = 'Collected '+plainTk(A.paid)+' and spent '+plainTk(A.cashOut)+'. ';
+    if (top && A.cashOut > 0) cfNote += 'Biggest outflow: '+top.l+' at '+plainTk(top.v)+' ('+pct(top.v/A.cashOut)+'). ';
+    if (runway != null) cfNote += 'Cash on hand covers about '+runway.toFixed(1)+' months at the recent loss rate.';
+    cf += '<div class="note '+(A.ncf<0?'bad':'good')+'">'+esc(cfNote)+'</div>';
+    cf += '<div class="card"><div class="card-hd"><span class="card-t">Cash in vs cash out</span><span class="card-s">per month</span></div>'
+      + barChart({ id:'cf', ks:WK, hi:[R0,R1],
+          bars:[{ vals: WK.map(k => MD_BY_K[k].paid), color:'#16b07c', label:'Cash in' }, { vals: WK.map(k => cashOutOf(MD_BY_K[k])), color:'#ef4444', label:'Cash out' }],
+          line:{ vals: WK.map(k => MD_BY_K[k].paid - cashOutOf(MD_BY_K[k])), color:'#09090D', label:'Net' },
+          detail: i => { const r = MD_BY_K[WK[i]], net = r.paid - cashOutOf(r); return '<div class="d-hd">'+mLabelFull(r.k)+'</div><div class="d-row">'
+            + dBox('In', shortTk(r.paid), 'c-pos') + dBox('Out', shortTk(cashOutOf(r)), 'c-neg') + dBox('Net', sgnTk(net), net>=0?'c-pos':'c-neg') + dBox('Stock', shortTk(r.raw)) + '</div>'; } })
+      + '</div>';
+    cf += '<div class="card"><div class="card-hd"><span class="card-t">Where the cash went</span><span class="card-s">'+esc(rangeLabel())+'</span></div>'+donut(outParts)+'</div>';
+    cf += '<div class="card"><div class="card-hd"><span class="card-t">Cash runway</span><span class="card-s">months of cash left</span></div>'
+      + (runway != null ? '<div class="tiles t3">'+tile('Cash in hand', shortTk(CASH))+tile('Avg loss / mo', shortTk(burn))+tile('Runway', runway.toFixed(1)+' mo', '', runway<3?'c-neg':runway<6?'c-amb':'c-pos')+'</div>'
+         : '<div class="state" style="padding:12px">'+(CASH==null?'Fill the "Positive" row in the Cash in Hand tab to see runway.':'The business made a profit over the last 3 months, so there is no burn.')+'</div>')
+      + '</div>';
+    cf += '<div class="formula"><b>Net cashflow</b> = Cash collected − (Operating expense + Raw materials bought + Assets bought). <b>Runway</b> = Cash in hand ÷ Average monthly loss of the last 3 months.</div>';
+    h += accPanel('cash', cf);
+
+    /* ── CUSTOMERS ── */
+    const cuBadge = C.ratio == null ? '<span class="nav-badge">'+C.newIn+' new</span>' : '<span class="nav-badge '+(C.ratio>=3?'good':C.ratio>=1?'warn':'bad')+'">'+C.ratio.toFixed(1)+'x</span>';
+    h += navBtn('cust', '👥', 'Customers', 'CAC, LTV, new and repeat buyers', cuBadge, true);
+    let cu = '<div class="tiles t4">' + tile('CAC', C.cac==null?'—':shortTk(C.cac), 'per new customer') + tile('LTV', C.ltv==null?'—':shortTk(C.ltv), 'profit per customer')
+      + tile('LTV / CAC', C.ratio==null?'—':C.ratio.toFixed(1)+'x', '', ratioCls) + tile('Repeat', pct(C.repeatRate), C.repeat+' of '+C.total) + '</div>';
+    let cuNote = C.newIn + ' new customer' + (C.newIn===1?'':'s') + ' in this period';
+    cuNote += C.cac != null ? ' at '+plainTk(C.cac)+' marketing each. ' : (C.mkt > 0 ? '. ' : ' with no marketing spend recorded. ');
+    if (C.ltv != null) cuNote += 'A customer brings about '+plainTk(C.ltv)+' profit after delivery over their life so far. ';
+    if (C.paybackOrders != null) cuNote += 'It takes about '+C.paybackOrders.toFixed(1)+' orders to earn back the cost of winning a customer. ';
+    cuNote += 'CAC counts marketing spend only, not sales salaries.';
+    cu += '<div class="note '+(C.ratio!=null&&C.ratio<1?'bad':'')+'">'+esc(cuNote)+'</div>';
+    cu += '<div class="card"><div class="card-hd"><span class="card-t">New customers per month</span><span class="card-s">first order month</span></div>'
+      + barChart({ id:'cu', ks:WK, hi:[R0,R1],
+          bars:[{ vals: WK.map(k => C.newBy[k] || 0), color:'#1E9DD6', label:'New customers' }],
+          detail: i => { const k = WK[i], nn = C.newBy[k] || 0, mk = MD_BY_K[k].mkt; return '<div class="d-hd">'+mLabelFull(k)+'</div><div class="d-row">'
+            + dBox('New', nn) + dBox('Marketing', shortTk(mk)) + dBox('CAC', nn ? shortTk(mk/nn) : '—') + '</div>'; } })
+      + '</div>';
+    const ltvMax = Math.max(C.ltv || 0, (C.cac || 0) * 3, 1);
+    if (C.ltv != null && C.cac != null) cu += '<div class="card"><div class="card-hd"><span class="card-t">Value vs cost of a customer</span><span class="card-s">target 3x</span></div>'
+      + '<div style="display:flex;flex-direction:column;gap:9px;padding:2px 2px 4px">'
+      + '<div><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px"><span>LTV</span><span>'+plainTk(C.ltv)+'</span></div><div class="bar-bg"><div class="bar-fg" style="width:'+(C.ltv/ltvMax*100).toFixed(1)+'%;background:#16b07c"></div></div></div>'
+      + '<div><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px"><span>CAC</span><span>'+plainTk(C.cac)+'</span></div><div class="bar-bg"><div class="bar-fg" style="width:'+(C.cac/ltvMax*100).toFixed(1)+'%;background:#ef4444"></div></div></div>'
+      + '<div><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px;color:#828791"><span>3 × CAC (healthy line)</span><span>'+plainTk(C.cac*3)+'</span></div><div class="bar-bg"><div class="bar-fg" style="width:'+(C.cac*3/ltvMax*100).toFixed(1)+'%;background:#c4cad3"></div></div></div>'
+      + '</div></div>';
+    if (C.cohorts.length) cu += '<div class="card"><div class="card-hd"><span class="card-t">Did they come back?</span><span class="card-s">by first-order month</span></div>'
+      + '<table class="tbl"><tr><th>Joined</th><th class="n">New</th><th class="n">Ordered again</th><th style="width:34%"></th></tr>'
+      + C.cohorts.map(c => '<tr><td>'+mLabelFull(c.k)+'</td><td class="n">'+c.n+'</td><td class="n">'+c.back+' ('+pct(c.rate)+')</td><td><div class="bar-bg"><div class="bar-fg" style="width:'+(c.rate*100).toFixed(0)+'%"></div></div></td></tr>').join('')
+      + '</table></div>';
+    if (C.top.length) cu += '<div class="card"><div class="card-hd"><span class="card-t">Top 5 customers by profit</span><span class="card-s">up to '+mLabel(R1)+'</span></div>'
+      + C.top.map((t, i) => { const parts = t.c.split(','); return '<div class="rank"><div class="rank-n">'+(i+1)+'</div><div class="rank-t">'+esc((parts[1]||parts[0]).trim())+'<span>'+esc(parts[0].trim())+' · '+t.o+' order'+(t.o>1?'s':'')+'</span></div><div class="rank-v '+(t.p>=0?'c-pos':'c-neg')+'">'+shortTk(t.p)+'</div></div>'; }).join('')
+      + '</div>';
+    cu += '<div class="formula"><b>CAC</b> = Marketing spend ÷ New customers. <b>LTV</b> = (Product profit − Delivery cost) ÷ Customers, up to the selected month. <b>Payback</b> = CAC ÷ Profit per order.</div>';
+    h += accPanel('cust', cu);
+
+    h += '</div></div>';
+    h += '<div class="foot">Finance figures from the Monthly Dashboard tab' + (GEN_TS ? ', generated ' + esc(GEN_TS) : '') + '.<br>Customer figures from Sale Entry. Pull down to refresh.</div>';
+
+    document.getElementById('body').innerHTML = h;
+    applyAcc();
+  }
+  function navBtn(id, ico, lbl, sub, badge, blk) {
+    return '<div class="nav-btn'+(blk?' blk':'')+'" id="nav-'+id+'" onclick="accToggle(\''+id+'\')"><span class="nav-ico">'+ico+'</span>'
+      + '<div style="flex:1;min-width:0"><div class="nav-lbl">'+lbl+'</div><div class="nav-sub">'+sub+'</div></div>'+badge+'<span class="nav-arrow">▾</span></div>';
+  }
+  const accPanel = (id, inner) => '<div class="acc-panel" id="acc-'+id+'">'+inner+'</div>';
+
+  /* ═══════════════════════════════════════════════════════════
+     CACHE + REFRESH
+     ═══════════════════════════════════════════════════════════ */
+  function saveCache() {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts:Date.now(), MD, SE, CASH, CAP, GEN_TS, UNID_N })); } catch (e) {}
+  }
+  function hydrate() {
+    let c = null;
+    try { c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (e) { c = null; }
+    if (!c || !c.MD || !c.MD.length) return false;
+    MD = c.MD; MD_BY_K = {}; MD.forEach(r => MD_BY_K[r.k] = r);
+    SE = c.SE || []; CASH = c.CASH; CAP = c.CAP; GEN_TS = c.GEN_TS || ''; UNID_N = c.UNID_N || 0;
+    return true;
+  }
+  let _refreshing = false;
+  async function refresh() {
+    if (_refreshing) return;
+    _refreshing = true;
+    const res = await Promise.allSettled([loadMonthly(), loadSaleEntry(), loadCash(), loadCapital()]);
+    _refreshing = false;
+    if (res[0].status === 'rejected' && !MD.length) {
+      document.getElementById('body').innerHTML = '<div class="state">⚠️ Could not load the Monthly Dashboard tab.<br>Check the connection and pull down to retry.</div>';
+      return;
+    }
+    const wasEmpty = R1 == null;
+    if (wasEmpty) { R1 = lastK(); R0 = R1; }
+    else { R1 = clampK(R1); R0 = clampK(R0); }
+    if (MODE === 'custom') { fillCustomSelects(); syncCustomSelects(); }
+    renderAll();
+    saveCache();
+  }
+
+  window.addEventListener('load', function () { document.body.classList.add('booted'); });
+  (function start() {
+    const now = new Date();
+    document.getElementById('g-date').textContent = now.toLocaleDateString('en-GB', { weekday:'long' }) + ' · ' + now.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    try { if (hydrate()) { R1 = lastK(); R0 = R1; renderAll(); } } catch (e) { console.error('hydrate failed:', e); }
+    document.body.classList.add('booted');
+    refresh();
+    setInterval(() => { if (!document.hidden) refresh(); }, REFRESH_MS);
+  })();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+
+  /* ── PULL TO REFRESH (same compact pill as the other panels) ── */
+  async function forceRefresh() {
+    const ind = document.getElementById('ptrIndicator');
+    ind.style.marginTop = '0px'; ind.classList.add('ptr-loading');
+    document.getElementById('ptrText').textContent = 'Refreshing…';
+    await refresh();
+    ind.classList.remove('ptr-loading');
+    document.getElementById('ptrText').textContent = 'Pull to refresh';
+    ind.style.marginTop = '-60px';
+  }
+  (function initPullToRefresh() {
+    const ind = document.getElementById('ptrIndicator'), txt = document.getElementById('ptrText');
+    const MAX = 84, FIRE = 58; let startY = 0, pulling = false, dist = 0;
+    document.addEventListener('touchstart', e => {
+      if (_refreshing || window.scrollY > 0 || e.target.closest('.scrollx')) { pulling = false; return; }
+      startY = e.touches[0].clientY; pulling = true;
+    }, { passive:true });
+    document.addEventListener('touchmove', e => {
+      if (!pulling || _refreshing) return;
+      dist = e.touches[0].clientY - startY;
+      if (dist <= 0) { dist = 0; ind.style.marginTop = '-60px'; return; }
+      if (window.scrollY > 0) { pulling = false; return; }
+      const eased = Math.min(MAX, dist * 0.5);
+      ind.style.marginTop = (eased - 52) + 'px';
+      txt.textContent = eased >= FIRE ? 'Release to refresh' : 'Pull to refresh';
+    }, { passive:true });
+    document.addEventListener('touchend', () => {
+      if (!pulling) return; pulling = false;
+      const eased = Math.min(MAX, dist * 0.5);
+      if (eased >= FIRE) forceRefresh(); else ind.style.marginTop = '-60px';
+      dist = 0;
+    });
+  })();
+</script>
+</body>
+</html>
