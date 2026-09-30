@@ -655,7 +655,9 @@
   // read first; the raw date is only a fallback.
   function mdMonthKey(cell) {
     if (!cell) return null;
-    const f = String(cell.f || '').trim();
+    // f = the formatted text of a date cell; once EnkoreFinance.gs writes the
+    // month as plain text ("'Oct 25"), the text arrives in v instead.
+    const f = String(cell.f || (typeof cell.v === 'string' && !/^Date\(/.test(cell.v) ? cell.v : '') || '').trim();
     const m = f.match(/^([A-Za-z]{3})[a-z]*[\s\-']+(\d{2}|\d{4})$/);
     if (m) {
       const mi = MOS3.findIndex(x => x.toLowerCase() === m[1].toLowerCase());
@@ -672,6 +674,9 @@
       // gviz returns the FIRST tab when a tab name is missing, so confirm
       // this really is the P&L before trusting a single number from it.
       if (!(tbl.cols||[]).some(c => /NET PROFIT/i.test(String(c.label||'')))) throw new Error('Monthly Dashboard tab not found');
+      // When the finance script last rebuilt this tab ("Generated 28 Sep 2026 11:21").
+      const gm = String(((tbl.cols||[])[0]||{}).label||'').match(/Generated\s+(\d{1,2}) ([A-Za-z]{3}) (\d{4}) (\d{1,2}:\d{2})/);
+      window._mdGen = gm ? new Date(gm[2]+' '+gm[1]+' '+gm[3]+' '+gm[4]).getTime() : null;
       const rows = (tbl.rows||[]).map(r => {
         const c = r.c||[];
         const k = mdMonthKey(c[MD_COL.date]);
@@ -900,8 +905,24 @@
           s:'A negative balance means more was paid out or approved than recorded as received. Reconcile the Cash in Hand tab.'});
     }
 
+    // Time-aware notes: a new calendar month with no finance row yet, and
+    // finance figures that the script has not rebuilt for over a day. These
+    // qualify every other number on the page, so they go first (unshift) and
+    // are never hidden behind the "+N more" cut-off.
+    const timeNotes = [];
+    if (!MONTHLY_BY_K[nowK] && nowK > cur.k)
+      timeNotes.push({lv:'warn', t:mLabelFull(nowK)+' has no finance entries yet',
+        s:'Showing '+mLabelFull(cur.k)+' above. '+mLabelFull(nowK)+' appears by itself once its first sale or expense reaches the Monthly Dashboard tab.'});
+    if (window._mdGen) {
+      const ageH = (Date.now() - window._mdGen) / 3600000;
+      if (ageH > 24)
+        timeNotes.push({lv:'warn', t:'Finance figures are '+(ageH<48?Math.round(ageH)+' hours':Math.round(ageH/24)+' days')+' old',
+          s:'The Monthly Dashboard tab was last rebuilt on '+new Date(window._mdGen).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+'. Expense, net profit and burn do not include anything entered after that.'});
+    }
+
     const lvRank = { bad:0, warn:1 };
     acts.sort((a,b) => (lvRank[a.lv]??2) - (lvRank[b.lv]??2));
+    acts.unshift(...timeNotes);
     const shown = acts.slice(0, 5);
     const hidden = acts.length - shown.length;
     actsEl.innerHTML = '<div class="sec-hdr"><span class="sec-title">Needs your attention</span></div>'
@@ -1860,6 +1881,7 @@
         cash: window._lastCash || { chayan:null, anik:null },
         cashOk: !!window._cashOk,
         md:   MONTHLY_PL,
+        mdGen: window._mdGen || null,
         an:   AN_ROWS.map(r => ({ d: r.d.getTime(), client:r.client, sales:r.sales, paid:r.paid, seller:r.seller, pmc:r.pmc }))
       }));
     } catch(_) {}
@@ -1871,6 +1893,7 @@
     if (!c || !c.ts) return null;
     MONTHLY_PL = (c.md||[]).map(r => ({ ...r, date: r.date ? new Date(r.date) : null }));
     MONTHLY_BY_K = {}; MONTHLY_PL.forEach(r => { MONTHLY_BY_K[r.k] = r; });
+    window._mdGen = c.mdGen || null;
     AN_ROWS  = (c.an ||[]).map(r => ({ d: new Date(r.d), client:r.client, sales:r.sales, paid:r.paid, seller:r.seller, pmc:r.pmc }));
     window._mdLoaded = true; window._anLoaded = true;
     window._lastCash = c.cash || { chayan:null, anik:null };

@@ -267,7 +267,9 @@
   // a fallback. Reading the raw date puts Oct-Dec 2025 into Oct-Dec 2026.
   function mdMonthKey(cell) {
     if (!cell) return null;
-    const f = String(cell.f || '').trim();
+    // f = the formatted text of a date cell; once EnkoreFinance.gs writes the
+    // month as plain text ("'Oct 25"), the text arrives in v instead.
+    const f = String(cell.f || (typeof cell.v === 'string' && !/^Date\(/.test(cell.v) ? cell.v : '') || '').trim();
     let m = f.match(/^([A-Za-z]{3})[a-z]*[\s\-']+(\d{2}|\d{4})$/);
     if (m) {
       const mi = MOS.findIndex(x => x.toLowerCase() === m[1].toLowerCase());
@@ -624,6 +626,14 @@
     return mLabel(R0) + ' – ' + mLabel(R1) + ' · ' + (R1 - R0 + 1) + ' months';
   }
   function isOpenMonth(k) { const now = new Date(); return k === mKey(now); }
+  // "28 Sep 2026 11:21" from the Monthly Dashboard title -> hours since the
+  // finance script last rebuilt that tab. null when it cannot be read.
+  function genAgeHours() {
+    if (!GEN_TS) return null;
+    const d = new Date(GEN_TS.replace(/(\d{1,2}) ([A-Za-z]{3}) (\d{4})/, '$2 $1 $3'));
+    return isNaN(d) ? null : (Date.now() - d.getTime()) / 3600000;
+  }
+  const ageText = h => h < 1 ? 'less than an hour' : h < 48 ? Math.round(h) + ' hours' : Math.round(h / 24) + ' days';
 
   function renderAll() {
     if (!MD.length) return;
@@ -664,6 +674,9 @@
 
     /* data quality */
     const dq = [];
+    const nowK = mKey(new Date()), age = genAgeHours();
+    if (nowK > lastK() && R1 === lastK()) dq.push({ c:'warn', b: mLabelFull(nowK)+' has no finance entries yet', s:'Showing '+mLabelFull(lastK())+'. The new month appears here by itself once its first sale or expense reaches the Monthly Dashboard tab.' });
+    if (age != null && age > 24) dq.push({ c:'warn', b:'Finance figures are '+ageText(age)+' old', s:'The Monthly Dashboard tab was last rebuilt on '+GEN_TS+'. Sales and expenses entered after that are not counted yet.' });
     if (isOpenMonth(R1)) dq.push({ c:'warn', b: mLabelFull(R1)+' is not over yet', s:'Numbers for this month are partial and will change as sales and expenses are entered.' });
     if (CAP == null) dq.push({ c:'warn', b:'ROI needs the capital figure', s:'Add a "Capital Account" tab to the Central Finance Sheet (Date, Type In/Out, Amount, Person, Note). ROI shows — until then.' });
     if (CASH == null) dq.push({ c:'warn', b:'Cash in Hand has no figures', s:'The "Positive" row in the Cash in Hand tab is blank, so runway cannot be calculated.' });
@@ -835,6 +848,7 @@
   async function refresh() {
     if (_refreshing) return;
     _refreshing = true;
+    const prevLast = MD.length ? lastK() : null;
     const res = await Promise.allSettled([loadMonthly(), loadSaleEntry(), loadCash(), loadCapital()]);
     _refreshing = false;
     if (res[0].status === 'rejected' && !MD.length) {
@@ -843,6 +857,10 @@
     }
     const wasEmpty = R1 == null;
     if (wasEmpty) { R1 = lastK(); R0 = R1; }
+    else if (MODE !== 'custom' && R1 === prevLast && lastK() > prevLast) {
+      // A new month arrived while the page was open: move with it.
+      setMode(MODE); saveCache(); return;
+    }
     else { R1 = clampK(R1); R0 = clampK(R0); }
     if (MODE === 'custom') { fillCustomSelects(); syncCustomSelects(); }
     renderAll();
