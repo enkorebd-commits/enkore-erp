@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Field Map - Enkore</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --blue:#1971c2;--blue2:#4098e6;--bluebg:#e7f1fb;
+  --grn:#1b6b3a;--grnbg:#edf7f1;--red:#e03131;--redbg:#fff5f5;
+  --amber:#e67e22;--amberbg:#fff4e6;--grey:#868e96;
+  --text:#1a1a2e;--muted:#868e96;--border:#dee2e6;--bg:#f3f4f6;--card:#fff;
+  --r:14px;--sh:0 2px 8px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior:none}
+svg{display:block}
+
+#ptrIndicator{position:fixed;top:8px;left:50%;transform:translate(-50%,0);margin-top:-56px;z-index:900;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.96);border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.18);padding:7px 14px;font-size:12px;font-weight:700;color:var(--text);pointer-events:none}
+.ptr-spin{width:16px;height:16px;border:2.5px solid #d0d4dc;border-top-color:var(--blue);border-radius:50%;display:inline-block}
+#ptrIndicator.ptr-loading .ptr-spin{animation:rot .6s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+.hdr{background:linear-gradient(135deg,#123a63,#1971c2);color:#fff;padding:20px 16px 14px;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.hdr-t{font-size:21px;font-weight:900;letter-spacing:.2px}
+.hdr-s{font-size:12px;font-weight:600;margin-top:4px;opacity:.9}
+.stats{display:flex;gap:8px;margin-top:12px}
+.stat{flex:1;background:rgba(255,255,255,.14);border-radius:11px;padding:9px 4px;text-align:center}
+.stat-v{font-size:19px;font-weight:900;letter-spacing:-.3px}
+.stat-l{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;opacity:.85;margin-top:1px}
+
+.body{padding:12px;max-width:760px;margin:0 auto;padding-bottom:60px}
+.row{display:flex;gap:8px;margin-bottom:8px}
+select,input[type=text],input[type=date]{width:100%;border:1.5px solid var(--border);border-radius:11px;padding:11px 12px;font-size:14px;font-family:inherit;color:var(--text);background:#fff;outline:none;appearance:none;-webkit-appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,#868e96 50%),linear-gradient(135deg,#868e96 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:30px}
+.chips{display:flex;gap:7px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px}
+.chip{border:1.5px solid var(--border);background:#fff;border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:800;color:var(--text);white-space:nowrap;flex-shrink:0}
+.chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip.Hot.on{background:var(--red);border-color:var(--red)}
+.chip.Warm.on{background:var(--amber);border-color:var(--amber)}
+.chip.Cold.on{background:var(--grey);border-color:var(--grey)}
+
+.seen{display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:3px}
+.sn{flex-shrink:0;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:8px 12px;min-width:118px}
+.sn.on{border-color:var(--blue);background:var(--bluebg)}
+.sn-n{font-size:12.5px;font-weight:800}
+.sn-s{font-size:10.5px;color:var(--muted);margin-top:2px;font-weight:600}
+.sn-s.live{color:var(--grn)}
+
+#mapWrap{position:relative;border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);margin-bottom:10px;background:#dfe6ee}
+#map{height:52vh;min-height:320px;width:100%;z-index:1}
+.mapmsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--muted);font-weight:700;font-size:13px;z-index:2;background:#eef1f5}
+.legend{position:absolute;left:8px;bottom:22px;z-index:500;background:rgba(255,255,255,.94);border-radius:10px;padding:6px 9px;font-size:10.5px;font-weight:800;display:flex;gap:9px;box-shadow:0 1px 6px rgba(0,0,0,.2)}
+.lg{display:flex;align-items:center;gap:4px}
+.lg i{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+.pin{width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.pin span{transform:rotate(45deg);color:#fff;font-size:11px;font-weight:900}
+.pin.Hot{background:var(--red)}.pin.Warm{background:var(--amber)}.pin.Cold{background:var(--grey)}
+.cnt{position:absolute;top:-9px;right:-9px;transform:rotate(45deg);background:#1a1a2e;color:#fff;border-radius:999px;font-size:9px;font-weight:900;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;border:1.5px solid #fff}
+
+.day{font-size:11px;font-weight:800;color:var(--muted);margin:12px 4px 6px;text-transform:uppercase;letter-spacing:.6px}
+.v{display:flex;gap:11px;align-items:center;background:var(--card);border-radius:12px;box-shadow:var(--sh);padding:11px 12px;margin-bottom:7px;cursor:pointer}
+.dot{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900}
+.dot.Hot{background:var(--red)}.dot.Warm{background:var(--amber)}.dot.Cold{background:var(--grey)}
+.v-m{flex:1;min-width:0}
+.v-n{font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v-s{font-size:11.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v-t{font-size:10.5px;font-weight:800;color:var(--muted);flex-shrink:0}
+.empty{text-align:center;color:var(--muted);font-size:13px;padding:24px 10px;font-weight:600}
+.sec-t{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:14px 4px 8px}
+
+/* detail sheet */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:none;align-items:flex-end;justify-content:center}
+.ov.open{display:flex}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:88vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;animation:up .22s ease}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.sh-h{padding:16px 16px 10px;display:flex;align-items:flex-start;gap:10px}
+.sh-t{flex:1;min-width:0}
+.sh-n{font-size:18px;font-weight:900;line-height:1.2}
+.sh-s{font-size:12px;color:var(--muted);margin-top:3px;font-weight:600}
+.sh-x{border:none;background:#e6e9ee;width:32px;height:32px;border-radius:50%;font-size:15px;font-weight:900;color:var(--text);flex-shrink:0}
+.sh-b{overflow-y:auto;padding:0 14px 20px}
+.badge{display:inline-block;font-size:10.5px;font-weight:900;color:#fff;border-radius:999px;padding:3px 10px;margin-top:6px}
+.badge.Hot{background:var(--red)}.badge.Warm{background:var(--amber)}.badge.Cold{background:var(--grey)}
+.card{background:var(--card);border-radius:12px;box-shadow:var(--sh);padding:12px 13px;margin-bottom:9px}
+.kv{display:flex;gap:10px;padding:5px 0;font-size:13px}
+.kv .k{width:92px;flex-shrink:0;color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;padding-top:1px}
+.kv .v2{flex:1;min-width:0;font-weight:600;word-break:break-word}
+.kv a{color:var(--blue);font-weight:800;text-decoration:none}
+.photo{width:100%;border-radius:12px;display:block;max-height:260px;object-fit:cover;background:var(--bg)}
+.btns{display:flex;gap:8px;margin-bottom:9px}
+.btn{flex:1;text-align:center;text-decoration:none;border-radius:11px;padding:12px 6px;font-size:13px;font-weight:800;color:#fff;background:var(--blue)}
+.btn.g{background:var(--grn)}
+.btn.o{background:#fff;color:var(--blue);border:1.5px solid var(--blue)}
+.hist{font-size:12.5px;padding:7px 0;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center}
+.hist:first-of-type{border-top:none}
+.hist .d{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.hist .d.Hot{background:var(--red)}.hist .d.Warm{background:var(--amber)}.hist .d.Cold{background:var(--grey)}
+.hist b{font-weight:800}
+.hist .m{flex:1;min-width:0;color:var(--muted);font-weight:600}
+
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(30px);opacity:0;background:#1a1a2e;color:#fff;border-radius:999px;padding:11px 18px;font-size:13px;font-weight:700;z-index:1100;max-width:90%;text-align:center;transition:all .25s;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{background:var(--red)}
+#toast.ok{background:var(--grn)}
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#51cf66;margin-right:5px;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+</style>
+</head>
+<body>
+<div id="ptrIndicator"><span class="ptr-spin"></span><span id="ptrText">Pull to refresh</span></div>
+
+<div class="hdr">
+  <div class="hdr-t">Field Map</div>
+  <div class="hdr-s"><span class="live-dot"></span><span id="hdrSub">Loading visits</span></div>
+  <div class="stats">
+    <div class="stat"><div class="stat-v" id="stV">0</div><div class="stat-l">Visits</div></div>
+    <div class="stat"><div class="stat-v" id="stS">0</div><div class="stat-l">Shops</div></div>
+    <div class="stat"><div class="stat-v" id="stH">0</div><div class="stat-l">Hot</div></div>
+    <div class="stat"><div class="stat-v" id="stP">0</div><div class="stat-l">Reps active</div></div>
+  </div>
+</div>
+
+<div class="body">
+  <div class="row">
+    <select id="selPeriod">
+      <option value="today">Today</option>
+      <option value="7">Last 7 days</option>
+      <option value="30" selected>Last 30 days</option>
+      <option value="month">This month</option>
+      <option value="custom">Custom dates</option>
+    </select>
+    <select id="selRep"><option value="">All salesmen</option></select>
+  </div>
+  <div class="row" id="customRow" style="display:none">
+    <input type="date" id="dFrom"><input type="date" id="dTo">
+  </div>
+  <div class="chips" id="chInt"></div>
+  <div class="seen" id="seen"></div>
+
+  <div id="mapWrap">
+    <div id="map"></div>
+    <div class="legend"><span class="lg"><i style="background:#e03131"></i>Hot</span><span class="lg"><i style="background:#e67e22"></i>Warm</span><span class="lg"><i style="background:#868e96"></i>Cold</span></div>
+  </div>
+
+  <div class="sec-t">Visits</div>
+  <input type="text" id="search" placeholder="Search shop, owner, phone, address, notes, salesman" autocomplete="off" style="margin-bottom:8px">
+  <div id="list"></div>
+</div>
+
+<div class="ov" id="ov">
+  <div class="sheet">
+    <div class="sh-h"><div class="sh-t"><div class="sh-n" id="shN"></div><div class="sh-s" id="shS"></div><span class="badge" id="shB"></span></div><button class="sh-x" id="shX" type="button" aria-label="Close">x</button></div>
+    <div class="sh-b" id="shBody"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const API   = 'https://script.google.com/macros/s/AKfycbylAEyTwyBrejsLKA1a5-dhL57K44UVUJOT9rDvLtd53GSzR-WEEAMYD-WYVx7SpGUaJA/exec';
+const PARAMS  = new URLSearchParams(location.search);
+const USER_ID = PARAMS.get('userId') || '';
+const CKEY    = 'enkore_fieldmap_' + USER_ID;
+const SAME_PLACE_M = 30;          // visits closer than this share one pin
+const REFRESH_MS   = 60000;       // auto refresh while the panel is on screen
+
+let VISITS = [], PLACES = [], MAP = null, LAYER = null, MARKERS = {};
+let REP = '', INT = '', Q = '', _ptrBusy = false, _loading = false, _fitNext = true, _timer = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg, kind){ const t=$('toast'); t.textContent=msg; t.className='show '+(kind||''); clearTimeout(toast._t); toast._t=setTimeout(()=>{t.className='';},2600); }
+function lsGet(k,d){ try{ const v=sessionStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+function lsSet(k,v){ try{ sessionStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+const z2 = n => String(n).padStart(2,'0');
+const ymd = d => d.getFullYear()+'-'+z2(d.getMonth()+1)+'-'+z2(d.getDate());
+
+/* ---------- period ---------- */
+function range(){
+  const p=$('selPeriod').value, now=new Date(), to=new Date(now), from=new Date(now);
+  if(p==='today'){ /* same day */ }
+  else if(p==='month'){ from.setDate(1); }
+  else if(p==='custom'){
+    if($('dFrom').value && $('dTo').value) return {from:$('dFrom').value,to:$('dTo').value};
+    from.setDate(from.getDate()-29);
+  } else from.setDate(from.getDate()-(parseInt(p,10)-1));
+  return {from:ymd(from),to:ymd(to)};
+}
+
+/* ---------- data ---------- */
+async function load(force){
+  if(_loading) return; _loading=true;
+  const r=range();
+  const key=CKEY+'_'+r.from+'_'+r.to;
+  if(!force){ const c=lsGet(key,null); if(c){ VISITS=c; render(); } }
+  try{
+    const qs=new URLSearchParams({action:'getShopVisits',userId:USER_ID,mine:'0',from:r.from,to:r.to,t:Date.now()});
+    const res=await fetch(API+'?'+qs).then(x=>x.json());
+    if(res && res.ok){ VISITS=res.visits; lsSet(key,VISITS); render(); }
+    else if(res && res.error){ $('hdrSub').textContent=res.error==='not authorized'?'You do not have access to the Field Map':res.error; }
+  }catch(e){ if(!VISITS.length) $('hdrSub').textContent='Cannot load. Check your connection'; }
+  finally{ _loading=false; }
+}
+
+/* ---------- helpers ---------- */
+function meters(a,b,c,d){ const R=6371000,k=Math.PI/180,x=(c-a)*k,y=(d-b)*k; const h=Math.sin(x/2)**2+Math.cos(a*k)*Math.cos(c*k)*Math.sin(y/2)**2; return 2*R*Math.asin(Math.min(1,Math.sqrt(h))); }
+function dt(s){ return new Date(s); }
+function ago(s){
+  const m=Math.round((Date.now()-dt(s).getTime())/60000);
+  if(m<1) return 'just now'; if(m<60) return m+' min ago';
+  const h=Math.round(m/60); if(h<24) return h+' h ago';
+  const d=Math.round(h/24); return d+' day'+(d>1?'s':'')+' ago';
+}
+function fmtDay(s){
+  const t=new Date(); t.setHours(0,0,0,0); const x=dt(s); x.setHours(0,0,0,0);
+  const diff=Math.round((t-x)/86400000);
+  if(diff===0) return 'Today'; if(diff===1) return 'Yesterday';
+  return x.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+}
+function fmtTime(s){ return dt(s).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
+function matches(v){
+  if(REP && v.sid!==REP) return false;
+  if(INT && v.interest!==INT) return false;
+  if(!Q) return true;
+  const hay=[v.shop,v.owner,v.phone,v.addr,v.notes,v.products,v.type,v.by,v.interest].join(' ').toLowerCase();
+  return Q.toLowerCase().split(/\s+/).every(w=>hay.indexOf(w)>=0);
+}
+function shown(){ return VISITS.filter(matches); }
+
+/* group visits into places (same spot = one pin) */
+function buildPlaces(vs){
+  const out=[];
+  vs.forEach(v=>{                      // vs is newest first
+    if(!isFinite(v.lat)||!isFinite(v.lng)) return;
+    let p=null;
+    for(const x of out){ if(meters(x.lat,x.lng,v.lat,v.lng)<=SAME_PLACE_M){ p=x; break; } }
+    if(!p){ p={key:'p'+out.length,lat:v.lat,lng:v.lng,visits:[],latest:v}; out.push(p); }
+    p.visits.push(v);
+  });
+  return out;
+}
+
+/* ---------- map ---------- */
+function initMap(){
+  if(typeof L==='undefined'){ $('mapWrap').insertAdjacentHTML('afterbegin','<div class="mapmsg">The map could not load. Check your internet connection and pull down to refresh.</div>'); return; }
+  MAP=L.map('map',{zoomControl:true,attributionControl:true}).setView([23.8103,90.4125],11);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(MAP);
+  LAYER=L.layerGroup().addTo(MAP);
+  setTimeout(()=>MAP.invalidateSize(),250);
+}
+function drawPins(){
+  if(!MAP) return;
+  LAYER.clearLayers(); MARKERS={};
+  const pts=[];
+  PLACES.forEach(p=>{
+    const i=p.latest.interest||'Warm';
+    const icon=L.divIcon({className:'',iconSize:[28,28],iconAnchor:[14,28],
+      html:'<div class="pin '+esc(i)+'"><span>'+esc(i.charAt(0))+'</span></div>'+(p.visits.length>1?'<div class="cnt" style="position:absolute;top:-6px;right:-6px;transform:none">'+p.visits.length+'</div>':'')});
+    const m=L.marker([p.lat,p.lng],{icon}).addTo(LAYER);
+    m.on('click',()=>openSheet(p.key));
+    MARKERS[p.key]=m; pts.push([p.lat,p.lng]);
+  });
+  if(_fitNext && pts.length){
+    if(pts.length===1) MAP.setView(pts[0],16); else MAP.fitBounds(pts,{padding:[34,34],maxZoom:16});
+    _fitNext=false;
+  }
+}
+
+/* ---------- render ---------- */
+function render(){
+  const vs=shown(); PLACES=buildPlaces(vs);
+  $('stV').textContent=vs.length; $('stS').textContent=PLACES.length;
+  $('stH').textContent=PLACES.filter(p=>p.latest.interest==='Hot').length;
+  $('stP').textContent=new Set(vs.map(v=>v.sid)).size;
+  const last=VISITS[0]; $('hdrSub').textContent=last?('Live. Last visit '+ago(last.at)+' by '+last.by):'Live. No visits in this period';
+  renderReps(); renderChips(); drawPins(); renderList();
+}
+function renderReps(){
+  const m={}; VISITS.forEach(v=>{ if(!m[v.sid]) m[v.sid]={sid:v.sid,by:v.by,last:v.at,n:0}; m[v.sid].n++; });
+  const reps=Object.values(m).sort((a,b)=>dt(b.last)-dt(a.last));
+  const sel=$('selRep'); const cur=REP;
+  sel.innerHTML='<option value="">All salesmen</option>'+reps.map(r=>'<option value="'+esc(r.sid)+'">'+esc(r.by)+' ('+r.n+')</option>').join('');
+  sel.value=cur;
+  $('seen').innerHTML=reps.map(r=>{
+    const mins=(Date.now()-dt(r.last).getTime())/60000;
+    return '<div class="sn'+(REP===r.sid?' on':'')+'" data-s="'+esc(r.sid)+'"><div class="sn-n">'+esc(r.by)+'</div><div class="sn-s'+(mins<90?' live':'')+'">Last seen '+esc(ago(r.last))+'</div></div>';
+  }).join('');
+}
+function renderChips(){
+  const list=[['','All'],['Hot','Hot'],['Warm','Warm'],['Cold','Cold']];
+  $('chInt').innerHTML=list.map(([v,l])=>'<button type="button" class="chip '+v+(INT===v?' on':'')+'" data-v="'+v+'">'+l+'</button>').join('');
+}
+function renderList(){
+  const vs=shown();
+  if(!vs.length){ $('list').innerHTML='<div class="empty">'+(Q||REP||INT?'No visit matches these filters':'No visits in this period')+'</div>'; return; }
+  let h='', day='';
+  vs.slice(0,300).forEach(v=>{
+    const d=fmtDay(v.at); if(d!==day){ day=d; h+='<div class="day">'+esc(d)+'</div>'; }
+    h+='<div class="v" data-id="'+esc(v.id)+'"><div class="dot '+esc(v.interest)+'">'+esc((v.interest||'W').charAt(0))+'</div><div class="v-m"><div class="v-n">'+esc(v.shop)+'</div><div class="v-s">'+esc(v.by)+(v.owner?' · '+esc(v.owner):'')+(v.addr?' · '+esc(v.addr):'')+'</div></div><div class="v-t">'+esc(fmtTime(v.at))+'</div></div>';
+  });
+  if(vs.length>300) h+='<div class="empty">Showing the latest 300. Narrow the dates or search to see more.</div>';
+  $('list').innerHTML=h;
+}
+
+/* ---------- detail sheet (back button contract: ovOpen / ovClose / __erpHandleBack) ---------- */
+function ovOpen(id){
+  const el=$(id); if(!el||el.classList.contains('open')) return;
+  el.classList.add('open');
+  try{ if(parent&&parent.__erpOv) parent.__erpOv(); }catch(_){}
+}
+function ovClose(id){
+  const el=$(id); if(!el||!el.classList.contains('open')) return;
+  el.classList.remove('open');
+  try{ if(parent&&parent.__erpOvClose) parent.__erpOvClose(); }catch(_){}
+}
+window.__erpHandleBack=function(){ const o=$('ov'); if(o&&o.classList.contains('open')){ ovClose('ov'); return true; } return false; };
+
+function openSheet(key, visitId){
+  const p=PLACES.find(x=>x.key===key) || PLACES.find(x=>x.visits.some(v=>v.id===visitId));
+  if(!p) return;
+  const v=visitId ? (p.visits.find(x=>x.id===visitId)||p.latest) : p.latest;
+  $('shN').textContent=v.shop;
+  $('shS').textContent=v.by+' · '+fmtDay(v.at)+', '+fmtTime(v.at);
+  const b=$('shB'); b.className='badge '+v.interest; b.textContent=v.interest+' lead';
+  const tel=String(v.phone||'').replace(/[^0-9+]/g,'');
+  let wa=tel.replace(/^\+/,''); if(/^0/.test(wa)) wa='88'+wa;
+  let h='';
+  if(v.photo) h+='<div class="card" style="padding:6px"><img class="photo" alt="Shop photo" src="https://drive.google.com/thumbnail?id='+encodeURIComponent(v.photo)+'&sz=w800" onerror="this.parentNode.style.display=\'none\'"></div>';
+  h+='<div class="btns"><a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination='+v.lat+','+v.lng+'">Directions</a>'
+    +'<a class="btn o" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query='+v.lat+','+v.lng+'">Open in Maps</a></div>';
+  if(tel) h+='<div class="btns"><a class="btn g" href="tel:'+esc(tel)+'">Call</a><a class="btn o" target="_blank" rel="noopener" href="https://wa.me/'+esc(wa)+'">WhatsApp</a></div>';
+  const kv=(k,val)=>val?'<div class="kv"><div class="k">'+k+'</div><div class="v2">'+esc(val)+'</div></div>':'';
+  h+='<div class="card">'+kv('Owner',v.owner)+kv('Phone',v.phone)+kv('Shop type',v.type)+kv('Products',v.products)+kv('Address',v.addr)+kv('Next visit',v.next)+kv('Notes',v.notes)+kv('GPS accuracy',v.acc?('within '+v.acc+' m'):'')+'</div>';
+  if(p.visits.length>1){
+    h+='<div class="sec-t" style="margin-top:6px">All visits here ('+p.visits.length+')</div><div class="card">'
+      +p.visits.map(x=>'<div class="hist"><span class="d '+esc(x.interest)+'"></span><span class="m"><b>'+esc(fmtDay(x.at))+', '+esc(fmtTime(x.at))+'</b> · '+esc(x.by)+(x.notes?' · '+esc(x.notes):'')+'</span></div>').join('')+'</div>';
+  }
+  $('shBody').innerHTML=h; $('shBody').scrollTop=0;
+  ovOpen('ov');
+  if(MAP && MARKERS[p.key]) MAP.setView([p.lat,p.lng],Math.max(MAP.getZoom(),16),{animate:true});
+}
+
+/* ---------- events ---------- */
+$('selPeriod').addEventListener('change',()=>{ $('customRow').style.display=$('selPeriod').value==='custom'?'flex':'none'; _fitNext=true; load(true); });
+['dFrom','dTo'].forEach(id=>$(id).addEventListener('change',()=>{ if($('dFrom').value&&$('dTo').value){ _fitNext=true; load(true); } }));
+$('selRep').addEventListener('change',e=>{ REP=e.target.value; _fitNext=true; render(); });
+$('seen').addEventListener('click',e=>{ const c=e.target.closest('.sn'); if(!c) return; REP=(REP===c.dataset.s)?'':c.dataset.s; _fitNext=true; render(); });
+$('chInt').addEventListener('click',e=>{ const c=e.target.closest('.chip'); if(!c) return; INT=c.dataset.v; _fitNext=true; render(); });
+$('search').addEventListener('input',e=>{ Q=e.target.value.trim(); _fitNext=true; render(); });
+$('list').addEventListener('click',e=>{ const c=e.target.closest('.v'); if(!c) return; const v=VISITS.find(x=>x.id===c.dataset.id); if(!v) return;
+  const p=PLACES.find(x=>x.visits.some(y=>y.id===v.id)); if(p) openSheet(p.key, v.id); });
+$('shX').addEventListener('click',()=>ovClose('ov'));
+$('ov').addEventListener('click',e=>{ if(e.target.id==='ov') ovClose('ov'); });
+
+/* ---------- pull to refresh (off while the sheet is open or the finger is on the map) ---------- */
+async function forceRefresh(){
+  const ind=$('ptrIndicator'); ind.classList.add('ptr-loading'); _ptrBusy=true; $('ptrText').textContent='Refreshing';
+  try{ await load(true); toast('Refreshed','ok'); }catch(e){ toast('Refresh failed','err'); }
+  finally{ _ptrBusy=false; ind.classList.remove('ptr-loading'); $('ptrText').textContent='Pull to refresh'; }
+}
+function initPTR(){
+  const ind=$('ptrIndicator'), txt=$('ptrText'); const MAXD=90, FIRE=60; let startY=0, pulling=false, dist=0;
+  const blocked=e=>_ptrBusy||$('ov').classList.contains('open')||window.scrollY>0||(e.target.closest&&e.target.closest('#mapWrap'));
+  document.addEventListener('touchstart',e=>{ if(blocked(e)){pulling=false;return;} startY=e.touches[0].clientY; pulling=true; },{passive:true});
+  document.addEventListener('touchmove',e=>{ if(!pulling||_ptrBusy)return; dist=e.touches[0].clientY-startY; if(dist<=0){dist=0;ind.style.marginTop='-56px';return;} if(window.scrollY>0){pulling=false;return;} const es=Math.min(MAXD,dist*0.5); ind.style.marginTop=(es-56)+'px'; txt.textContent=es>=FIRE?'Release to refresh':'Pull to refresh'; },{passive:true});
+  document.addEventListener('touchend',()=>{ if(!pulling)return; pulling=false; const es=Math.min(MAXD,dist*0.5); if(es>=FIRE){ind.style.marginTop='0px';forceRefresh().then(()=>{ind.style.marginTop='-56px';});} else ind.style.marginTop='-56px'; dist=0; });
+}
+
+/* ---------- live refresh: every 60 s, only while the panel is visible ---------- */
+function startTimer(){ stopTimer(); _timer=setInterval(()=>{ if(!document.hidden && !$('ov').classList.contains('open')) load(true); }, REFRESH_MS); }
+function stopTimer(){ if(_timer){ clearInterval(_timer); _timer=null; } }
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) stopTimer(); else { load(true); startTimer(); } });
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const t=new Date(); $('dTo').value=ymd(t); const f=new Date(); f.setDate(f.getDate()-29); $('dFrom').value=ymd(f);
+  initMap(); initPTR(); renderChips(); load(false); startTimer();
+});
+</script>
+</body>
+</html>
