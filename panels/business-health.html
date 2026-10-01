@@ -97,7 +97,15 @@
     .nav-arrow { font-size:12px; color:var(--sub2); flex-shrink:0; transition:transform .2s; }
     .nav-btn.open .nav-arrow { transform:rotate(180deg); color:var(--text); }
     .acc-panel { display:none; margin-top:8px; }
-    .acc-panel.open { display:block; }
+    .acc-panel.open { display:block; background:var(--seg-bg); border:2px solid var(--seg); border-radius:14px; padding:8px 8px 0; }
+    /* segment colors: each section has its own tint so you can see where it starts and ends */
+    .seg-be   { --seg:#1E9DD6; --seg-bg:#E8F4FD; }
+    .seg-roi  { --seg:#7C3AED; --seg-bg:#F1ECFD; }
+    .seg-cash { --seg:#16B07C; --seg-bg:#E6F7EF; }
+    .seg-cust { --seg:#F59E0B; --seg-bg:#FFF3E3; }
+    .nav-btn[class*="seg-"] { background:var(--seg-bg); border-left-color:var(--seg); border:1.5px solid transparent; border-left:5px solid var(--seg); transition:background .2s,border-color .2s; }
+    .nav-btn[class*="seg-"].open { border-color:var(--seg); border-left:5px solid var(--seg); border-bottom-left-radius:6px; border-bottom-right-radius:6px; }
+    .acc-end { display:flex; align-items:center; justify-content:center; gap:6px; margin:0 -8px; padding:9px 0; background:var(--seg); color:#fff; font-size:11px; font-weight:800; border-radius:0 0 11px 11px; cursor:pointer; user-select:none; }
 
     .card { background:var(--card); border-radius:var(--r); box-shadow:var(--sh); padding:14px 12px 12px; margin-bottom:8px; }
     .card-hd { display:flex; align-items:baseline; justify-content:space-between; padding:0 2px 8px; gap:8px; }
@@ -881,10 +889,10 @@
     applyAcc();
   }
   function navBtn(id, ico, lbl, sub, badge, blk) {
-    return '<div class="nav-btn'+(blk?' blk':'')+'" id="nav-'+id+'" onclick="accToggle(\''+id+'\')"><span class="nav-ico">'+ico+'</span>'
+    return '<div class="nav-btn seg-'+id+'" id="nav-'+id+'" onclick="accToggle(\''+id+'\')"><span class="nav-ico">'+ico+'</span>'
       + '<div style="flex:1;min-width:0"><div class="nav-lbl">'+lbl+'</div><div class="nav-sub">'+sub+'</div></div>'+badge+'<span class="nav-arrow">▾</span></div>';
   }
-  const accPanel = (id, inner) => '<div class="acc-panel" id="acc-'+id+'">'+inner+'</div>';
+  const accPanel = (id, inner) => '<div class="acc-panel seg-'+id+'" id="acc-'+id+'">'+inner+'<div class="acc-end" onclick="accToggle(\''+id+'\')">End of '+({be:'Breakeven',roi:'ROI',cash:'Cashflow',cust:'Customers'}[id])+' &nbsp;▲ Close</div></div>';
 
   /* ═══════════════════════════════════════════════════════════
      CACHE + REFRESH
