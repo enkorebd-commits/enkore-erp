@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Inventory — Enkore</title>
+<style>
+:root{
+  --b:#1971c2;--bbg:#e7f1fb;--red:#e03131;--green:#2b8a3e;--gbg:#ebfbee;--amber:#e8590c;--abg:#fff4e6;
+  --text:#1a1a2e;--muted:#868e96;--border:#dee2e6;--bg:#f4f6f8;--card:#fff;--r:12px;
+  --sh:0 2px 8px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);
+  color:var(--text);min-height:100vh;font-size:14px;overscroll-behavior-y:contain}
+.hdr{background:var(--b);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,.2);display:flex;justify-content:space-between;align-items:center}
+.hdr-t{font-size:15px;font-weight:800}
+.hdr-u{font-size:11px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);
+  padding:4px 10px;border-radius:20px;font-weight:700;max-width:150px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.body{padding:12px;max-width:560px;margin:0 auto;padding-bottom:110px}
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.card-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px}
+.tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.tab{padding:11px 6px;border-radius:9px;border:1.5px solid var(--border);background:#fff;
+  font-size:12.5px;font-weight:800;color:var(--muted);cursor:pointer;text-align:center}
+.tab.on{border-color:var(--b);background:var(--bbg);color:var(--b)}
+.fg{margin-bottom:10px}.fg:last-child{margin-bottom:0}
+.fl{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.fi{width:100%;padding:12px 13px;font-size:15px;border:1.5px solid var(--border);border-radius:8px;
+  outline:none;background:#fff;color:var(--text);font-weight:500}
+.fi:focus{border-color:var(--b)}
+select.fi{appearance:none}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.r3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+.hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45}
+.sub-btn{width:100%;padding:15px;border:none;border-radius:10px;background:var(--b);color:#fff;
+  font-size:15px;font-weight:800;cursor:pointer;margin-top:4px}
+.sub-btn.alt{background:#fff;color:var(--b);border:1.5px solid var(--b)}
+.sub-btn.ghost{background:var(--bbg);color:var(--b);font-size:13px;padding:10px}
+.sub-btn:disabled{opacity:.5;cursor:default}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(90px);z-index:500;
+  background:#212529;color:#fff;padding:11px 18px;border-radius:24px;font-size:13px;font-weight:700;
+  transition:transform .22s;max-width:92vw;text-align:center}
+.toast.on{transform:translateX(-50%) translateY(0)}
+.toast.err{background:var(--red)}.toast.ok{background:var(--green)}
+.stock-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f3f5}
+.stock-row:last-child{border-bottom:none}
+.stock-name{font-weight:700;font-size:13.5px}
+.stock-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.stock-qty{font-weight:800;font-size:14px;text-align:right}
+.stock-qty.low{color:var(--red)}
+.stock-wac{font-size:10.5px;color:var(--muted);text-align:right;margin-top:2px}
+.empty{text-align:center;color:var(--muted);font-size:13px;padding:24px 10px}
+.recipe-row{display:grid;grid-template-columns:2fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center}
+.recipe-row .fi{padding:9px 10px;font-size:13px}
+.rm-btn{background:#fff5f5;color:var(--red);border:1.5px solid #ffc9c9;border-radius:8px;
+  width:34px;height:34px;font-size:16px;font-weight:800;cursor:pointer}
+.locked{text-align:center;padding:60px 20px;color:var(--muted)}
+.locked .big{font-size:30px;margin-bottom:10px}
+
+    @media (min-width:769px){
+      body, .body { max-width:1040px; width:100%; margin-left:auto; margin-right:auto; }
+    }
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-t">Inventory</div><div class="hdr-u" id="who">—</div></div>
+
+<div class="body" id="appBody" style="display:none">
+
+  <div class="tabs">
+    <div class="tab on" id="tabStock"      onclick="setMode('stock')">Stock</div>
+    <div class="tab"    id="tabPurchase"   onclick="setMode('purchase')">Purchase</div>
+    <div class="tab"    id="tabProduction" onclick="setMode('production')">Production</div>
+  </div>
+
+  <!-- STOCK -->
+  <div id="paneStock">
+    <div class="card">
+      <div class="card-lbl">Item master — live stock and weighted average cost</div>
+      <div id="stockList"><div class="empty">Loading…</div></div>
+    </div>
+    <button class="sub-btn ghost" onclick="loadStock()">Refresh</button>
+  </div>
+
+  <!-- PURCHASE -->
+  <div id="panePurchase" style="display:none">
+    <div class="card">
+      <div class="card-lbl">Record a raw material / goods purchase</div>
+      <div class="fg">
+        <div class="fl">Item name</div>
+        <input type="text" class="fi" id="pItem" placeholder="e.g. Tire Sealant Concentrate" list="itemNames">
+        <datalist id="itemNames"></datalist>
+      </div>
+      <div class="r2">
+        <div class="fg">
+          <div class="fl">Type</div>
+          <select class="fi" id="pType">
+            <option>Raw Material</option>
+            <option>Finished Good</option>
+            <option>Combo</option>
+          </select>
+        </div>
+        <div class="fg">
+          <div class="fl">Unit</div>
+          <select class="fi" id="pUnit">
+            <option>kg</option><option>L</option><option>piece</option><option>qty</option>
+          </select>
+        </div>
+      </div>
+      <div class="r2">
+        <div class="fg">
+          <div class="fl">Quantity</div>
+          <input type="number" class="fi" id="pQty" placeholder="0" inputmode="decimal">
+        </div>
+        <div class="fg">
+          <div class="fl">Unit price (BDT)</div>
+          <input type="number" class="fi" id="pPrice" placeholder="0" inputmode="decimal">
+        </div>
+      </div>
+      <div class="fg">
+        <div class="fl">Note (optional)</div>
+        <input type="text" class="fi" id="pNote" placeholder="Supplier, invoice no, etc.">
+      </div>
+      <div class="hint">This updates Item Master stock and Weighted Average Cost, writes a Stock Ledger
+        row, and posts the matching expense into Expense_Entry under "Raw Materials / Inventory"
+        automatically — no double entry needed.</div>
+    </div>
+    <button class="sub-btn" id="pBtn" onclick="submitPurchase()">Record purchase</button>
+  </div>
+
+  <!-- PRODUCTION -->
+  <div id="paneProduction" style="display:none">
+    <div class="card">
+      <div class="card-lbl">Turn raw materials into a finished good</div>
+      <div class="fg">
+        <div class="fl">Finished good name</div>
+        <input type="text" class="fi" id="oName" placeholder="e.g. Chain Lube 150ml" list="itemNames">
+      </div>
+      <div class="r2">
+        <div class="fg">
+          <div class="fl">Output unit</div>
+          <select class="fi" id="oUnit">
+            <option>piece</option><option>qty</option><option>kg</option><option>L</option>
+          </select>
+        </div>
+        <div class="fg">
+          <div class="fl">Batches</div>
+          <input type="number" class="fi" id="oBatches" placeholder="1" inputmode="decimal">
+        </div>
+      </div>
+      <div class="fg">
+        <div class="fl">Output qty per batch</div>
+        <input type="number" class="fi" id="oQtyPerBatch" placeholder="e.g. 100" inputmode="decimal">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-lbl">Recipe — raw materials consumed per batch</div>
+      <div id="recipeRows"></div>
+      <button class="sub-btn ghost" onclick="addRecipeRow()">+ Add component</button>
+      <div class="hint">Each component is deducted from its own stock. If a component would go
+        negative, the whole production is rejected before anything is changed.</div>
+    </div>
+    <button class="sub-btn" id="oBtn" onclick="submitProduction()">Record production</button>
+  </div>
+
+</div>
+
+<div class="locked" id="lockedBox" style="display:none">
+  <div class="big">🔒</div>
+  No user id. Open this from the ERP.
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Deployed from the InventoryEngine.gs Web App bound to the Raw Material List sheet.
+// Replace with the real /exec URL after: Apps Script project → Deploy → New deployment
+// → type "Web app" → Execute as "Me" → Who has access "Anyone with Google account".
+const AS_URL = 'REPLACE_WITH_INVENTORY_WEBAPP_EXEC_URL';
+
+function qs(){ return new URLSearchParams(location.search); }
+function getUser(){ return { name: qs().get('name') || '', id: qs().get('userId') || '' }; }
+
+(function init(){
+  const u = getUser();
+  if (!u.id) {
+    document.getElementById('lockedBox').style.display = 'block';
+    return;
+  }
+  document.getElementById('who').textContent = u.name || '—';
+  document.getElementById('appBody').style.display = 'block';
+  addRecipeRow();
+  loadStock();
+})();
+
+function toast(m, k){
+  const t = document.getElementById('toast');
+  t.textContent = m; t.className = 'toast on ' + (k || '');
+  clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 2800);
+}
+
+function setMode(m){
+  ['Stock','Purchase','Production'].forEach(k => {
+    document.getElementById('tab'+k).className = 'tab' + (k.toLowerCase() === m ? ' on' : '');
+    document.getElementById('pane'+k).style.display = k.toLowerCase() === m ? 'block' : 'none';
+  });
+}
+
+let STOCK = [];
+
+async function loadStock(){
+  const list = document.getElementById('stockList');
+  list.innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    const r = await fetch(AS_URL + '?action=stock');
+    const data = await r.json();
+    if (!Array.isArray(data)) throw new Error(data.reason || 'Unexpected response');
+    STOCK = data;
+    const dl = document.getElementById('itemNames');
+    dl.innerHTML = data.map(it => `<option value="${it.name}">`).join('');
+    if (!data.length) {
+      list.innerHTML = '<div class="empty">No items yet. Record a purchase to create the first one.</div>';
+      return;
+    }
+    list.innerHTML = data.map(it => {
+      const low = it.reorder && Number(it.stock) <= Number(it.reorder);
+      return `<div class="stock-row">
+        <div>
+          <div class="stock-name">${it.name}</div>
+          <div class="stock-sub">${it.sku} · ${it.type}</div>
+        </div>
+        <div>
+          <div class="stock-qty${low ? ' low' : ''}">${Number(it.stock).toLocaleString('en-IN')} ${it.unit}</div>
+          <div class="stock-wac">WAC ৳${Number(it.wac || 0).toLocaleString('en-IN', {maximumFractionDigits:2})}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="empty">Could not load stock. ' + e.message + '</div>';
+  }
+}
+
+async function submitPurchase(){
+  const u = getUser();
+  const item = document.getElementById('pItem').value.trim();
+  const type = document.getElementById('pType').value;
+  const unit = document.getElementById('pUnit').value;
+  const qty = Number(document.getElementById('pQty').value);
+  const price = Number(document.getElementById('pPrice').value);
+  const note = document.getElementById('pNote').value.trim();
+  if (!item || !qty || qty <= 0 || !price || price <= 0) {
+    toast('Fill in item, quantity and unit price.', 'err'); return;
+  }
+  const btn = document.getElementById('pBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const url = AS_URL + '?action=purchase&item=' + encodeURIComponent(item) +
+      '&type=' + encodeURIComponent(type) + '&unit=' + encodeURIComponent(unit) +
+      '&qty=' + qty + '&price=' + price + '&by=' + encodeURIComponent(u.name) +
+      '&byId=' + encodeURIComponent(u.id) + '&note=' + encodeURIComponent(note);
+    const r = await fetch(url);
+    const out = await r.json();
+    if (!out.ok) throw new Error(out.reason || 'Failed');
+    toast(out.warning ? out.warning : 'Purchase recorded. New stock ' + out.newStock, out.warning ? 'err' : 'ok');
+    document.getElementById('pItem').value = '';
+    document.getElementById('pQty').value = '';
+    document.getElementById('pPrice').value = '';
+    document.getElementById('pNote').value = '';
+    loadStock();
+  } catch(e) {
+    toast(e.message, 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Record purchase';
+  }
+}
+
+function addRecipeRow(){
+  const wrap = document.getElementById('recipeRows');
+  const row = document.createElement('div');
+  row.className = 'recipe-row';
+  row.innerHTML = `
+    <input type="text" class="fi" placeholder="Raw material name" list="itemNames">
+    <input type="number" class="fi" placeholder="Qty/batch" inputmode="decimal">
+    <button class="rm-btn" onclick="this.parentElement.remove()">×</button>`;
+  wrap.appendChild(row);
+}
+
+async function submitProduction(){
+  const u = getUser();
+  const output = document.getElementById('oName').value.trim();
+  const unit = document.getElementById('oUnit').value;
+  const batches = Number(document.getElementById('oBatches').value);
+  const outputQtyPerBatch = Number(document.getElementById('oQtyPerBatch').value);
+  const rows = [...document.querySelectorAll('#recipeRows .recipe-row')];
+  const recipe = rows.map(row => {
+    const inputs = row.querySelectorAll('input');
+    return { name: inputs[0].value.trim(), qtyPerBatch: Number(inputs[1].value), unit: 'kg' };
+  }).filter(r => r.name && r.qtyPerBatch > 0);
+
+  if (!output || !batches || batches <= 0 || !outputQtyPerBatch || !recipe.length) {
+    toast('Fill in output, batches, output qty/batch and at least one component.', 'err'); return;
+  }
+  const btn = document.getElementById('oBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const url = AS_URL + '?action=production&output=' + encodeURIComponent(output) +
+      '&unit=' + encodeURIComponent(unit) + '&batches=' + batches +
+      '&outputQtyPerBatch=' + outputQtyPerBatch + '&by=' + encodeURIComponent(u.name) +
+      '&recipe=' + encodeURIComponent(JSON.stringify(recipe));
+    const r = await fetch(url);
+    const out = await r.json();
+    if (!out.ok) throw new Error(out.reason || 'Failed');
+    toast('Production recorded. New stock ' + out.newStock, 'ok');
+    document.getElementById('oName').value = '';
+    document.getElementById('oBatches').value = '';
+    document.getElementById('oQtyPerBatch').value = '';
+    document.getElementById('recipeRows').innerHTML = '';
+    addRecipeRow();
+    loadStock();
+  } catch(e) {
+    toast(e.message, 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Record production';
+  }
+}
+</script>
+</body>
+</html>
