@@ -97,11 +97,14 @@ select.fi{appearance:none}
       <div class="r2">
         <div class="fg">
           <div class="fl">Type</div>
-          <select class="fi" id="pType">
+          <select class="fi" id="pType" onchange="onTypeChange()">
             <option>Raw Material</option>
             <option>Finished Good</option>
             <option>Combo</option>
+            <option value="__other">Other (type your own)</option>
           </select>
+          <input type="text" class="fi" id="pTypeOther" placeholder="Type your custom type"
+            style="display:none; margin-top:8px;">
         </div>
         <div class="fg">
           <div class="fl">Unit</div>
@@ -242,16 +245,29 @@ async function loadStock(){
   }
 }
 
+function onTypeChange(){
+  const sel = document.getElementById('pType').value;
+  const other = document.getElementById('pTypeOther');
+  other.style.display = sel === '__other' ? 'block' : 'none';
+  if (sel === '__other') other.focus();
+}
+
 async function submitPurchase(){
   const u = getUser();
   const item = document.getElementById('pItem').value.trim();
-  const type = document.getElementById('pType').value;
+  const typeSel = document.getElementById('pType').value;
+  const type = typeSel === '__other'
+    ? document.getElementById('pTypeOther').value.trim()
+    : typeSel;
   const unit = document.getElementById('pUnit').value;
   const qty = Number(document.getElementById('pQty').value);
   const price = Number(document.getElementById('pPrice').value);
   const note = document.getElementById('pNote').value.trim();
   if (!item || !qty || qty <= 0 || !price || price <= 0) {
     toast('Fill in item, quantity and unit price.', 'err'); return;
+  }
+  if (typeSel === '__other' && !type) {
+    toast('Enter a custom type name.', 'err'); return;
   }
   const btn = document.getElementById('pBtn');
   btn.disabled = true; btn.textContent = 'Saving…';
@@ -268,6 +284,7 @@ async function submitPurchase(){
     document.getElementById('pQty').value = '';
     document.getElementById('pPrice').value = '';
     document.getElementById('pNote').value = '';
+    document.getElementById('pTypeOther').value = '';
     loadStock();
   } catch(e) {
     toast(e.message, 'err');
