@@ -167,7 +167,11 @@
       white-space:nowrap; z-index:60; transition:margin-top .18s ease; pointer-events:none; }
     #ptrIndicator .ptr-spin { width:15px; height:15px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; display:inline-block; }
     #ptrIndicator.ptr-loading .ptr-spin { animation:spin .7s linear infinite; }
-  </style>
+  
+    @media (min-width:769px){
+      body, .body { max-width:1040px; }
+    }
+</style>
 </head>
 <body>
 
