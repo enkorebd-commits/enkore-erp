@@ -177,10 +177,8 @@ select.fi{appearance:none}
 <div class="toast" id="toast"></div>
 
 <script>
-// Deployed from the InventoryEngine.gs Web App bound to the Raw Material List sheet.
-// Replace with the real /exec URL after: Apps Script project → Deploy → New deployment
-// → type "Web app" → Execute as "Me" → Who has access "Anyone with Google account".
-const AS_URL = 'REPLACE_WITH_INVENTORY_WEBAPP_EXEC_URL';
+// InventoryEngine.gs Web App, bound to the Raw Material List sheet.
+const AS_URL = 'https://script.google.com/macros/s/AKfycbxQZY69ypUNUYJsIHa-mnTZEReamRttPRCSEARfzgctGgwIBzQIhO0yQs_hlJ-eszE_Wg/exec';
 
 function qs(){ return new URLSearchParams(location.search); }
 function getUser(){ return { name: qs().get('name') || '', id: qs().get('userId') || '' }; }
